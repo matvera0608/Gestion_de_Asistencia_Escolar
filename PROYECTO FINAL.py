@@ -3,6 +3,7 @@ import mysql.connector as MySql
 from mysql.connector import Error as error_sql
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox as mensajeTexto
 from PIL import Image, ImageTk
 
 # --- COLORES EN HEXADECIMALES ---
@@ -51,6 +52,94 @@ def desconectar_base_de_datos(conexión):
   desconectando_db = conexión.is_connected()
   if desconectando_db:
     conexión.close()
+
+# --- FUNCIONES DE LECTURA ---
+# Esta función sirve sólo para leer datos de la bases de datos escuela
+def consultar_tabla(nombre_de_la_tabla):
+  global lista_IDs
+  try:
+      lista_IDs = []
+      conexión = conectar_base_de_datos()
+      if conexión:
+          cursor = conexión.cursor()
+
+          match nombre_de_la_tabla.lower():
+              case "alumno":
+                  cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre
+                                  FROM alumno AS a
+                                  JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera;""")
+              case "asistencia":
+                  cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
+                                  FROM asistencia AS asis
+                                  JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;""")
+              case "carrera":
+                  cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
+                                  FROM carrera AS c;""")
+              case "materia":
+                  cursor.execute("""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i'), c.Nombre
+                                  FROM materia AS m
+                                  JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
+              case "enseñanza":
+                  cursor.execute("""SELECT e.IDMateria, m.Nombre, p.Nombre FROM enseñanza AS e
+                                 JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                                 JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
+              case "profesor":
+                  cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre FROM profesor AS pro;""")
+              case "nota":
+                  cursor.execute("""SELECT n.IDAlumno, n.IDMateria, 
+                                          REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, 
+                                          n.tipoNota, 
+                                          al.Nombre AS NombreAlumno, 
+                                          m.Nombre AS NombreMateria
+                                  FROM nota AS n
+                                  JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                                  JOIN materia AS m ON n.IDMateria = m.ID_Materia;""")
+              case _:
+                  cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
+
+          resultado = cursor.fetchall()
+          Lista_de_datos.delete(0, tk.END)
+
+          if not resultado:
+              mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
+              return
+
+          lista_IDs.clear()
+          ancho_de_tablas = []
+
+          for fila in resultado:
+              if nombre_de_la_tabla.lower() == "nota":
+                lista_IDs.append((fila[0], fila[1]))
+                filaVisible = fila[2:]
+              else:
+                lista_IDs.append(fila[0])
+                filaVisible = fila[1:]
+
+              while len(ancho_de_tablas) < len(filaVisible):
+                ancho_de_tablas.append(0)
+
+              for i, valor in enumerate(filaVisible):
+                valorTipoCadena = str(valor)
+                ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
+
+          formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas) # Formato de visualización
+
+          for fila in resultado:
+            if nombre_de_la_tabla.lower() == "nota":
+              filaVisible = list(fila[2:])
+            else:
+              filaVisible = list(fila[1:])
+
+            filaTipoCadena = [str(valor) for valor in filaVisible]
+            if len(filaTipoCadena) == len(ancho_de_tablas):
+              filas_formateadas = formato.format(*filaTipoCadena)
+              Lista_de_datos.insert(tk.END, filas_formateadas)
+
+      desconectar_base_de_datos(conexión)
+
+  except Exception as Exc:
+    mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+
 
 mi_ventana = tk.Tk()
 
@@ -107,7 +196,6 @@ def pantallaLogin():
   
   return ventana
 
-
 def mostrar_pestañas(ventana):
   global notebook, tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota
 
@@ -142,7 +230,8 @@ def mostrar_pestañas(ventana):
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  
+  global Lista_de_datos, campos_de_la_tabla
+
   íconos_por_tabla = {
     "alumno": os.path.join(ruta_base, "imágenes", "alumno.ico"),
     "asistencia": os.path.join(ruta_base, "imágenes", "asistencia.ico"),
@@ -151,10 +240,10 @@ def abrir_tablas(nombre_de_la_tabla):
     "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
     "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
     "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
-}
+      }
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
-  ventanaSecundaria.geometry("800x800")
+  ventanaSecundaria.geometry("800x400")
   ventanaSecundaria.configure(bg=colores["blanco"])
   ventanaSecundaria.resizable(width=False, height=False)
   
@@ -214,29 +303,29 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos):
-    crear_etiqueta(ventanaSecundaria, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
-    crear_entrada(ventanaSecundaria, 30).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
+    crear_etiqueta(ventanaSecundaria, texto_etiqueta, 10).grid(row=i, column=1, sticky="w", padx=5, pady=5)
+    crear_entrada(ventanaSecundaria, 30).grid(row=i, column=2, sticky="ew", padx=5, pady=5)
 
-  Lista_de_datos = tk.Listbox(ventanaSecundaria, width=60, height=15)
-  Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 5, padx=10, pady=10, sticky="nsew")
-  
-  fila_botones = len(campos) #Esta fila contiene la longitud de cada campo
+  Lista_de_datos = tk.Listbox(ventanaSecundaria, width=40, height=10, font=("Courier New", 10))
+  Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 10, padx=10, pady=10, sticky="nsew")
+  consultar_tabla(nombre_de_la_tabla)
+  fila_botones = len(campos) + 1
 
-  crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=5, sticky="ew")
+  crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=2, sticky="n")
   # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=5, sticky="ew")
+  crear_botón(ventanaSecundaria, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=2, sticky="n")
   # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=5, sticky="ew")
+  crear_botón(ventanaSecundaria, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=2, sticky="n")
   # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=5, sticky="ew")
+  crear_botón(ventanaSecundaria, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=2, sticky="n")
   # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=5, sticky="ew")
+  crear_botón(ventanaSecundaria, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=2, sticky="n")
   # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
-  
+
 
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()
