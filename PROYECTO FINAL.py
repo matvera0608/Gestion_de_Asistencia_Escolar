@@ -152,9 +152,9 @@ def crear_etiqueta(contenedor, texto, tamaño_letra):
 def crear_entrada(contenedor, ancho, tamaño_letra=10):
   return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
 
-def crear_botón(frameActivo, texto, comando, ancho):
+def crear_botón(contenedor, texto, comando, ancho):
   ancho = len(texto) + 5 if ancho is None else ancho
-  return tk.Button(frameActivo, text=texto, width=ancho, command=comando)
+  return tk.Button(contenedor, text=texto, width=ancho, command=comando)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 def pantallaLogin():
@@ -248,10 +248,9 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.resizable(width=False, height=False)
   
   # Configuración del grid para los widgets dentro de la ventanaSecundaria
-  ventanaSecundaria.grid_columnconfigure(0, weight=0)
-  ventanaSecundaria.grid_columnconfigure(1, weight=1)
-  ventanaSecundaria.grid_columnconfigure(2, weight=2)
-  ventanaSecundaria.grid_rowconfigure(0, weight=1)
+  ventanaSecundaria.grid_columnconfigure(0, weight=1)
+  ventanaSecundaria.grid_columnconfigure(1, weight=2)
+  ventanaSecundaria.grid_columnconfigure(0, weight=1)
   
   ruta_ícono = íconos_por_tabla.get(nombre_de_la_tabla)
   if ruta_ícono and os.path.exists(ruta_ícono):
@@ -262,68 +261,81 @@ def abrir_tablas(nombre_de_la_tabla):
   elif ruta_ícono:
       print("Advertencia de Ícono", f"El archivo de ícono no se encontró en la ruta: {ruta_ícono}.")
 
+  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["blanco"])
+  marco_izquierdo.grid(row=0, column=0,  padx=15, pady=15, sticky="nsew")
+
+  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["blanco"])
+  marco_derecho.grid(row=0, column=1,  padx=15, pady=15, sticky="nsew")
+
   # Diccionario que mapea los nombres de las tablas a sus campos
   campos_por_tabla = {
       "alumno": [
-          ("Nombre *", "txBox_NombreAlumno"),
-          ("Fecha que nació *", "txBox_FechaNacimiento"),
-          ("Carrera *","txBox_NombreCarrera")
+          ("Nombre*", "txBox_NombreAlumno"),
+          ("Fecha que nació*", "txBox_FechaNacimiento"),
+          ("Carrera*","txBox_NombreCarrera")
       ],
       "asistencia": [
-          ("Estado *", "txBox_EstadoDeAsistencia"),
-          ("Fecha que asistió *", "txBox_FechaAsistencia"),
+          ("Estado*", "txBox_EstadoDeAsistencia"),
+          ("Fecha que asistió*", "txBox_FechaAsistencia"),
           ("Alumno que asistió*", "txBox_NombreAlumno")
       ],
       "carrera": [
-          ("Nombre *", "txBox_NombreCarrera"),
-          ("Duración *", "txBox_Duración")
+          ("Nombre*", "txBox_NombreCarrera"),
+          ("Duración*", "txBox_Duración")
       ],
       "materia": [
-          ("Nombre *", "txBox_NombreMateria"),
-          ("Horario *", "txBox_HorarioCorrespondiente")
+          ("Nombre*", "txBox_NombreMateria"),
+          ("Horario*", "txBox_HorarioCorrespondiente")
       ],
       "enseñanza": [
           ("Nombre de la asignatura*", "txBox_NombreMateria"),
           ("Nombre del profesor*", "txBox_NombreProfesor")
       ],
       "profesor": [
-          ("Nombre *", "txBox_NombreProfesor")
+          ("Nombre*", "txBox_NombreProfesor")
       ],
       "nota": [
-          ("Nota *", "txBox_Valor"),
-          ("Tipo de evaluación *", "txBox_Tipo"),
-          ("Fecha y Hora *", "txBox_Fecha"),
-          ("Nombre del estudiante *", "txBox_NombreAlumno"),
-          ("Nombre de la asignatura*", "txBox_NombreMateria"),
+          ("Nota*", "txBox_Valor"),
+          ("Tipo de evaluación*", "txBox_Tipo"),
+          ("Fecha y Hora*", "txBox_Fecha"),
+          ("Nombre del estudiante*", "txBox_NombreAlumno"),
+          ("Nombre de la asignatura*", "txBox_NombreMateria")
       ]
   }
-
+  
+  
+  marco_izquierdo.grid_columnconfigure(0, weight=1)
+  marco_izquierdo.grid_rowconfigure(0, weight=1)
+  
   campos = campos_por_tabla.get(nombre_de_la_tabla, None)
   if not campos:
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos):
-    crear_etiqueta(ventanaSecundaria, texto_etiqueta, 10).grid(row=i, column=1, sticky="w", padx=5, pady=5)
-    crear_entrada(ventanaSecundaria, 30).grid(row=i, column=2, sticky="ew", padx=5, pady=5)
+    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
+    crear_entrada(marco_izquierdo, 30).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
 
-  Lista_de_datos = tk.Listbox(ventanaSecundaria, width=40, height=10, font=("Courier New", 10))
-  Lista_de_datos.grid(row=0, column=2, rowspan=len(campos) + 10, padx=10, pady=10, sticky="nsew")
+  Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10))
+  Lista_de_datos.grid(row=0, column=0, sticky="nsew")
   consultar_tabla(nombre_de_la_tabla)
   fila_botones = len(campos) + 1
 
-  crear_botón(ventanaSecundaria, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=2, sticky="n")
-  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)
+  marco_derecho.grid_columnconfigure(0, weight=1)
+  marco_derecho.grid_rowconfigure(0, weight=1)
 
-  crear_botón(ventanaSecundaria, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=2, sticky="n")
+  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=2, sticky="ew")
+  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)}
+
+  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=2, sticky="ew")
   # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=2, sticky="n")
+  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=2, sticky="ew")
   # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=2, sticky="n")
+  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=2, sticky="ew")
   # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
-  crear_botón(ventanaSecundaria, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=2, sticky="n")
+  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=2, sticky="ew")
   # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
 
