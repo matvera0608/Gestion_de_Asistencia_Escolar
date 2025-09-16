@@ -315,16 +315,16 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos):
-    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
-    crear_entrada(marco_izquierdo, 10, 10).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
+    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i + 2, column=0, sticky="w", padx=5, pady=10)
+    crear_entrada(marco_izquierdo, 10, 10).grid(row=i + 2, column=1, sticky="ew", padx=5, pady=10)
     
   
   
-  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=0, column=2, pady=2, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=1, column=2, pady=2, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=2, column=2, pady=2, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=3, column=2, pady=2, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=4, column=2, pady=2, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=1, column=2, pady=10, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=2, pady=10, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=2, pady=10, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=2, pady=10, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=2, pady=10, padx=5, sticky="ew")
     
   Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
