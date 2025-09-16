@@ -318,27 +318,13 @@ def abrir_tablas(nombre_de_la_tabla):
     crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
     crear_entrada(marco_izquierdo, 10, 10).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
     
-  fila_botones = len(campos)
-  
-  marco_botones = tk.Frame(marco_izquierdo, bg=colores["blanco"])
-  marco_botones.grid(row=fila_botones, column=0, columnspan=2, pady=15)
-  marco_botones.grid_columnconfigure(0, weight=1)
   
   
-  crear_botón(marco_botones, "Agregar", None, 10).pack(pady=2)
-  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)}
-
-  crear_botón(marco_botones, "Modificar", None, 10).pack(pady=2)
-  # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_botones, "Eliminar", None, 10).pack(pady=2)
-  # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_botones, "Ordenar", None, 10).pack(pady=2)
-  # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_botones, "Exportar", None, 10).pack(pady=2)
-  # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
+  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=0, column=2, pady=2, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=1, column=2, pady=2, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=2, column=2, pady=2, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=3, column=2, pady=2, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=4, column=2, pady=2, padx=5, sticky="ew")
     
   Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
