@@ -11,7 +11,10 @@ colores = {
   "blanco": "#FFFFFF",
   "gris": "#AAAAAA",
   "negro": "#000000",
-  "negro_resaltado": "#3A3A3A"
+  "negro_resaltado": "#3A3A3A",
+  "celeste_azulado": "#004CFF",
+  "celeste_resaltado": "#3A6FFF",
+  "azul_claro": "#9D9DFF"
 }
 
 dirección_del_ícono = os.path.dirname(__file__)
@@ -140,21 +143,20 @@ def consultar_tabla(nombre_de_la_tabla):
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
 
-
 mi_ventana = tk.Tk()
 
 
 # --- FUNCIONES AUXILIARES PARA CREAR WIDGETS ---
 def crear_etiqueta(contenedor, texto, tamaño_letra):
-  # color_padre = contenedor.cget('bg')
-  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
+  color_padre = contenedor.cget("bg")
+  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra, "bold"))
 
 def crear_entrada(contenedor, ancho, tamaño_letra):
   return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
 
 def crear_botón(contenedor, texto, comando, ancho):
   ancho = len(texto) + 5 if ancho is None else ancho
-  return tk.Button(contenedor, text=texto, width=ancho, command=comando)
+  return tk.Button(contenedor, text=texto, width=ancho, command=comando, bg=colores["celeste_azulado"], fg=colores["blanco"], font=("Arial", 10, "bold"), cursor='hand2', activebackground=colores["celeste_resaltado"], activeforeground=colores["blanco"])
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 def pantallaLogin():
@@ -201,7 +203,9 @@ def mostrar_pestañas(ventana):
 
   for widget in ventana.winfo_children():
     widget.destroy()
-    
+  
+  estilo = ttk.Style()
+  
   notebook = ttk.Notebook(ventana)
   notebook.pack(expand=True, fill="both")
   
@@ -214,7 +218,6 @@ def mostrar_pestañas(ventana):
   tablaProfesor = tk.Frame(notebook)
   tablaNota = tk.Frame(notebook)
 
-
   notebook.add(tablaAlumno, text="Alumno")
   notebook.add(tablaAsistencia, text="Asistencia")
   notebook.add(tablaCarrera, text="Carrera")
@@ -223,10 +226,12 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
   
-  crear_etiqueta(notebook, "* Campos obligatorios, es decir, no puede estar vacíos", 10).pack(side="bottom", pady=5)
+  color_padre = estilo.lookup("TNotebook", "background")
+  lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=color_padre, font=("Arial", 10)).pack(side="bottom", pady=5)
 
   
   notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(notebook.tab(notebook.select(), "text").lower()))
+
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
@@ -240,11 +245,11 @@ def abrir_tablas(nombre_de_la_tabla):
     "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
     "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
     "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
-      }
+    }
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
   ventanaSecundaria.geometry("800x400")
-  ventanaSecundaria.configure(bg=colores["blanco"])
+  ventanaSecundaria.configure(bg=colores["azul_claro"])
   ventanaSecundaria.resizable(width=False, height=False)
   
   # Configuración del grid para los widgets dentro de la ventanaSecundaria
@@ -261,10 +266,10 @@ def abrir_tablas(nombre_de_la_tabla):
   elif ruta_ícono:
       print("Advertencia de Ícono", f"El archivo de ícono no se encontró en la ruta: {ruta_ícono}.")
 
-  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["blanco"], padx=15, pady=15)
+  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
   marco_izquierdo.grid(row=0, column=0, sticky="nsew")
 
-  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["blanco"], padx=15, pady=15)
+  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
   marco_derecho.grid(row=0, column=1, sticky="nsew")
 
   
@@ -320,13 +325,13 @@ def abrir_tablas(nombre_de_la_tabla):
     
   
   
-  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=1, column=2, pady=10, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=2, pady=10, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=2, pady=10, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=2, pady=10, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=2, pady=10, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=1, column=2, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=2, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=2, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=2, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=2, pady=15, padx=5, sticky="ew")
     
-  Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10))
+  Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10, "bold"))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
   consultar_tabla(nombre_de_la_tabla)
 
