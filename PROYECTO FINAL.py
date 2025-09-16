@@ -149,7 +149,7 @@ def crear_etiqueta(contenedor, texto, tamaño_letra):
   # color_padre = contenedor.cget('bg')
   return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=colores["blanco"], font=("Arial", tamaño_letra))
 
-def crear_entrada(contenedor, ancho, tamaño_letra=10):
+def crear_entrada(contenedor, ancho, tamaño_letra):
   return tk.Entry(contenedor, width=ancho, font=("Arial", tamaño_letra))
 
 def crear_botón(contenedor, texto, comando, ancho):
@@ -248,9 +248,9 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.resizable(width=False, height=False)
   
   # Configuración del grid para los widgets dentro de la ventanaSecundaria
-  ventanaSecundaria.grid_columnconfigure(0, weight=1)
-  ventanaSecundaria.grid_columnconfigure(1, weight=2)
-  ventanaSecundaria.grid_columnconfigure(0, weight=1)
+  ventanaSecundaria.grid_columnconfigure(0, weight=1, uniform="panels")
+  ventanaSecundaria.grid_columnconfigure(1, weight=1, uniform="panels")
+  ventanaSecundaria.grid_rowconfigure(0, weight=1)
   
   ruta_ícono = íconos_por_tabla.get(nombre_de_la_tabla)
   if ruta_ícono and os.path.exists(ruta_ícono):
@@ -261,11 +261,18 @@ def abrir_tablas(nombre_de_la_tabla):
   elif ruta_ícono:
       print("Advertencia de Ícono", f"El archivo de ícono no se encontró en la ruta: {ruta_ícono}.")
 
-  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["blanco"])
-  marco_izquierdo.grid(row=0, column=0,  padx=15, pady=15, sticky="nsew")
+  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["blanco"], padx=15, pady=15)
+  marco_izquierdo.grid(row=0, column=0, sticky="nsew")
 
-  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["blanco"])
-  marco_derecho.grid(row=0, column=1,  padx=15, pady=15, sticky="nsew")
+  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["blanco"], padx=15, pady=15)
+  marco_derecho.grid(row=0, column=1, sticky="nsew")
+
+  
+  marco_izquierdo.grid_columnconfigure(0, weight=0)
+  marco_izquierdo.grid_columnconfigure(1, weight=1)
+  
+  marco_derecho.grid_columnconfigure(0, weight=1)
+  marco_derecho.grid_rowconfigure(0, weight=1)
 
   # Diccionario que mapea los nombres de las tablas a sus campos
   campos_por_tabla = {
@@ -303,40 +310,39 @@ def abrir_tablas(nombre_de_la_tabla):
       ]
   }
   
-  
-  marco_izquierdo.grid_columnconfigure(0, weight=1)
-  marco_izquierdo.grid_rowconfigure(0, weight=1)
-  
   campos = campos_por_tabla.get(nombre_de_la_tabla, None)
   if not campos:
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos):
     crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i, column=0, sticky="w", padx=5, pady=5)
-    crear_entrada(marco_izquierdo, 30).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
+    crear_entrada(marco_izquierdo, 10, 10).grid(row=i, column=1, sticky="ew", padx=5, pady=5)
+    
+  fila_botones = len(campos)
+  
+  marco_botones = tk.Frame(marco_izquierdo, bg=colores["blanco"])
+  marco_botones.grid(row=fila_botones, column=0, columnspan=2, pady=15)
+  marco_botones.grid_columnconfigure(0, weight=1)
+  
+  
+  crear_botón(marco_botones, "Agregar", None, 10).pack(pady=2)
+  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)}
 
+  crear_botón(marco_botones, "Modificar", None, 10).pack(pady=2)
+  # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  crear_botón(marco_botones, "Eliminar", None, 10).pack(pady=2)
+  # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  crear_botón(marco_botones, "Ordenar", None, 10).pack(pady=2)
+  # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
+
+  crear_botón(marco_botones, "Exportar", None, 10).pack(pady=2)
+  # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
+    
   Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
   consultar_tabla(nombre_de_la_tabla)
-  fila_botones = len(campos) + 1
-
-  marco_derecho.grid_columnconfigure(0, weight=1)
-  marco_derecho.grid_rowconfigure(0, weight=1)
-
-  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=fila_botones, column=0, columnspan=2, pady=2, sticky="ew")
-  # botón_agregar.bind("<Return>", ejecutar_acción_presionando_Enter)}
-
-  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=fila_botones + 1, column=0, columnspan=2, pady=2, sticky="ew")
-  # botón_modificar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=fila_botones + 2, column=0, columnspan=2, pady=2, sticky="ew")
-  # botón_eliminar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=fila_botones + 3, column=0, columnspan=2, pady=2, sticky="ew")
-  # botón_ordenar.bind("<Return>", ejecutar_acción_presionando_Enter)
-
-  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=fila_botones + 4, column=0, columnspan=2, pady=2, sticky="ew")
-  # botón_exportar.bind("<Return>", ejecutar_acción_presionando_Enter)
 
 
 # --- INICIO DEL SISTEMA ---
