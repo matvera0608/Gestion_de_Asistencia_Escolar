@@ -199,7 +199,7 @@ def pantallaLogin():
   return ventana
 
 def mostrar_pestañas(ventana):
-  global notebook, tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota
+  global notebook, tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
 
   for widget in ventana.winfo_children():
     widget.destroy()
@@ -249,7 +249,17 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
   ventanaSecundaria.geometry("800x400")
-  ventanaSecundaria.configure(bg=colores["azul_claro"])
+  # Cargar imagen de fondo
+  imagen_fondo_path = os.path.join(ruta_imagen, "Fondo.png")
+  if os.path.exists(imagen_fondo_path):
+    imagen_fondo = Image.open(imagen_fondo_path)
+    imagen_fondo = imagen_fondo.resize((800, 400), Image.Resampling.LANCZOS)
+    fondo_tk = ImageTk.PhotoImage(imagen_fondo)
+    label_fondo = tk.Label(ventanaSecundaria, image=fondo_tk)
+    label_fondo.image = fondo_tk  # Evita que la imagen se elimine por el recolector de basura
+    label_fondo.place(x=0, y=0, relwidth=1, relheight=1)
+  else:
+    ventanaSecundaria.configure(bg=colores["blanco"])
   ventanaSecundaria.resizable(width=False, height=False)
   
   # Configuración del grid para los widgets dentro de la ventanaSecundaria
@@ -266,10 +276,10 @@ def abrir_tablas(nombre_de_la_tabla):
   elif ruta_ícono:
       print("Advertencia de Ícono", f"El archivo de ícono no se encontró en la ruta: {ruta_ícono}.")
 
-  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
+  marco_izquierdo = tk.Frame(ventanaSecundaria, bg=color_padre, padx=15, pady=15)
   marco_izquierdo.grid(row=0, column=0, sticky="nsew")
 
-  marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
+  marco_derecho = tk.Frame(ventanaSecundaria, bg=color_padre, padx=15, pady=15)
   marco_derecho.grid(row=0, column=1, sticky="nsew")
 
   
@@ -320,16 +330,16 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos):
-    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i + 2, column=0, sticky="w", padx=5, pady=10)
-    crear_entrada(marco_izquierdo, 10, 10).grid(row=i + 2, column=1, sticky="ew", padx=5, pady=10)
+    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i + 2, column=1, sticky="w", padx=5, pady=10)
+    crear_entrada(marco_izquierdo, 10, 10).grid(row=i + 2, column=2, sticky="ew", padx=5, pady=10)
     
   
   
-  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=1, column=2, pady=15, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=2, pady=15, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=2, pady=15, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=2, pady=15, padx=5, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=2, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", None, 10).grid(row=1, column=0, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=0, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=0, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=0, pady=15, padx=5, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=0, pady=15, padx=5, sticky="ew")
     
   Lista_de_datos = tk.Listbox(marco_derecho, width=30, height=20, font=("Courier New", 10, "bold"))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
