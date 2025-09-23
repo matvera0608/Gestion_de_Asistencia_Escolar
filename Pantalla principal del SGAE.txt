@@ -1,0 +1,36 @@
+def pantalla_principal(ventana):
+
+  # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+  ventana = mi_ventana
+  ventana.title("Sistema Gestor de Asistencia")
+  ventana.geometry("1250x625")
+  ventana.minsize(1250, 100)
+  ventana.configure(bg=colores["rosado_claro"])
+  ventana.iconbitmap(ícono)
+  ventana.attributes("-alpha", 1)
+
+  #--- LISTBOX ---
+  barraDesplazadora()
+  
+  ventana.bind_all("<Key>", mover_con_flechas)
+    
+  return ventana
+
+  # --- INICIO DEL SISTEMA ---
+interfaz = pantalla_principal(mi_ventana)
+interfaz.mainloop()
+
+
+# 📜 Lista de valores de sticky:
+# Valor   Significado
+# "n"     Norte → arriba
+# "s"     Sur → abajo
+# "e"     Este → derecha
+# "w"     Oeste → izquierda
+# "ne"    Arriba a la derecha
+# "nw"    Arriba a la izquierda
+# "se"    Abajo a la derecha
+# "sw"    Abajo a la izquierda
+# "ns"    Se estira verticalmente
+# "ew"    Se estira horizontalmente
+# "nsew"  Se estira completamente (ocupa todo)** ⬅️ más usado
