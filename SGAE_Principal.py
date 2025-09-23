@@ -20,7 +20,6 @@ colores = {
   "celeste_resaltado": "#3F72FD",
   "azul_claro": "#A8A8FF"
 }
-
 dirección_del_ícono = os.path.dirname(__file__)
 ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
 ruta_base = os.path.dirname(__file__)
@@ -96,11 +95,11 @@ def pantallaLogin():
 def mostrar_pestañas(ventana):
   global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
   
-  if actualizaciónHora is not None:
-    ventana.after_cancel(actualizaciónHora)
-    actualizaciónHora = None
-  for widget in ventana.winfo_children():
-    widget.destroy()
+  frameHora = tk.Frame(ventana)
+  frameHora.pack()
+  
+  actualizar_la_hora(frameHora)
+  
   
   estilo = ttk.Style()
   

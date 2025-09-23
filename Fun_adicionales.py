@@ -1,11 +1,10 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos
-# from Fun_Validación_SGAE import validar_datos
 from datetime import datetime
 from datetime import datetime as hora_del_sistema
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-
-actualizaciónHora = None
+import tkinter as tk
+import time
 
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos, campos_de_la_base_de_datos
@@ -83,13 +82,34 @@ def convertir_datos(nombre_de_la_tabla):
     caja.insert(0, str(valor))  # Inserta el valor convertido
 
 #Esta función sirve para actualizar la hora
-def actualizar_la_hora(interfaz):
-  global actualizaciónHora
-  label_Hora = tk.Label(interfaz, text=hora_del_sistema.now().strftime("%I:%M:%S"), font=("Arial", 10), fg="blue", bg=interfaz.cget("bg"))
-  label_Hora.config(text=hora_del_sistema.now().strftime("%I:%M:%S"))
-  label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)  # Usá una fila alta para que quede abajo
-  actualizaciónHora = interfaz.after(1000, actualizar_la_hora, interfaz)
-  
+
+# def actualizar_la_hora(contenedor):
+#   label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"))
+#   label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+#   actualizar_la_hora(label_Hora)
+#   return label_Hora
+
+# def iniciar_reloj(reloj):
+#   reloj.config(text=hora_del_sistema.now().strftime("%I:%M:%S"))
+#   reloj.after(1000, actualizar_la_hora, reloj)
+
+
+# --- Fun_adicionales.py ---
+
+
+def iniciar_reloj(etiqueta):
+    hora_actual = time.strftime("%H:%M:%S")
+    etiqueta.config(text=hora_actual)
+    etiqueta.after(1000, iniciar_reloj, etiqueta)
+
+def actualizar_la_hora(contenedor):
+    reloj = tk.Label(contenedor, font=("Courier New", 12, "bold"))
+    reloj.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+    iniciar_reloj(reloj)
+    return reloj
+
+
+
 # --- FUNCIONES DE LECTURA ---
 # Esta función sirve sólo para leer datos de la bases de datos escuela
 def consultar_tabla(nombre_de_la_tabla):
