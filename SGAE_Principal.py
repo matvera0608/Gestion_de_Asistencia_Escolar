@@ -22,10 +22,10 @@ colores = {
 }
 
 dirección_del_ícono = os.path.dirname(__file__)
-ícono = os.path.join(dirección_del_ícono,"escuela.ico")
-ventanaAbierta = {}
+ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
 ruta_base = os.path.dirname(__file__)
 ruta_imagen = os.path.join(ruta_base, "imágenes")
+ventanaAbierta = {}
 
 # --- FUNCIÓN PARA CARGAR IMÁGENES, CONECTAR BASE DE DATOS Y DE MOSTRAR LA HORA ---
 def cargar_imagen(nombre_imagen):
@@ -36,7 +36,6 @@ def cargar_imagen(nombre_imagen):
   imagen = Image.open(ruta)
   imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
   return ImageTk.PhotoImage(imagen)
-
 
 mi_ventana = tk.Tk()
 
