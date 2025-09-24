@@ -98,18 +98,18 @@ métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 #     except Exception as e:
 #       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto):
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos):
     """Inserta datos en la tabla especificada sin validación.
 
     Args:
         nombre_de_la_tabla (str): El nombre de la tabla de la base de datos.
         cajasDeTexto (dict): Un diccionario con las entradas de texto.
     """
-    # Enviar validarDatos=False para obtener datos sin validación por ahora
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto)
-    
+
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+
     if not datos:
-        return
+      return
     
     campos = ', '.join(datos.keys())
     valores_placeholder = ', '.join(['%s'] * len(datos))
@@ -127,7 +127,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto):
             cursor.execute(consulta, tuple(valores_sql))
             conexión.commit()
             mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
-            
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
             # Limpia las cajas de texto después de una inserción exitosa
             if nombre_de_la_tabla in cajasDeTexto:
                 for entry in cajasDeTexto[nombre_de_la_tabla]:
@@ -136,7 +136,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto):
     except Exception as e:
         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
 
-def modificar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
+def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
     """Modifica datos en la tabla especificada sin validación.
 
     Args:
@@ -145,15 +145,15 @@ def modificar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
         lista_IDs (list): Una lista de los IDs de las filas.
     """
     columna_seleccionada = Lista_de_datos.curselection()
+    
     if not columna_seleccionada:
         mensajeTexto.showwarning("ADVERTENCIA", "⚠️ FALTA SELECCIONAR UNA FILA")
         return
-
     selección = columna_seleccionada[0]
     ID_Seleccionado = lista_IDs[selección]
 
     # Enviar validarDatos=False para obtener datos sin validación por ahora
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
     if not datos:
         return
 
@@ -176,17 +176,15 @@ def modificar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
             
             cursor.execute(consulta, tuple(valores_sql))
             conexión.commit()
-
-            consultar_tabla(nombre_de_la_tabla)
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
             mensajeTexto.showinfo("CORRECTO", "✅ ¡Se modificó exitosamente!")
 
     except Exception as e:
         mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-
-def eliminar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs, cajasDeTexto):
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
   columna_seleccionada = Lista_de_datos.curselection()
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=False)
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
   if not CampoID:
     mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
@@ -206,14 +204,14 @@ def eliminar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs, cajasDeTexto):
                   return
               else:
                 query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
-              cursor.execute(query, (ID_Seleccionado,))
+              cursor.execute(query, (ID_Seleccionado))
               for i, (campo, valor) in enumerate(datos.items()):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]
                 entry.delete(0, tk.END)
             else:
               mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
             conexión.commit()
-            consultar_tabla(nombre_de_la_tabla)
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
             mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
       except error_sql as e:

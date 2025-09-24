@@ -20,6 +20,16 @@ dirección_del_ícono = os.path.dirname(__file__)
 ruta_base = os.path.dirname(__file__)
 ruta_imagen = os.path.join(ruta_base, "imágenes")
 ventanaAbierta = {}
+campos_en_db = {
+      "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
+      "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno"],
+      "carrera": ["Nombre", "Duración"],
+      "materia": ["Nombre", "Horario", "IDCarrera"],
+      "enseñanza": ["IDMateria", "IDProfesor"],
+      "profesor": ["Nombre"],
+      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota"]
+  }
+lista_IDs = [] 
 
 # --- FUNCIÓN PARA CARGAR IMÁGENES, CONECTAR BASE DE DATOS Y DE MOSTRAR LA HORA ---
 def cargar_imagen(nombre_imagen):
@@ -169,8 +179,6 @@ def abrir_tablas(nombre_de_la_tabla):
   marco_derecho.grid_columnconfigure(0, weight=1)
   marco_derecho.grid_rowconfigure(0, weight=1)
 
-  # Diccionario que mapea los nombres de las tablas a sus campos
-  
   campos_por_tabla = {
       "alumno": [
           ("Nombre*", "txBox_NombreAlumno"),
@@ -226,11 +234,11 @@ def abrir_tablas(nombre_de_la_tabla):
     entrada.grid(row=i + int(2.5), column=2, sticky="ew", padx=1, pady=5)
     cajasDeTexto[nombre_de_la_tabla].append(entrada)
     
-  crear_botón(marco_izquierdo, "Agregar", insertar_datos(nombre_de_la_tabla, cajasDeTexto), 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", None, 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", None, 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", None, 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", None, 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", lambda: insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos), 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos, lista_IDs), 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos, lista_IDs), 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", lambda: None, 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", lambda: None, 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
   
   Lista_de_datos = tk.Listbox(marco_derecho, width=20, height=20, font=("Courier New", 10, "bold"))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")

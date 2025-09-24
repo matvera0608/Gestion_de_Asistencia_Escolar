@@ -3,20 +3,20 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos):
-  global datos
-
-  
+  global datos, campos_db, lista_de_cajas
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
-   
+  lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
+  
+  convertir_datos(campos_db, lista_de_cajas)
+  
   if nombre_de_la_tabla not in cajasDeTexto or nombre_de_la_tabla not in campos_de_la_base_de_datos:
     mensajeTexto.showerror("Error", f"Configuración no encontrada para la tabla: {nombre_de_la_tabla}")
     return None
   
   datos = {}
 
-  for campo, caja in zip(campos_db, cajasDeTexto[nombre_de_la_tabla]):
+  for campo, caja in zip(campos_db, lista_de_cajas):
     texto = caja.get().strip()
-
     try:
       if texto.count("/") == 2:
         texto = fecha_y_hora.strptime(texto, "%d/%m/%Y").date()
@@ -36,7 +36,7 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
 #Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
 #ya que SQL obliga poner una condición antes de ejecutar una tarea
 def conseguir_campo_ID(nombre_de_la_tabla):
-  IDs = {
+  IDs_mapeados = {
               'alumno': "ID_Alumno",
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
@@ -44,10 +44,10 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'profesor': "ID_Profesor",
               'nota': ["IDAlumno", "IDMateria"]
         }
-  return IDs.get(nombre_de_la_tabla.strip().lower())
+  return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
 
-def convertir_datos(nombre_de_la_tabla, cajasDeTexto):
-  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+def convertir_datos(campos_db, lista_de_cajas):
+  for campo, caja in zip(campos_db, lista_de_cajas):
     valor = caja.get()
     # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
     if isinstance(valor, str) and "fecha" in campo.lower():
