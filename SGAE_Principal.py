@@ -10,7 +10,7 @@ from datetime import datetime as hora_del_sistema
 from tkinter import messagebox as mensajeTexto
 from PIL import Image, ImageTk
 
-# --- COLORES EN HEXADECIMALES ---
+# --- ELEMENTOS ---
 colores = {
   "blanco": "#FFFFFF",
   "gris": "#AAAAAA",
@@ -95,10 +95,6 @@ def pantallaLogin():
 def mostrar_pestañas(ventana):
   global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
   
-  frameHora = tk.Frame(ventana)
-  frameHora.pack()
-  
-  actualizar_la_hora(frameHora)
   
   
   estilo = ttk.Style()

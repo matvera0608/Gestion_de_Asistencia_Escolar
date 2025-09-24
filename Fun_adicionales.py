@@ -1,11 +1,7 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos
-from datetime import datetime
-from datetime import datetime as hora_del_sistema
+from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-import tkinter as tk
-import time
-
 def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
   global cajasDeTexto, datos, campos_de_la_base_de_datos
 
@@ -34,9 +30,9 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
 
     try:
       if texto.count("/") == 2:
-        texto = datetime.strptime(texto, "%d/%m/%Y").date()
+        texto = fecha_y_hora.strptime(texto, "%d/%m/%Y").date()
       elif texto.count(":") == 1 and len(texto) <= 5:
-        texto = datetime.strptime(texto, "%H:%M").time()
+        texto = fecha_y_hora.strptime(texto, "%H:%M").time()
     except ValueError:
       mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
       return None
@@ -67,14 +63,14 @@ def convertir_datos(nombre_de_la_tabla):
     # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
     if isinstance(valor, str) and "fecha" in campo.lower():
         try:
-            fecha_obj = datetime.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
+            fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
         except ValueError:
             continue
         valor = fecha_obj
     # Si el campo es una hora, lo convierte al formato "HH:MM"
     elif isinstance(valor, str) and "hora" in campo.lower():
         try:
-            hora_obj = datetime.strptime(valor, "%H:%M:%S").strftime("%H:%M")
+            hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S").strftime("%H:%M")
         except ValueError:
             continue  # Si no es una hora válida, no la convierte
         valor = hora_obj
@@ -84,29 +80,38 @@ def convertir_datos(nombre_de_la_tabla):
 #Esta función sirve para actualizar la hora
 
 # def actualizar_la_hora(contenedor):
-#   label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"))
-#   label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-#   actualizar_la_hora(label_Hora)
-#   return label_Hora
+  
+#   color_padre = contenedor.cget('bg')
+  
+#   if hasattr(contenedor, 'label_Hora'):
+#     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+#   else:
+#     contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+#     contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+#     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+#   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
 
-# def iniciar_reloj(reloj):
-#   reloj.config(text=hora_del_sistema.now().strftime("%I:%M:%S"))
-#   reloj.after(1000, actualizar_la_hora, reloj)
-
+def actualizar_la_hora(contenedor):
+  color_padre = contenedor.cget('bg')
+  
+  label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+  label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+  label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+  actualizar_la_hora(contenedor)
 
 # --- Fun_adicionales.py ---
 
 
-def iniciar_reloj(etiqueta):
-    hora_actual = time.strftime("%H:%M:%S")
-    etiqueta.config(text=hora_actual)
-    etiqueta.after(1000, iniciar_reloj, etiqueta)
+# def iniciar_reloj(etiqueta):
+#     hora_actual = time.strftime("%H:%M:%S")
+#     etiqueta.config(text=hora_actual)
+#     etiqueta.after(1000, iniciar_reloj, etiqueta)
 
-def actualizar_la_hora(contenedor):
-    reloj = tk.Label(contenedor, font=("Courier New", 12, "bold"))
-    reloj.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-    iniciar_reloj(reloj)
-    return reloj
+# def actualizar_la_hora(contenedor):
+#     reloj = tk.Label(contenedor, font=("Courier New", 12, "bold"))
+#     reloj.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+#     iniciar_reloj(reloj)
+#     return reloj
 
 
 
