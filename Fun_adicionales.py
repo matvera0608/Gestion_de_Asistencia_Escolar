@@ -2,30 +2,19 @@ from Conexión import conectar_base_de_datos, desconectar_base_de_datos
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-def obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos):
-  global cajasDeTexto, datos, campos_de_la_base_de_datos
+def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos):
+  global datos
 
-  campos_de_la_base_de_datos = {
-      'alumno':     ["FechaDeNacimiento", "Nombre"],
-      'asistencia': ["Estado", "Fecha_Asistencia"],
-      'carrera':    ["Nombre", "Duración"],
-      'materia':    ["Nombre", "Horario"],
-      'profesor':   ["Nombre"],
-      'nota':       ["valorNota", "tipoNota"]
-  }
-
-  # cajasDeTexto = {
-  #     'alumno':  (txBox_FechaNacimiento, txBox_NombreAlumno),
-  #     'asistencia': (txBox_EstadoDeAsistencia, txBox_FechaAsistencia),
-  #     'carrera':  (txBox_NombreCarrera, txBox_Duración),
-  #     'materia': (txBox_NombreMateria, txBox_HorarioCorrespondiente),
-  #     'profesor': (txBox_NombreProfesor,),
-  #     'nota':     (txBox_Valor, txBox_Tipo)
-  # }
-
+  
+  campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
+   
+  if nombre_de_la_tabla not in cajasDeTexto or nombre_de_la_tabla not in campos_de_la_base_de_datos:
+    mensajeTexto.showerror("Error", f"Configuración no encontrada para la tabla: {nombre_de_la_tabla}")
+    return None
+  
   datos = {}
 
-  for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
+  for campo, caja in zip(campos_db, cajasDeTexto[nombre_de_la_tabla]):
     texto = caja.get().strip()
 
     try:
@@ -57,7 +46,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
         }
   return IDs.get(nombre_de_la_tabla.strip().lower())
 
-def convertir_datos(nombre_de_la_tabla):
+def convertir_datos(nombre_de_la_tabla, cajasDeTexto):
   for campo, caja in zip(campos_de_la_base_de_datos[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla]):
     valor = caja.get()
     # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
@@ -79,16 +68,17 @@ def convertir_datos(nombre_de_la_tabla):
 
 #Esta función sirve para actualizar la hora
 
-def actualizar_la_hora(contenedor):
-  color_padre = contenedor.cget('bg')
-  
-  if hasattr(contenedor, 'label_Hora'):
-    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-  else:
-    contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
-    contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-  contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
+#En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
+#pero si el label ya existe, sólo se actualiza su texto.
+# # def actualizar_la_hora(contenedor):
+# #   color_padre = contenedor.cget('bg')
+# #   if hasattr(contenedor, 'label_Hora'):
+# #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+# #   else:
+# #     contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+# #     contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+# #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+# #   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
 
 # def actualizar_la_hora(contenedor):
 #   color_padre = contenedor.cget('bg')
@@ -116,8 +106,7 @@ def actualizar_la_hora(contenedor):
 
 # --- FUNCIONES DE LECTURA ---
 # Esta función sirve sólo para leer datos de la bases de datos escuela
-def consultar_tabla(nombre_de_la_tabla):
-  from SGAE_Principal import Lista_de_datos
+def consultar_tabla(nombre_de_la_tabla, Lista_de_datos):
   global lista_IDs
   try:
       lista_IDs = []
@@ -160,6 +149,7 @@ def consultar_tabla(nombre_de_la_tabla):
                   cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
 
           resultado = cursor.fetchall()
+
           Lista_de_datos.delete(0, tk.END)
 
           if not resultado:
@@ -201,4 +191,3 @@ def consultar_tabla(nombre_de_la_tabla):
 
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
-    
