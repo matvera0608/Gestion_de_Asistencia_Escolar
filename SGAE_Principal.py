@@ -5,9 +5,6 @@ from Fun_adicionales import consultar_tabla, actualizar_la_hora
 import os
 import tkinter as tk
 from tkinter import ttk
-from datetime import date as fecha, time as hora
-from datetime import datetime as hora_del_sistema
-from tkinter import messagebox as mensajeTexto
 from PIL import Image, ImageTk
 
 # --- ELEMENTOS ---
@@ -41,17 +38,6 @@ mi_ventana = tk.Tk()
 
 # --- FUNCIONES AUXILIARES ---
 
-  #Esta función controla que rol es cada usuario
-def validarRol(txBox, ventana=mi_ventana):
-  rol = txBox.get().strip().lower()
-  rolesVálidos = ["profesor", "docente", "administrativo", "personal administrativo"]
-  
-  if rol in rolesVálidos:
-    mostrar_pestañas(ventana)
-  else:
-    print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
-    return
-
 def crear_etiqueta(contenedor, texto, tamaño_letra):
   color_padre = contenedor.cget("bg")
   return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra, "bold"))
@@ -74,6 +60,18 @@ def pantallaLogin():
   ventana.grid_columnconfigure(0, weight=1)
   ventana.grid_rowconfigure(2, weight=1)
 
+
+    #Esta función controla que rol es cada usuario
+  def validarRol(txBox, ventana=mi_ventana):
+    rol = txBox.get().strip().lower()
+    rolesVálidos = ["profesor", "docente", "administrativo", "personal administrativo"]
+    
+    if rol in rolesVálidos:
+      mostrar_pestañas(ventana)
+    else:
+      print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
+      return
+
   #Etiqueta para rol
   label_usuario_rol = tk.Label(ventana, text="ROL", bg=colores["blanco"], fg=colores["negro"], font=("Arial", 15, "bold"))
   label_usuario_rol.grid(row=0, column=0, pady=(20, 5), sticky="n")
@@ -85,17 +83,14 @@ def pantallaLogin():
   
   #Iniciar Sesión
   botón_login = tk.Button(ventana, text="Iniciar Sesión", width=15)
-  botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command = lambda: mostrar_pestañas(ventana))
+  botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command = lambda: validarRol(txBox_usuario))
   botón_login.grid(row=2, column=0, pady=30, sticky="s")
   
-  actualizar_la_hora(ventana)
+  # actualizar_la_hora(ventana)
   
-  return ventana
 
 def mostrar_pestañas(ventana):
   global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
-  
-  
   
   estilo = ttk.Style()
   
@@ -127,7 +122,7 @@ def mostrar_pestañas(ventana):
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global Lista_de_datos, campos_de_la_tabla, ventanaSecundaria
+  global Lista_de_datos, ventanaSecundaria
 
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return

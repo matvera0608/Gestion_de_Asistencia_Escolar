@@ -79,25 +79,24 @@ def convertir_datos(nombre_de_la_tabla):
 
 #Esta función sirve para actualizar la hora
 
-# def actualizar_la_hora(contenedor):
-  
-#   color_padre = contenedor.cget('bg')
-  
-#   if hasattr(contenedor, 'label_Hora'):
-#     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-#   else:
-#     contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
-#     contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-#     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-#   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
-
 def actualizar_la_hora(contenedor):
   color_padre = contenedor.cget('bg')
   
-  label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
-  label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-  label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-  actualizar_la_hora(contenedor)
+  if hasattr(contenedor, 'label_Hora'):
+    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+  else:
+    contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+    contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+  contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
+
+# def actualizar_la_hora(contenedor):
+#   color_padre = contenedor.cget('bg')
+  
+#   label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+#   label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+#   label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+#   actualizar_la_hora(contenedor)
 
 # --- Fun_adicionales.py ---
 
