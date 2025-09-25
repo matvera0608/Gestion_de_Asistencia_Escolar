@@ -191,46 +191,47 @@ def consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
 
-def reconocer_ID(tabla, nombre_campo, buscar_campo_dis_ID):
+
+# Esta función sirve para traducir los nombres a IDs antes de insertar o actualizar datos en la base de datos.
+#Si quiero escribir "Analista de sistemas" en vez de 1 en la tabla ALUMNO, esta función me traduce ese nombre a su ID correspondiente.
+def traducir_IDs(nombre_de_la_tabla, datos):
+  campos_a_traducir = {
+    "alumno": {"Carrera": ("ID_Carrera", "carrera", "Nombre")},
+    "asistencia": {"Alumno": ("ID_Alumno", "alumno", "Nombre")},
+    "enseñanza": {
+        "Profesor": ("ID_Profesor", "profesor", "Nombre"),
+        "Materia": ("ID_Materia", "materia", "Nombre")},
+    "nota": {
+        "Alumno": ("ID_Alumno", "alumno", "Nombre"),
+        "Materia": ("ID_Materia", "materia", "Nombre")},
+    "materia": {"Carrera": ("ID_Carrera", "carrera", "Nombre")}
+    }
+  relación = campos_a_traducir.get(nombre_de_la_tabla.lower())
+  if not relación:
+    return datos
+    
+  datos_traducidos = datos.copy()
+
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      consulta = f"SELECT ID{tabla} FROM {tabla} WHERE {nombre_campo} = %s"
-      cursor.execute(consulta, (buscar_campo_dis_ID,))
-      resultado = cursor.fetchone()
-      if resultado:
-          return resultado[0]
-      else:
-          return None
-  except Exception as e:
-      mensajeTexto.showerror("Error de Base de Datos", f"Error al buscar en la tabla '{tabla}': {e}")
-      return None
-    
-def traducir_IDs(nombre_de_la_tabla, datos_importantes):
-  
-  mapeo_relaciones = {
-        "nota": {"Nombre": ("Alumno", "Nombre"), "Nombre": ("Materia", "Nombre")},
-        "enseñanza": {"Nombre": ("Profesor", "Nombre"), "Nombre": ("Materia", "Nombre")},
-        "alumno": {"Carrera": ("Carrera", "Nombre")},
-        "asistencia": {"Nombre": ("Alumno", "Nombre")},
-        "materia": {"Carrera": ("Carrera", "Nombre")}
-    }
-  
-  relación = mapeo_relaciones.get(nombre_de_la_tabla.lower())
-
-  if not relación:
-    return datos_importantes
-  
-  for campo_formulario, (tabla_FK, campo_FK) in relación.items():
-        if campo_formulario in datos_importantes:
-            nombre_ingresado = datos_importantes[campo_formulario]
-            id_encontrado = reconocer_ID(tabla_FK, campo_FK, nombre_ingresado)
-            
-            if id_encontrado is None:
-                mensajeTexto.showerror("Error", f"'{tabla_FK}' con nombre '{nombre_ingresado}' no existe.")
+      for campo, (campo_id, tabla_ref, campo_ref) in relación.items():
+        if campo in datos_traducidos:
+          valor = datos_traducidos[campo]
+          if str(valor).isdigit():
+            datos_traducidos[campo_id] = int(valor)
+          else:
+            consulta = f"SELECT {campo_id} FROM {tabla_ref} WHERE {campo_ref} = %s"
+            cursor.execute(consulta, (valor,))
+            resultado = cursor.fetchone()
+            if resultado:
+                datos_traducidos[campo_id] = resultado[0]
+            else:
+                mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{valor}' no existe en la tabla {tabla_ref}.")
                 return None
-            
-            # Reemplazar el nombre por el ID
-            datos_importantes[campo_formulario] = id_encontrado
-    
-  return datos_importantes
+          del datos_traducidos[campo]
+    return datos_traducidos
+          
+  except Exception as e:
+    mensajeTexto.showerror("ERROR INESPERADO", f"❌ Error al traducir IDs: {str(e)}")
+    return None

@@ -100,47 +100,46 @@ métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 #       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+  if not datos:
+    return
   
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-    if not datos:
-      return
-    
-    datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-    
-    if datos_traducidos is None:
-      return
-    
-    campos = ', '.join(datos.keys())
-    valores_placeholder = ', '.join(['%s'] * len(datos))
-    valores_sql = list(datos.values())
-    
-    # Lógica para la tabla de notas
-    if nombre_de_la_tabla.lower() == "nota":
-        consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
-    else:
-        consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
+  datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+  
+  if datos_traducidos is None:
+    return
+  
+  campos = ', '.join(datos_traducidos.keys())
+  valores_placeholder = ', '.join(['%s'] * len(datos_traducidos))
+  valores_sql = list(datos_traducidos.values())
 
-    try:
-        with conectar_base_de_datos() as conexión:
-            cursor = conexión.cursor()
-            cursor.execute(consulta, tuple(valores_sql))
-            conexión.commit()
-            mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
-            # Limpia las cajas de texto después de una inserción exitosa
-            if nombre_de_la_tabla in cajasDeTexto:
-                for entry in cajasDeTexto[nombre_de_la_tabla]:
-                    entry.delete(0, tk.END)
+  # Lógica para la tabla de notas
+  if nombre_de_la_tabla.lower() == "nota":
+      consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
+  else:
+      consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
 
-    except Exception as e:
-        mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
+  try:
+      with conectar_base_de_datos() as conexión:
+          cursor = conexión.cursor()
+          cursor.execute(consulta, tuple(valores_sql))
+          conexión.commit()
+          mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
+          consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
+          # Limpia las cajas de texto después de una inserción exitosa
+          if nombre_de_la_tabla in cajasDeTexto:
+              for entry in cajasDeTexto[nombre_de_la_tabla]:
+                  entry.delete(0, tk.END)
+
+  except Exception as e:
+      mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
     columna_seleccionada = Lista_de_datos.curselection()
     
     if not columna_seleccionada:
-        mensajeTexto.showwarning("ADVERTENCIA", "⚠️ FALTA SELECCIONAR UNA FILA")
-        return
+      mensajeTexto.showwarning("ADVERTENCIA", "⚠️ FALTA SELECCIONAR UNA FILA")
+      return
     selección = columna_seleccionada[0]
     ID_Seleccionado = lista_IDs[selección]
 
@@ -149,14 +148,17 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos,
     if not datos:
         return
       
-    traducir_IDs(nombre_de_la_tabla, datos)
+    datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
     
-    valores_sql = list(datos.values())
-    campos_sql = [f"{campo} = %s" for campo in datos.keys()]
+    if datos_traducidos is None:
+      return
+
+    valores_sql = list(datos_traducidos.values())
+    campos_sql = [f"{campo} = %s" for campo in datos_traducidos.keys()]
     set_sql = ', '.join(campos_sql)
 
     try:
-        with conectar_base_de_datos() as conexión:
+      with conectar_base_de_datos() as conexión:
             cursor = conexión.cursor()
             
             if nombre_de_la_tabla.lower() == "nota":
