@@ -1,13 +1,14 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
-from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID
-from tkinter import messagebox as mensajeTexto
+from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs
+from tkinter import messagebox as mensajeTexto, filedialog as diálogo
+from datetime import datetime as fecha_y_hora
 import tkinter as tk
+
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics as métricasPDF
 from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
-
 
 # #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
@@ -98,17 +99,15 @@ métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 #     except Exception as e:
 #       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos):
-    """Inserta datos en la tabla especificada sin validación.
-
-    Args:
-        nombre_de_la_tabla (str): El nombre de la tabla de la base de datos.
-        cajasDeTexto (dict): Un diccionario con las entradas de texto.
-    """
-
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
+  
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-
     if not datos:
+      return
+    
+    datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+    
+    if datos_traducidos is None:
       return
     
     campos = ', '.join(datos.keys())
@@ -127,7 +126,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos):
             cursor.execute(consulta, tuple(valores_sql))
             conexión.commit()
             mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
             # Limpia las cajas de texto después de una inserción exitosa
             if nombre_de_la_tabla in cajasDeTexto:
                 for entry in cajasDeTexto[nombre_de_la_tabla]:
@@ -137,13 +136,6 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos):
         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
-    """Modifica datos en la tabla especificada sin validación.
-
-    Args:
-        nombre_de_la_tabla (str): El nombre de la tabla de la base de datos.
-        Lista_de_datos (tk.Listbox): La lista de datos mostrada en la interfaz.
-        lista_IDs (list): Una lista de los IDs de las filas.
-    """
     columna_seleccionada = Lista_de_datos.curselection()
     
     if not columna_seleccionada:
@@ -156,7 +148,9 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos,
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
     if not datos:
         return
-
+      
+    traducir_IDs(nombre_de_la_tabla, datos)
+    
     valores_sql = list(datos.values())
     campos_sql = [f"{campo} = %s" for campo in datos.keys()]
     set_sql = ', '.join(campos_sql)
@@ -176,7 +170,7 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos,
             
             cursor.execute(consulta, tuple(valores_sql))
             conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
             mensajeTexto.showinfo("CORRECTO", "✅ ¡Se modificó exitosamente!")
 
     except Exception as e:
@@ -186,6 +180,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, 
   columna_seleccionada = Lista_de_datos.curselection()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+  
   if not CampoID:
     mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
     return
@@ -199,26 +194,26 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, 
             if ID_Seleccionado is not None:
               if nombre_de_la_tabla == "nota":
                 query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+                cursor.execute(query, (ID_Seleccionado,))
                 if not isinstance(ID_Seleccionado, tuple):
                   mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
                   return
               else:
                 query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
-              cursor.execute(query, (ID_Seleccionado))
+                cursor.execute(query, (ID_Seleccionado,))
               for i, (campo, valor) in enumerate(datos.items()):
                 entry = cajasDeTexto[nombre_de_la_tabla][i]
                 entry.delete(0, tk.END)
             else:
               mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
             conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos)
+            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
             mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
       except error_sql as e:
          mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {str(e)}")
   else:
     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
-
 
 # def eliminar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
 #     """Elimina datos de la tabla especificada.
@@ -270,7 +265,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, 
 #         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 
-def ordenar_datos(nombre_de_la_tabla, tabla, campo=None, ascendencia=True):
+def ordenar_datos(nombre_de_la_tabla, tabla, Lista_de_datos, campo=None, ascendencia=True):
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
   if conexión is None:
@@ -369,7 +364,7 @@ def exportar_en_PDF(nombre_de_la_tabla, Lista_de_datos):
       ruta_archivo_pdf = diálogo.asksaveasfilename(
           defaultextension=".pdf",
           filetypes=[("Archivo PDF", "*.pdf")],
-          initialfile=f"Reporte_{nombre_de_la_tabla}_{datetime.now().strftime('%Y%m%d_%H%M%S')}", # Nombre de archivo más descriptivo
+          initialfile=f"Reporte_{nombre_de_la_tabla}_{fecha_y_hora.now().strftime('%Y%m%d_%H%M%S')}", # Nombre de archivo más descriptivo
           title="Exportar informe en PDF"
       )
       

@@ -41,6 +41,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
+              'enseñanza': ["IDProfesor", "IDMateria"],
               'profesor': "ID_Profesor",
               'nota': ["IDAlumno", "IDMateria"]
         }
@@ -106,10 +107,8 @@ def convertir_datos(campos_db, lista_de_cajas):
 
 # --- FUNCIONES DE LECTURA ---
 # Esta función sirve sólo para leer datos de la bases de datos escuela
-def consultar_tabla(nombre_de_la_tabla, Lista_de_datos):
-  global lista_IDs
+def consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
   try:
-      lista_IDs = []
       conexión = conectar_base_de_datos()
       if conexión:
           cursor = conexión.cursor()
@@ -191,3 +190,47 @@ def consultar_tabla(nombre_de_la_tabla, Lista_de_datos):
 
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+
+def reconocer_ID(tabla, nombre_campo, buscar_campo_dis_ID):
+  try:
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      consulta = f"SELECT ID{tabla} FROM {tabla} WHERE {nombre_campo} = %s"
+      cursor.execute(consulta, (buscar_campo_dis_ID,))
+      resultado = cursor.fetchone()
+      if resultado:
+          return resultado[0]
+      else:
+          return None
+  except Exception as e:
+      mensajeTexto.showerror("Error de Base de Datos", f"Error al buscar en la tabla '{tabla}': {e}")
+      return None
+    
+def traducir_IDs(nombre_de_la_tabla, datos_importantes):
+  
+  mapeo_relaciones = {
+        "nota": {"Nombre": ("Alumno", "Nombre"), "Nombre": ("Materia", "Nombre")},
+        "enseñanza": {"Nombre": ("Profesor", "Nombre"), "Nombre": ("Materia", "Nombre")},
+        "alumno": {"Carrera": ("Carrera", "Nombre")},
+        "asistencia": {"Nombre": ("Alumno", "Nombre")},
+        "materia": {"Carrera": ("Carrera", "Nombre")}
+    }
+  
+  relación = mapeo_relaciones.get(nombre_de_la_tabla.lower())
+
+  if not relación:
+    return datos_importantes
+  
+  for campo_formulario, (tabla_FK, campo_FK) in relación.items():
+        if campo_formulario in datos_importantes:
+            nombre_ingresado = datos_importantes[campo_formulario]
+            id_encontrado = reconocer_ID(tabla_FK, campo_FK, nombre_ingresado)
+            
+            if id_encontrado is None:
+                mensajeTexto.showerror("Error", f"'{tabla_FK}' con nombre '{nombre_ingresado}' no existe.")
+                return None
+            
+            # Reemplazar el nombre por el ID
+            datos_importantes[campo_formulario] = id_encontrado
+    
+  return datos_importantes
