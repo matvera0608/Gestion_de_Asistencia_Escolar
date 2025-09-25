@@ -27,7 +27,7 @@ campos_en_db = {
       "materia": ["Nombre", "Horario", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
       "profesor": ["Nombre"],
-      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota"]
+      "nota": ["IDAlumno", "IDMateria", "fechaEvaluación", "valorNota", "tipoNota"]
   }
 lista_IDs = [] 
 # --- FUNCIÓN PARA CARGAR IMÁGENES, CONECTAR BASE DE DATOS Y DE MOSTRAR LA HORA ---
