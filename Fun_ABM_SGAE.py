@@ -1,5 +1,6 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
 from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs
+from Fun_Validación_SGAE import validar_datos, normalizar_valor_nota
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo
 from datetime import datetime as fecha_y_hora
 import tkinter as tk

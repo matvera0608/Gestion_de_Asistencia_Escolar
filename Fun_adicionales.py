@@ -193,12 +193,17 @@ def consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
-      "alumno": {"IDCarrera": ("Carrera", "Nombre")},
-      "materia": {"IDCarrera": ("Carrera", "Nombre")},
-      "asistencia": {"IDAlumno": ("Alumno", "Nombre")},
-      "enseñanza": {"IDProfesor": ("Profesor", "Nombre"), "IDMateria": ("Materia", "Nombre")},
-      "nota": {"IDAlumno": ("Alumno", "Nombre"), "IDMateria": ("Materia", "Nombre")}
+      "alumno": {"IDCarrera": ("ID_Carrera","Carrera", "Nombre")},
+      "materia": {"IDCarrera": ("ID_Carrera","Carrera", "Nombre")},
+      "asistencia": {"IDAlumno": ("ID_Alumno","Alumno", "Nombre")},
+      "enseñanza": {"IDProfesor": ("ID_Profesor","Profesor", "Nombre"), "IDMateria": ("ID_Materia", "Materia", "Nombre")},
+      "nota": {"IDAlumno": ("ID_Alumno","Alumno", "Nombre"), "IDMateria": ("ID_Materia","Materia", "Nombre")}
   }
+  #MEJORA IMPLEMENTADA: Ahora la función crea una copia del diccionario original.
+  #Puse las claves primarias y las tablas de referencia en una tupla para facilitar la lectura del código.
+  #y también para no tener que poner un guión bajo en la consulta o query. YA ESTÁ SOLUCIONADO POR COMPLETO.
+  if not datos:
+    return None
   # Crear un nuevo diccionario para almacenar los datos traducidos
   datos_traducidos = datos.copy()
   relación = campos_a_traducir.get(nombre_de_la_tabla.lower())
@@ -206,68 +211,21 @@ def traducir_IDs(nombre_de_la_tabla, datos):
     return datos
   try:
       with conectar_base_de_datos() as conexión:
-          cursor = conexión.cursor()
-          for campo_db, (tabla_ref, campo_ref_nombre) in relación.items():
-              if campo_db in datos:
-                  nombre_a_buscar = datos[campo_db]
-                  
-                  # CORRECCIÓN: Se concatena 'ID' con la tabla_ref para el nombre de la columna.
-                  consulta = f"SELECT ID_{tabla_ref} FROM {tabla_ref} WHERE {campo_ref_nombre} = %s"
-                  cursor.execute(consulta, (nombre_a_buscar,))
-                  resultado = cursor.fetchone()
-                  
-                  if resultado:
-                      datos_traducidos[campo_db] = resultado[0]
-                  else:
-                      mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{nombre_a_buscar}' no existe en la base de datos.")
-                      return None
+        cursor = conexión.cursor()
+        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in relación.items():
+          if campo_fkID in datos:
+            nombre_a_buscar = datos[campo_fkID]
+            consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s" #El for ahora recorre 3 variables en paréntesis, el id, la tabla y el campo a buscar
+            cursor.execute(consulta, (nombre_a_buscar,))
+            resultado = cursor.fetchone()
+            
+            if resultado:
+                datos_traducidos[campo_fkID] = resultado[0]
+            else:
+                mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{nombre_a_buscar}' no existe en la base de datos.")
+                return None
       return datos_traducidos
       
   except Exception as e:
       mensajeTexto.showerror("ERROR DE CONEXIÓN", f"❌ Error al conectar a la base de datos: {e}")
       return None
-
-
-# # Esta función sirve para traducir los nombres a IDs antes de insertar o actualizar datos en la base de datos.
-# #Si quiero escribir "Analista de sistemas" en vez de 1 en la tabla ALUMNO, esta función me traduce ese nombre a su ID correspondiente.
-# def traducir_IDs(nombre_de_la_tabla, datos):
-#   campos_a_traducir = {
-#     "alumno": {"Carrera": ("ID_Carrera", "carrera", "Nombre")},
-#     "asistencia": {"Alumno": ("ID_Alumno", "alumno", "Nombre")},
-#     "enseñanza": {
-#         "Profesor": ("ID_Profesor", "profesor", "Nombre"),
-#         "Materia": ("ID_Materia", "materia", "Nombre")},
-#     "nota": {
-#         "Alumno": ("ID_Alumno", "alumno", "Nombre"),
-#         "Materia": ("ID_Materia", "materia", "Nombre")},
-#     "materia": {"Carrera": ("ID_Carrera", "carrera", "Nombre")}
-#     }
-#   relación = campos_a_traducir.get(nombre_de_la_tabla.lower())
-#   if not relación:
-#     return datos
-    
-#   datos_traducidos = datos.copy()
-
-#   try:
-#     with conectar_base_de_datos() as conexión:
-#       cursor = conexión.cursor()
-#       for campo, (campo_id, tabla_ref, campo_ref) in relación.items():
-#         if campo in datos_traducidos:
-#           valor = datos_traducidos[campo]
-#           if str(valor).isdigit():
-#             datos_traducidos[campo_id] = int(valor)
-#           else:
-#             consulta = f"SELECT {campo_id} FROM {tabla_ref} WHERE {campo_ref} = %s"
-#             cursor.execute(consulta, (valor,))
-#             resultado = cursor.fetchone()
-#             if resultado:
-#                 datos_traducidos[campo_id] = resultado[0]
-#             else:
-#                 mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{valor}' no existe en la tabla {tabla_ref}.")
-#                 return None
-#           del datos_traducidos[campo]
-#     return datos_traducidos
-          
-#   except Exception as e:
-#     mensajeTexto.showerror("ERROR INESPERADO", f"❌ Error al traducir IDs: {str(e)}")
-#     return None

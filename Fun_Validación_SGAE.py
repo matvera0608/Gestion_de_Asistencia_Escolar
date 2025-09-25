@@ -18,7 +18,7 @@ def validar_datos(nombre_de_la_tabla, datos):
                       "materia":    ["Nombre", "Horario"],
                       "profesor":   ["Nombre",],
                       "asistencia": [],
-                      "nota":       ["valorNota", "TipoNota"]
+                      "nota":       ["valorNota", "fechaEvaluación", "TipoNota"]
                       }
     
     if nombre_de_la_tabla not in tabla_a_validar:
@@ -56,6 +56,7 @@ def validar_datos(nombre_de_la_tabla, datos):
       'nota': {
               "tipoNota": lambda valor: patron_alfanumerico_con_espacios.match(valor),
               "valorNota": lambda valor: patrón_númerosDecimales.match(valor),
+              "fechaEvaluación": validar_fecha,
       }
     }
 
