@@ -13,259 +13,136 @@ métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
 # #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
-# def insertar_datos(nombre_de_la_tabla):
-#   conexión = conectar_base_de_datos()
-#   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-
-#   if not datos or not validar_datos(nombre_de_la_tabla, datos):
-#       return
-    
-#   valores_sql = []
-#   campos_sql = []
-#   for campo, valor in datos.items():
-#     valores_sql.append(valor)
-#     campos_sql.append(campo)
-    
-#   if nombre_de_la_tabla.lower() == "nota":
-#     id_alumno = datos.get("IDAlumno")
-#     id_materia = datos.get("IDMateria")
-#     # Agregar campos extra
-#     campos = ', '.join(list(datos.keys()) + ["IDAlumno", "IDMateria"])
-#     valores = ', '.join(['%s'] * (len(datos) + 2))
-#     consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-#     valores_sql.extend([id_alumno, id_materia])
-#   else:
-#     campos = ', '.join(datos.keys())
-#     valores = ', '.join(['%s'] * len(datos))
-#     consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-#     valores_sql = list(datos.values())
-#   try:
-#     cursor = conexión.cursor()
-#     cursor.execute(consulta, tuple(valores_sql))
-#     conexión.commit()
-#     consultar_tabla(nombre_de_la_tabla)
-#     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
-#     for i, (campo, valor) in enumerate(datos.items()):
-#       entry = cajasDeTexto[nombre_de_la_tabla][i]
-#       entry.delete(0, tk.END)
-#   except Exception as e:
-#       mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
-#   finally:
-#       desconectar_base_de_datos(conexión)
-
-
-# def modificar_datos(nombre_de_la_tabla, Lista_de_datos):
-#     columna_seleccionada = Lista_de_datos.curselection()
-#     if not columna_seleccionada:
-#       mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-#       return
-
-#     selección = columna_seleccionada[0]
-#     ID_Seleccionado = lista_IDs[selección]
-
-#     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
-#     if not datos:
-#       return
-
-#     if not validar_datos(nombre_de_la_tabla, datos):
-#       return
-
-#     valores_sql = []
-#     campos_sql = []
-
-#     for campo, valor in datos.items():
-#       valores_sql.append(valor)
-#       campos_sql.append(f"{campo} = %s")
-
-#     try:
-#       with conectar_base_de_datos() as conexión:
-#           cursor = conexión.cursor()
-#           set_sql = ', '.join(campos_sql)
-
-#           if nombre_de_la_tabla.lower() == "nota":
-#             id_alumno, id_materia = ID_Seleccionado
-#             consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-#             valores_sql.extend([id_alumno, id_materia])
-#           else:
-#             CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-#             consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-#             valores_sql.append(ID_Seleccionado)
-            
-#           cursor.execute(consulta, tuple(valores_sql))
-#           conexión.commit()
-
-#           consultar_tabla(nombre_de_la_tabla)
-#           mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
-
-#     except Exception as e:
-#       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
-
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-  if not datos:
-    return
-  
+  conexión = conectar_base_de_datos()
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
+
+  if not datos or not validar_datos(nombre_de_la_tabla, datos):
+      return
+    
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-  
-  if datos_traducidos is None:
-    return
-  
-  campos = ', '.join(datos_traducidos.keys())
-  valores_placeholder = ', '.join(['%s'] * len(datos_traducidos))
-  valores_sql = list(datos_traducidos.values())
-
-  # Lógica para la tabla de notas
+    
+  valores_sql = []
+  campos_sql = []
+  for campo, valor in datos_traducidos.items():
+    valores_sql.append(valor)
+    campos_sql.append(campo)
+    
   if nombre_de_la_tabla.lower() == "nota":
-      consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
+    id_alumno = datos.get("IDAlumno")
+    id_materia = datos.get("IDMateria")
+    # Agregar campos extra
+    campos = ', '.join(list(datos_traducidos.keys()) + ["IDAlumno", "IDMateria"])
+    valores = ', '.join(['%s'] * (len(datos_traducidos) + 2))
+    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
+    valores_sql.extend([id_alumno, id_materia])
   else:
-      consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
-
+    campos = ', '.join(datos_traducidos.keys())
+    valores = ', '.join(['%s'] * len(datos_traducidos))
+    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
+    valores_sql = list(datos_traducidos.values())
   try:
-      with conectar_base_de_datos() as conexión:
-          cursor = conexión.cursor()
-          cursor.execute(consulta, tuple(valores_sql))
-          conexión.commit()
-          mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
-          consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
-          # Limpia las cajas de texto después de una inserción exitosa
-          if nombre_de_la_tabla in cajasDeTexto:
-              for entry in cajasDeTexto[nombre_de_la_tabla]:
-                  entry.delete(0, tk.END)
-
+    cursor = conexión.cursor()
+    cursor.execute(consulta, tuple(valores_sql))
+    conexión.commit()
+    consultar_tabla(nombre_de_la_tabla)
+    mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    for i, (campo, valor) in enumerate(datos_traducidos.items()):
+      entry = cajasDeTexto[nombre_de_la_tabla][i]
+      entry.delete(0, tk.END)
   except Exception as e:
-      mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
+  finally:
+      desconectar_base_de_datos(conexión)
+
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
     columna_seleccionada = Lista_de_datos.curselection()
-    
     if not columna_seleccionada:
-      mensajeTexto.showwarning("ADVERTENCIA", "⚠️ FALTA SELECCIONAR UNA FILA")
+      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
       return
+
     selección = columna_seleccionada[0]
     ID_Seleccionado = lista_IDs[selección]
 
-    # Enviar validarDatos=False para obtener datos sin validación por ahora
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, validarDatos=True)
     if not datos:
-        return
-      
-    datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-    
-    if datos_traducidos is None:
       return
 
-    valores_sql = list(datos_traducidos.values())
-    campos_sql = [f"{campo} = %s" for campo in datos_traducidos.keys()]
-    set_sql = ', '.join(campos_sql)
+    if not validar_datos(nombre_de_la_tabla, datos):
+      return
+
+    valores_sql = []
+    campos_sql = []
+
+    for campo, valor in datos.items():
+      valores_sql.append(valor)
+      campos_sql.append(f"{campo} = %s")
 
     try:
       with conectar_base_de_datos() as conexión:
-            cursor = conexión.cursor()
+          cursor = conexión.cursor()
+          set_sql = ', '.join(campos_sql)
+
+          if nombre_de_la_tabla.lower() == "nota":
+            id_alumno, id_materia = ID_Seleccionado
+            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+            valores_sql.extend([id_alumno, id_materia])
+          else:
+            CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+            valores_sql.append(ID_Seleccionado)
             
-            if nombre_de_la_tabla.lower() == "nota":
-                id_alumno, id_materia = ID_Seleccionado
-                consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-                valores_sql.extend([id_alumno, id_materia])
-            else:
-                campoID = conseguir_campo_ID(nombre_de_la_tabla)
-                consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {campoID} = %s"
-                valores_sql.append(ID_Seleccionado)
-            
-            cursor.execute(consulta, tuple(valores_sql))
-            conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
-            mensajeTexto.showinfo("CORRECTO", "✅ ¡Se modificó exitosamente!")
+          cursor.execute(consulta, tuple(valores_sql))
+          conexión.commit()
+
+          consultar_tabla(nombre_de_la_tabla)
+          mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
 
     except Exception as e:
-        mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
+      mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
+
 
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
-  columna_seleccionada = Lista_de_datos.curselection()
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  
-  if not CampoID:
-    mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-    return
-  
-  if columna_seleccionada:
-      try:
-        with conectar_base_de_datos() as conexión:
-          cursor = conexión.cursor()
-          for index in columna_seleccionada:
-            ID_Seleccionado = lista_IDs[index]
-            if ID_Seleccionado is not None:
-              if nombre_de_la_tabla == "nota":
-                query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
-                cursor.execute(query, (ID_Seleccionado,))
-                if not isinstance(ID_Seleccionado, tuple):
-                  mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
-                  return
-              else:
-                query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
-                cursor.execute(query, (ID_Seleccionado,))
-              for i, (campo, valor) in enumerate(datos.items()):
-                entry = cajasDeTexto[nombre_de_la_tabla][i]
-                entry.delete(0, tk.END)
-            else:
-              mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-            conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
-            print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
-            mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
-      except error_sql as e:
-         mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {str(e)}")
-  else:
-    mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
-
-# def eliminar_datos(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
-#     """Elimina datos de la tabla especificada.
-
-#     Args:
-#         nombre_de_la_tabla (str): El nombre de la tabla de la base de datos.
-#         Lista_de_datos (tk.Listbox): La lista de datos mostrada en la interfaz.
-#         lista_IDs (list): Una lista de los IDs de las filas.
-#     """
-#     columna_seleccionada = Lista_de_datos.curselection()
+    columna_seleccionada = Lista_de_datos.curselection()
     
-#     if not columna_seleccionada:
-#         mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
-#         return
-
-#     try:
-#         with conectar_base_de_datos() as conexión:
-#             cursor = conexión.cursor()
+    if not columna_seleccionada:
+        mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
+        return
+      
+    try:
+        with conectar_base_de_datos() as conexión:
+            cursor = conexión.cursor()
             
-#             # Recorrer las selecciones y eliminarlas una por una
-#             for index in columna_seleccionada:
-#                 ID_Seleccionado = lista_IDs[index]
+            # Recorrer las selecciones y eliminarlas una por una
+            for index in columna_seleccionada:
+                ID_Seleccionado = lista_IDs[index]
                 
-#                 if nombre_de_la_tabla.lower() == "nota":
-#                     # Lógica para la tabla "nota" con clave compuesta (IDAlumno, IDMateria)
-#                     query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
-#                     if not isinstance(ID_Seleccionado, tuple):
-#                         mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
-#                         return
-#                     cursor.execute(query, ID_Seleccionado)
-#                 else:
-#                     # Lógica para otras tablas con clave simple
-#                     CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-#                     if not CampoID:
-#                         mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-#                         return
-#                     query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
-#                     if ID_Seleccionado is not None:
-#                         cursor.execute(query, (ID_Seleccionado,))
-#                     else:
-#                         mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-#                         return
+                if nombre_de_la_tabla.lower() == "nota":
+                  # Lógica para la tabla "nota" con clave compuesta (IDAlumno, IDMateria)
+                  query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+                  if not isinstance(ID_Seleccionado, tuple):
+                      mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
+                      return
+                  cursor.execute(query, ID_Seleccionado)
+                else:
+                  # Lógica para otras tablas con clave simple
+                  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+                  if not CampoID:
+                      mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+                      return
+                  query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
+                  if ID_Seleccionado is not None:
+                      cursor.execute(query, (ID_Seleccionado,))
+                  else:
+                      mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+                      return
+            conexión.commit()
+            consultar_tabla(nombre_de_la_tabla)
+            mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
-#             conexión.commit()
-#             consultar_tabla(nombre_de_la_tabla)
-#             mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
-
-#     except Exception as e:
-#         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
+    except Exception as e:
+        mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 
 def ordenar_datos(nombre_de_la_tabla, tabla, Lista_de_datos, campo=None, ascendencia=True):
@@ -416,3 +293,122 @@ def exportar_en_PDF(nombre_de_la_tabla, Lista_de_datos):
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
     pass
+
+
+# def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
+#   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+#   if not datos:
+#     return
+  
+#   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+  
+#   if datos_traducidos is None:
+#     return
+  
+#   campos = ', '.join(datos_traducidos.keys())
+#   valores_placeholder = ', '.join(['%s'] * len(datos_traducidos))
+#   valores_sql = list(datos_traducidos.values())
+
+#   # Lógica para la tabla de notas
+#   if nombre_de_la_tabla.lower() == "nota":
+#       consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
+#   else:
+#       consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores_placeholder})"
+
+#   try:
+#       with conectar_base_de_datos() as conexión:
+#           cursor = conexión.cursor()
+#           cursor.execute(consulta, tuple(valores_sql))
+#           conexión.commit()
+#           mensajeTexto.showinfo("CORRECTO", "✅ ¡Se agregaron los datos correctamente!")
+#           consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
+#           # Limpia las cajas de texto después de una inserción exitosa
+#           if nombre_de_la_tabla in cajasDeTexto:
+#               for entry in cajasDeTexto[nombre_de_la_tabla]:
+#                   entry.delete(0, tk.END)
+
+#   except Exception as e:
+#       mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL INSERTAR: {str(e)}")
+
+# def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
+#     columna_seleccionada = Lista_de_datos.curselection()
+    
+#     if not columna_seleccionada:
+#       mensajeTexto.showwarning("ADVERTENCIA", "⚠️ FALTA SELECCIONAR UNA FILA")
+#       return
+#     selección = columna_seleccionada[0]
+#     ID_Seleccionado = lista_IDs[selección]
+
+#     # Enviar validarDatos=False para obtener datos sin validación por ahora
+#     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+#     if not datos:
+#         return
+      
+#     datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+    
+#     if datos_traducidos is None:
+#       return
+
+#     valores_sql = list(datos_traducidos.values())
+#     campos_sql = [f"{campo} = %s" for campo in datos_traducidos.keys()]
+#     set_sql = ', '.join(campos_sql)
+
+#     try:
+#       with conectar_base_de_datos() as conexión:
+#             cursor = conexión.cursor()
+            
+#             if nombre_de_la_tabla.lower() == "nota":
+#                 id_alumno, id_materia = ID_Seleccionado
+#                 consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+#                 valores_sql.extend([id_alumno, id_materia])
+#             else:
+#                 campoID = conseguir_campo_ID(nombre_de_la_tabla)
+#                 consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {campoID} = %s"
+#                 valores_sql.append(ID_Seleccionado)
+            
+#             cursor.execute(consulta, tuple(valores_sql))
+#             conexión.commit()
+#             consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
+#             mensajeTexto.showinfo("CORRECTO", "✅ ¡Se modificó exitosamente!")
+
+#     except Exception as e:
+#         mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
+
+# def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, lista_IDs):
+#   columna_seleccionada = Lista_de_datos.curselection()
+#   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+#   CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+  
+#   if not CampoID:
+#     mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+#     return
+  
+#   if columna_seleccionada:
+#       try:
+#         with conectar_base_de_datos() as conexión:
+#           cursor = conexión.cursor()
+#           for index in columna_seleccionada:
+#             ID_Seleccionado = lista_IDs[index]
+#             if ID_Seleccionado is not None:
+#               if nombre_de_la_tabla == "nota":
+#                 query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+#                 cursor.execute(query, (ID_Seleccionado,))
+#                 if not isinstance(ID_Seleccionado, tuple):
+#                   mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
+#                   return
+#               else:
+#                 query = f"DELETE FROM {nombre_de_la_tabla} where {CampoID} = %s"
+#                 cursor.execute(query, (ID_Seleccionado,))
+#               for i, (campo, valor) in enumerate(datos.items()):
+#                 entry = cajasDeTexto[nombre_de_la_tabla][i]
+#                 entry.delete(0, tk.END)
+#             else:
+#               mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+#             conexión.commit()
+#             consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
+#             print(f"Eliminando de {nombre_de_la_tabla} con {CampoID} = {ID_Seleccionado}")
+#             mensajeTexto.showinfo("ÉXITOS", "Ha sido eliminada exitosamente")
+#       except error_sql as e:
+#          mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL ELIMINAR: {str(e)}")
+#   else:
+#     mensajeTexto.showwarning("ADVERTENCIA", "NO SELECCIONASTE NINGUNA COLUMNA")
