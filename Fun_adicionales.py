@@ -151,9 +151,9 @@ def consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
 
           Lista_de_datos.delete(0, tk.END)
 
-          if not resultado:
-              mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
-              return
+          # if not resultado:
+          #     mensajeTexto.showinfo("Sin datos", "No hay datos disponibles para mostrar.")
+          #     return
 
           lista_IDs.clear()
           ancho_de_tablas = []
