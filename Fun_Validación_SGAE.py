@@ -114,7 +114,7 @@ def validar_fecha(valor):
 
 def validar_hora(valor):
   if isinstance(valor, hora):
-    return True # ya es una hora válida
+    return True
   if isinstance(valor, str):
     try:
       datetime.strptime(valor, '%H:%M').time()

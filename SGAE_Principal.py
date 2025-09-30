@@ -1,4 +1,4 @@
-from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos
+from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, seleccionar_registro
 from Fun_adicionales import consultar_tabla
 import os
 import tkinter as tk
@@ -195,7 +195,8 @@ def abrir_tablas(nombre_de_la_tabla):
       ],
       "materia": [
           ("Nombre*", "txBox_NombreMateria"),
-          ("Horario*", "txBox_HorarioCorrespondiente")
+          ("Horario*", "txBox_HorarioCorrespondiente"),
+          ("Carrera*","txBox_NombreCarrera")
       ],
       "enseñanza": [
           ("Nombre de la asignatura*", "txBox_NombreMateria"),
@@ -241,6 +242,7 @@ def abrir_tablas(nombre_de_la_tabla):
   
   Lista_de_datos = tk.Listbox(marco_derecho, width=20, height=20, font=("Courier New", 10, "bold"))
   Lista_de_datos.grid(row=0, column=0, sticky="nsew")
+  Lista_de_datos.bind("<<ListboxSelect>>", lambda event: seleccionar_registro(nombre_de_la_tabla, Lista_de_datos, lista_IDs, cajasDeTexto))
   consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
   
 

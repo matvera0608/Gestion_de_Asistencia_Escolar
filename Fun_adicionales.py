@@ -1,8 +1,9 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos
+from Fun_Validación_SGAE import validar_datos
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos):
+def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos=True):
   global datos, campos_db, lista_de_cajas
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
   lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
@@ -27,10 +28,9 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
       return None
     datos[campo] = texto
   
-  # if validarDatos:
-  #   if not validar_datos(nombre_de_la_tabla, datos):
-  #     return None
-
+  if validarDatos:
+    if not validar_datos(nombre_de_la_tabla, datos):
+      return None
   return datos
 
 #Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
@@ -190,6 +190,7 @@ def consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs):
 
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
