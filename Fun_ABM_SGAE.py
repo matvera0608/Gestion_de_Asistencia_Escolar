@@ -11,8 +11,8 @@ from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
-def seleccionar_registro(nombre_de_la_tabla,  ListaDatos, listaID, cajasDeTexto):
-  selección = ListaDatos.curselection()
+def seleccionar_registro(nombre_de_la_tabla,  tablas_de_datos, listaID, cajasDeTexto):
+  selección = tablas_de_datos.selection()
 
   if not selección:
     return
@@ -96,25 +96,25 @@ def seleccionar_registro(nombre_de_la_tabla,  ListaDatos, listaID, cajasDeTexto)
         cursor.close()
       desconectar_base_de_datos(conexión)
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, listaID):
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
 
   if not datos or not validar_datos(nombre_de_la_tabla, datos):
-      return
-    
+    return
+
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-    
+
   valores_sql = []
   campos_sql = []
   for campo, valor in datos_traducidos.items():
     valores_sql.append(valor)
     campos_sql.append(campo)
-    
+
   if nombre_de_la_tabla.lower() == "nota":
     id_alumno = datos.get("IDAlumno")
     id_materia = datos.get("IDMateria")
-    
+
     campos = ', '.join(list(datos_traducidos.keys()) + ["IDAlumno", "IDMateria"])
     valores = ', '.join(['%s'] * (len(datos_traducidos) + 2))
     consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
@@ -128,24 +128,28 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, 
     cursor = conexión.cursor()
     cursor.execute(consulta, tuple(valores_sql))
     conexión.commit()
-    consultar_tabla(nombre_de_la_tabla, Lista_de_datos, listaID)
+    consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    # Limpiar las cajas de texto después de insertar
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
+    # Si usas Treeview, no necesitas modificar aquí, porque consultar_tabla debe actualizar el Treeview.
+    # Si antes usabas Listbox y ahora Treeview, asegúrate que consultar_tabla inserte los datos en el Treeview.
+    # No necesitas modificar esta función para Treeview, solo la función de refresco de la tabla.
   except Exception as e:
-      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
+    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
-      desconectar_base_de_datos(conexión)
+    desconectar_base_de_datos(conexión)
 
-def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, listaID):
-    columna_seleccionada = Lista_de_datos.curselection()
+def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+    columna_seleccionada = tablas_de_datos.selection()
     if not columna_seleccionada:
       mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
       return
 
     selección = columna_seleccionada[0]
-    ID_Seleccionado = listaID[selección]
+    ID_Seleccionado = listaID.item(selección)
 
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
     if not datos:
@@ -183,14 +187,14 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos,
           cursor.execute(consulta, tuple(valores_sql))
           conexión.commit()
 
-          consultar_tabla(nombre_de_la_tabla, Lista_de_datos, listaID)
+          consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
           mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
 
     except Exception as e:
       mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, listaID):
-    columna_seleccionada = Lista_de_datos.curselection()
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+    columna_seleccionada = tablas_de_datos.selection()
     
     if not columna_seleccionada:
         mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
@@ -224,20 +228,21 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, Lista_de_datos, 
                       mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
                       return
             conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, Lista_de_datos, listaID)
+            consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
             mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
     except Exception as e:
         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
-def ordenar_datos(nombre_de_la_tabla, tabla, Lista_de_datos, campo=None, ascendencia=True):
+def ordenar_datos(nombre_de_la_tabla, tabla, tablas_de_datos, campo=None, ascendencia=True):
   conexión = conectar_base_de_datos()
   cursor = conexión.cursor()
   if conexión is None:
     mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
     return
 
-  Lista_de_datos.delete(0, tk.END)
+  for item in tablas_de_datos.get_children():
+    tablas_de_datos.delete(item)
 
   #Controla que se obtenga nombre reales de las columnas
   cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
@@ -304,7 +309,7 @@ def ordenar_datos(nombre_de_la_tabla, tabla, Lista_de_datos, campo=None, ascende
       #Se agrega una separación para que no se vea pegado
       if len(filaTipoCadena) == len(ancho_de_tablas):
         filas_formateadas = formato.format(*filaTipoCadena)
-        Lista_de_datos.insert(tk.END, filas_formateadas)
+        tablas_de_datos.insert(tk.END, filas_formateadas)
       else:
         print("❗ Columnas desalineadas:", filaTipoCadena)
         print("🔍 Longitudes -> fila:", len(filaTipoCadena), "| ancho_de_tablas:", len(ancho_de_tablas))
@@ -314,12 +319,10 @@ def ordenar_datos(nombre_de_la_tabla, tabla, Lista_de_datos, campo=None, ascende
   finally:
     desconectar_base_de_datos(conexión)
 
-def exportar_en_PDF(nombre_de_la_tabla, Lista_de_datos):
+def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   try:
-      # Paso 1: Obtener los datos directamente del Listbox
-      # Esta es la fuente principal de datos para este PDF, no la DB en este caso.
-      datos_a_exportar = Lista_de_datos.get(0, tk.END)
-      
+      datos_a_exportar = tablas_de_datos.get_children()
+
       if not datos_a_exportar:
           mensajeTexto.showwarning("ADVERTENCIA", "No hay datos para exportar en el Listbox.")
           return
@@ -332,17 +335,12 @@ def exportar_en_PDF(nombre_de_la_tabla, Lista_de_datos):
           title="Exportar informe en PDF"
       )
       
-      # Si el usuario presiona "Cancelar" en el diálogo de guardar
       if not ruta_archivo_pdf:
-          return # Salir de la función si no se seleccionó un archivo
+        return 
 
-      # Paso 3: Crear el objeto Canvas de ReportLab y dibujar el contenido
-      # Se debe instanciar canvas.Canvas solo una vez.
       pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
       
-      # Establecer la fuente. "Helvetica" es una fuente estándar garantizada en ReportLab.
-      # "Arial" no está incluida por defecto y necesita ser registrada si es obligatoria.
-      pdf_canvas.setFont("Arial", 12) # Tamaño de fuente más legible para el cuerpo
+      pdf_canvas.setFont("Arial", 12)
 
       # Coordenadas de inicio para el contenido
       margen_x = 50 # Margen desde la izquierda
@@ -373,7 +371,7 @@ def exportar_en_PDF(nombre_de_la_tabla, Lista_de_datos):
       
       print("ÉXITO", f"El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
       
-  except Exception as e: # Captura cualquier tipo de excepción general para depuración
+  except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
     pass

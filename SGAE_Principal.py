@@ -12,6 +12,7 @@ colores = {
   "negro": "#000000",
   "negro_resaltado": "#3A3A3A",
   "celeste_azulado": "#004CFF",
+  "celeste": "#00AAEE",
   "celeste_resaltado": "#3F72FD",
   "azul_claro": "#A8A8FF",
   "azul_oscuro": "#00004D"
@@ -31,7 +32,7 @@ campos_en_db = {
       "nota": ["IDAlumno", "IDMateria", "fechaEvaluación", "valorNota", "tipoNota"]
   }
 lista_IDs = [] 
-# --- FUNCIÓN PARA CARGAR IMÁGENES, CONECTAR BASE DE DATOS Y DE MOSTRAR LA HORA ---
+# --- FUNCIONES AUXILIARES ---
 def cargar_imagen(nombre_imagen):
   ruta = os.path.join(ruta_imagen, nombre_imagen)
   if(not os.path.exists(ruta)):
@@ -41,7 +42,10 @@ def cargar_imagen(nombre_imagen):
   imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
   return ImageTk.PhotoImage(imagen)
 
-mi_ventana = tk.Tk()
+def cargar_datos(tabla_Treeview, filas):
+  for i, fila in enumerate(filas):
+    tag = "evenrow" if i % 2 == 0 else "oddrow"
+    tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
 
 # --- FUNCIONES AUXILIARES ---
 
@@ -56,22 +60,28 @@ def crear_botón(contenedor, texto, comando, ancho, estilo="Boton.TButton"):
   ancho = len(texto) + 5 if ancho is None else ancho
   return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2')
 
-def crear_tablas_Treeview(contenedor, tabla, fuenteLetra=("Arial", 25)):
+def crear_tablas_Treeview(contenedor, tabla):
   columnas = campos_en_db[tabla]
   estilo = ttk.Style()
-  estilo_treeview = f"{tabla}.Treeview"
-
-  estilo.configure(estilo_treeview, font=fuenteLetra, foreground=colores["azul_oscuro"], background=colores["blanco"], fieldbackground=colores["negro"])
-  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", selectmode="browse", style=estilo_treeview)
+  estilo_treeview = f"Custom.Treeview"
+  estilo_encabezado = f"Custom.Treeview.Heading"
+  
+  estilo.configure(estilo_treeview, font=("Courier New", 10), foreground=colores["negro"], background=colores["blanco"], fieldbackground=colores["blanco"])
+  estilo.configure(estilo_encabezado, font=("Courier New", 10), foreground=colores["negro"], background=colores["celeste"])
+  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview, selectmode="browse")
+  tabla_Treeview.tag_configure("oddrow", background=colores["blanco"])
+  tabla_Treeview.tag_configure("evenrow", background=colores["celeste"])
 
   for columna in columnas:
     tabla_Treeview.heading(columna, anchor="center", text=columna)
-    tabla_Treeview.column(columna, anchor="center", width=len(columna), minwidth=80)
+    tabla_Treeview.column(columna, anchor="center", width=len(columna), minwidth=120)
   
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
   return tabla_Treeview
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+mi_ventana = tk.Tk()
+
 def pantallaLogin():
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencias")
@@ -238,7 +248,6 @@ def abrir_tablas(nombre_de_la_tabla):
   estilo.theme_use("clam")
   estilo.configure("Boton.TButton", font=("Arial", 10, "bold"), foreground=colores["blanco"], background=colores["celeste_azulado"], padding=10)
   estilo.configure("Entrada.TEntry", padding=5, relief="flat", foreground=colores["negro"], fieldbackground=colores["blanco"])
-  # estilo.configure(f"{nombre_de_la_tabla}.Treeview", padding=0, background=colores["blanco"], fieldbackground=colores["negro"], font=("Courier New", 10, "bold"))
   estilo.map("Boton.TButton", background=[("active", colores["celeste_resaltado"])])
 
   campos = campos_por_tabla.get(nombre_de_la_tabla, None)
@@ -258,7 +267,7 @@ def abrir_tablas(nombre_de_la_tabla):
   crear_botón(marco_izquierdo, "Exportar", lambda: None, 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
 
   tabla_treeview = crear_tablas_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
-  # consultar_tabla(nombre_de_la_tabla, tabla_treeview, lista_IDs)
+  consultar_tabla(nombre_de_la_tabla, tabla_treeview, lista_IDs)
   
 
 # --- INICIO DEL SISTEMA ---
