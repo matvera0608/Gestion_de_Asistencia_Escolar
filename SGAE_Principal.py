@@ -13,7 +13,8 @@ colores = {
   "negro_resaltado": "#3A3A3A",
   "celeste_azulado": "#004CFF",
   "celeste_resaltado": "#3F72FD",
-  "azul_claro": "#A8A8FF"
+  "azul_claro": "#A8A8FF",
+  "azul_oscuro": "#00004D"
 }
 dirección_del_ícono = os.path.dirname(__file__)
 ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
@@ -44,9 +45,9 @@ mi_ventana = tk.Tk()
 
 # --- FUNCIONES AUXILIARES ---
 
-def crear_etiqueta(contenedor, texto, tamaño_letra):
+def crear_etiqueta(contenedor, texto, fuenteLetra=("Arial", 10, "bold")):
   color_padre = contenedor.cget("bg")
-  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=("Arial", tamaño_letra, "bold"))
+  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=fuenteLetra)
 
 def crear_entrada(contenedor, ancho, estilo="Entrada.TEntry"):
   return ttk.Entry(contenedor, width=ancho, style=estilo)
@@ -54,6 +55,21 @@ def crear_entrada(contenedor, ancho, estilo="Entrada.TEntry"):
 def crear_botón(contenedor, texto, comando, ancho, estilo="Boton.TButton"):
   ancho = len(texto) + 5 if ancho is None else ancho
   return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2')
+
+def crear_tablas_Treeview(contenedor, tabla, fuenteLetra=("Arial", 25)):
+  columnas = campos_en_db[tabla]
+  estilo = ttk.Style()
+  estilo_treeview = f"{tabla}.Treeview"
+
+  estilo.configure(estilo_treeview, font=fuenteLetra, foreground=colores["azul_oscuro"], background=colores["blanco"], fieldbackground=colores["negro"])
+  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", selectmode="browse", style=estilo_treeview)
+
+  for columna in columnas:
+    tabla_Treeview.heading(columna, anchor="center", text=columna)
+    tabla_Treeview.column(columna, anchor="center", width=len(columna), minwidth=80)
+  
+  tabla_Treeview.grid(row=0, column=0, sticky="nsew")
+  return tabla_Treeview
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 def pantallaLogin():
@@ -130,7 +146,7 @@ def mostrar_pestañas(ventana):
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global Lista_de_datos, ventanaSecundaria
+  global ventanaSecundaria
 
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
@@ -222,6 +238,7 @@ def abrir_tablas(nombre_de_la_tabla):
   estilo.theme_use("clam")
   estilo.configure("Boton.TButton", font=("Arial", 10, "bold"), foreground=colores["blanco"], background=colores["celeste_azulado"], padding=10)
   estilo.configure("Entrada.TEntry", padding=5, relief="flat", foreground=colores["negro"], fieldbackground=colores["blanco"])
+  # estilo.configure(f"{nombre_de_la_tabla}.Treeview", padding=0, background=colores["blanco"], fieldbackground=colores["negro"], font=("Courier New", 10, "bold"))
   estilo.map("Boton.TButton", background=[("active", colores["celeste_resaltado"])])
 
   campos = campos_por_tabla.get(nombre_de_la_tabla, None)
@@ -229,21 +246,19 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   for i, (texto_etiqueta, _) in enumerate(campos): #Este for agrega dinámicamente siguiendo la longitud del diccionario
-    crear_etiqueta(marco_izquierdo, texto_etiqueta, 10).grid(row=i + int(2.5), column=1, sticky="w", padx=1, pady=5)
+    crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + int(2.5), column=1, sticky="w", padx=1, pady=5)
     entrada = crear_entrada(marco_izquierdo, 20)
     entrada.grid(row=i + int(2.5), column=2, sticky="ew", padx=1, pady=5)
     cajasDeTexto[nombre_de_la_tabla].append(entrada)
     
-  crear_botón(marco_izquierdo, "Agregar", lambda: insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos, lista_IDs), 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos, lista_IDs), 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, Lista_de_datos, lista_IDs), 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", lambda: None, 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", lambda: None, 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", lambda: None, 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
   crear_botón(marco_izquierdo, "Ordenar", lambda: None, 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
   crear_botón(marco_izquierdo, "Exportar", lambda: None, 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
-  
-  Lista_de_datos = tk.Listbox(marco_derecho, width=20, height=20, font=("Courier New", 10, "bold"))
-  Lista_de_datos.grid(row=0, column=0, sticky="nsew")
-  Lista_de_datos.bind("<<ListboxSelect>>", lambda event: seleccionar_registro(nombre_de_la_tabla, Lista_de_datos, lista_IDs, cajasDeTexto))
-  consultar_tabla(nombre_de_la_tabla, Lista_de_datos, lista_IDs)
+
+  tabla_treeview = crear_tablas_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  # consultar_tabla(nombre_de_la_tabla, tabla_treeview, lista_IDs)
   
 
 # --- INICIO DEL SISTEMA ---
