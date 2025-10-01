@@ -1,4 +1,4 @@
-from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, seleccionar_registro
+from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, ordenar_datos, exportar_en_PDF,seleccionar_registro
 from Fun_adicionales import consultar_tabla
 import os
 import tkinter as tk
@@ -260,11 +260,11 @@ def abrir_tablas(nombre_de_la_tabla):
     entrada.grid(row=i + int(2.5), column=2, sticky="ew", padx=1, pady=5)
     cajasDeTexto[nombre_de_la_tabla].append(entrada)
     
-  crear_botón(marco_izquierdo, "Agregar", lambda: None, 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", lambda: None, 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", lambda: None, 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", lambda: None, 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", lambda: None, 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Agregar", lambda: insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
+  crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
 
   tabla_treeview = crear_tablas_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
   consultar_tabla(nombre_de_la_tabla, tabla_treeview, lista_IDs)
