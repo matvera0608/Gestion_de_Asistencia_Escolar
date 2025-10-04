@@ -128,7 +128,16 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     cursor = conexión.cursor()
     cursor.execute(consulta, tuple(valores_sql))
     conexión.commit()
-    consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
+    datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+
+    for item in tablas_de_datos.get_children():
+        tablas_de_datos.delete(item)
+
+    for index, fila in enumerate(datos):
+        tag = "par" if index % 2 == 0 else "impar"
+        tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+
+    listaID[:] = lista_actualizada
     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
     # Limpiar las cajas de texto después de insertar
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
@@ -149,7 +158,8 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
       return
 
     selección = columna_seleccionada[0]
-    ID_Seleccionado = listaID.item(selección)
+    índice = tablas_de_datos.index(selección)
+    ID_Seleccionado = listaID[índice]
 
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
     if not datos:
@@ -186,8 +196,17 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
             
           cursor.execute(consulta, tuple(valores_sql))
           conexión.commit()
+        
+          datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
 
-          consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
+          for item in tablas_de_datos.get_children():
+              tablas_de_datos.delete(item)
+
+          for index, fila in enumerate(datos):
+              tag = "par" if index % 2 == 0 else "impar"
+              tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+
+          listaID[:] = lista_actualizada
           mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
 
     except Exception as e:
@@ -199,123 +218,123 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     if not columna_seleccionada:
         mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
         return
-      
     try:
         with conectar_base_de_datos() as conexión:
             cursor = conexión.cursor()
-            
             # Recorrer las selecciones y eliminarlas una por una
-            for index in columna_seleccionada:
-                ID_Seleccionado = listaID[index]
-                
-                if nombre_de_la_tabla.lower() == "nota":
-                  # Lógica para la tabla "nota" con clave compuesta (IDAlumno, IDMateria)
-                  query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
-                  if not isinstance(ID_Seleccionado, tuple):
-                      mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
-                      return
-                  cursor.execute(query, ID_Seleccionado)
+            for selección in columna_seleccionada:
+              índice = tablas_de_datos.index(selección)
+              ID_Seleccionado = listaID[índice]
+              if nombre_de_la_tabla.lower() == "nota":
+                query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+                if not isinstance(ID_Seleccionado, tuple):
+                    mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
+                    return
+                cursor.execute(query, ID_Seleccionado)
+              else:
+                # Lógica para otras tablas con clave simple
+                CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+                if not CampoID:
+                    mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+                    return
+                query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
+                if ID_Seleccionado is not None:
+                    cursor.execute(query, (ID_Seleccionado,))
                 else:
-                  # Lógica para otras tablas con clave simple
-                  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-                  if not CampoID:
-                      mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-                      return
-                  query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
-                  if ID_Seleccionado is not None:
-                      cursor.execute(query, (ID_Seleccionado,))
-                  else:
-                      mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-                      return
+                    mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+                    return
             conexión.commit()
-            consultar_tabla(nombre_de_la_tabla, tablas_de_datos, listaID)
+            datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+
+            for item in tablas_de_datos.get_children():
+                tablas_de_datos.delete(item)
+
+            for index, fila in enumerate(datos):
+                tag = "par" if index % 2 == 0 else "impar"
+                tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+
+            listaID[:] = lista_actualizada
+            consultar_tabla(nombre_de_la_tabla, listaID)
             mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
     except Exception as e:
         mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
-def ordenar_datos(nombre_de_la_tabla, tabla, tablas_de_datos, campo=None, ascendencia=True):
-  conexión = conectar_base_de_datos()
-  cursor = conexión.cursor()
-  if conexión is None:
-    mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
-
-  for item in tablas_de_datos.get_children():
-    tablas_de_datos.delete(item)
-
-  #Controla que se obtenga nombre reales de las columnas
-  cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
-  columna = [col[0] for col in cursor.fetchall()]
-  
-  if campo is None:
-    nombre_columna = ', '.join(columna)
-    campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
-    if not campo:
-      return
-    campo = campo.strip()
-  
-  coincidencia = [col for col in columna if col.lower() == campo.lower()]
-  
-  if not coincidencia:
-    mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
-    return
-  campo_real = coincidencia[0]
-  orden = "ASC" if ascendencia else "DESC"
   try:
-    consulta = {
-      "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y')
-                    FROM alumno AS a
-                    JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
-                    ORDER BY {campo_real} {orden}""",
-                
-      "asistencia": f"""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
-                                  FROM asistencia AS asis
-                                  JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;"""
-    }
-    cursor.execute(consulta[nombre_de_la_tabla].lower())
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    if not conexión:
+      mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
+      return
+
+    #Controla que se obtenga nombre reales de las columnas
+    cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
+    columna = [col[0] for col in cursor.fetchall()]
+    
+    if campo is None:
+      nombre_columna = ', '.join(columna)
+      campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
+      if not campo:
+        return
+      campo = campo.strip()
+    
+    coincidencia = [col for col in columna if col.lower() == campo.lower()]
+    
+    if not coincidencia:
+      mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
+      return
+      
+    campo_real = coincidencia[0]
+    
+    orden = "ASC" if ascendencia else "DESC"
+
+    consultas = {
+        "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y')
+                      FROM alumno AS a
+                      JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
+                      ORDER BY {campo_real} {orden}""",
+                  
+        "asistencia": f"""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
+                                    FROM asistencia AS asis
+                                    JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;"""
+      }
+      
+      
+    consultaSQL = consultas.get(nombre_de_la_tabla.lower()), f"SELECT * FROM {nombre_de_la_tabla} ORDER BY {campo_real} {orden}"
+    cursor.execute(consultaSQL)
     resultado = cursor.fetchall()
+
+    if tablas_de_datos.winfo_exists():
+      for item in tablas_de_datos.get_children():
+        tablas_de_datos.delete(item)
     
     #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
     if not resultado:
       mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
       return
     
-    #Esta lógica ya pertenece al formato de filas, para que quede bien derechito con el fin de evitar cualquier mezcla o confusión al usuario.
+    filasAMostrar = []
+    listasIDs = []
     
-    filaVisible = resultado[0][1:] if nombre_de_la_tabla != "nota" else resultado[0]
-    
-    ancho_de_tablas = [0] * len(filaVisible)
-    
-
     for fila in resultado:
-      filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
-      
-      for i, valor in enumerate(filaVisible):
-        valorTipoCadena = str(valor)
-        ancho_de_tablas[i] = max(ancho_de_tablas[i], len(valorTipoCadena))
-      
-      
-      formato = "|".join("{:<" + str(ancho) + "}" for ancho in ancho_de_tablas)
-      
-    #Recorro las filas.
-    for fila in resultado:
-      filaVisible = list(fila[1:] if nombre_de_la_tabla != "nota" else fila)
-    
-      match nombre_de_la_tabla.lower():
-        case "materia":
-          filaVisible[1] = f"{filaVisible[1]} horas"
-      filaTipoCadena = [str(valor) for valor in filaVisible]
-      #Se agrega una separación para que no se vea pegado
-      if len(filaTipoCadena) == len(ancho_de_tablas):
-        filas_formateadas = formato.format(*filaTipoCadena)
-        tablas_de_datos.insert(tk.END, filas_formateadas)
+      if nombre_de_la_tabla == "nota":
+        listasIDs.append((fila[0], fila[1]))
+        filaVisible = list(fila[2:])
       else:
-        print("❗ Columnas desalineadas:", filaTipoCadena)
-        print("🔍 Longitudes -> fila:", len(filaTipoCadena), "| ancho_de_tablas:", len(ancho_de_tablas))
-    
+        listasIDs.append(fila[0])
+        filaVisible = list(fila[1:])
+      
+    filasAMostrar.append(filaVisible)
+  
+    for index, filaVisible in enumerate(filasAMostrar): 
+      tag = "par" if index % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
+        
   except error_sql as e:
-     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -323,15 +342,11 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   try:
       datos_a_exportar = tablas_de_datos.get_children()
 
-      if not datos_a_exportar:
-          mensajeTexto.showwarning("ADVERTENCIA", "No hay datos para exportar en el Listbox.")
-          return
-
       # Paso 2: Abrir el diálogo para seleccionar la ruta y nombre del archivo PDF
       ruta_archivo_pdf = diálogo.asksaveasfilename(
           defaultextension=".pdf",
           filetypes=[("Archivo PDF", "*.pdf")],
-          initialfile=f"Reporte_{nombre_de_la_tabla}_{fecha_y_hora.now().strftime('%Y%m%d_%H%M%S')}", # Nombre de archivo más descriptivo
+          initialfile=f"Reporte_{nombre_de_la_tabla}_{fecha_y_hora.now().strftime('%Y %m %d_ %H %M %S')}", # Nombre de archivo más descriptivo
           title="Exportar informe en PDF"
       )
       
@@ -339,7 +354,6 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
         return 
 
       pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
-      
       pdf_canvas.setFont("Arial", 12)
 
       # Coordenadas de inicio para el contenido
@@ -363,7 +377,7 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
               pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
               y -= line_height
 
-          pdf_canvas.drawString(margen_x, y, f"{fila}") # Añade un número de línea
+          pdf_canvas.drawString(margen_x, y, f"{fila}")
           y -= line_height
 
       # Paso 4: Guardar el archivo PDF

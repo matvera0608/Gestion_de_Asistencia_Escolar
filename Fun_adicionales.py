@@ -68,8 +68,6 @@ def convertir_datos(campos_db, lista_de_cajas):
     caja.delete(0, tk.END)  # Limpia el entry
     caja.insert(0, str(valor))  # Inserta el valor convertido
 
-#Esta función sirve para actualizar la hora
-
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
 #pero si el label ya existe, sólo se actualiza su texto.
 # # def actualizar_la_hora(contenedor):
@@ -105,15 +103,34 @@ def convertir_datos(campos_db, lista_de_cajas):
 #     return reloj
 
 
-
 # --- FUNCIONES DE LECTURA ---
+
+# def cargar_datos(tabla_Treeview, tabla):
+#   conexión = conectar_base_de_datos()
+#   if not conexión:
+#     return
+  
+#   for item in tabla_Treeview.get_children():
+#     tabla_Treeview.delete(item)
+
+#   cursor = conexión.cursor()
+#   # Limpiar datos existentes en el Treeview
+  
+#   cursor.execute(f"SELECT * FROM {tabla}")
+#   filas = cursor.fetchall()
+  
+#   for i, fila in enumerate(filas):
+#     tag = "evenrow" if i % 2 == 0 else "oddrow"
+#     tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
+#   print(filas)
+#   desconectar_base_de_datos(conexión)
+
 # Esta función sirve sólo para leer datos de la bases de datos escuela
-def consultar_tabla(nombre_de_la_tabla, tablas_de_datos, lista_IDs):
+def consultar_tabla(nombre_de_la_tabla, lista_IDs):
   try:
     conexión = conectar_base_de_datos()
     if conexión:
       cursor = conexión.cursor()
-
       match nombre_de_la_tabla.lower():
           case "alumno":
               cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre
@@ -148,35 +165,23 @@ def consultar_tabla(nombre_de_la_tabla, tablas_de_datos, lista_IDs):
           case _:
               cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
 
-      resultado = cursor.fetchall()
-
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
-
-      lista_IDs.clear()
-      
-
-      for fila in resultado:
-          if nombre_de_la_tabla.lower() == "nota":
-            lista_IDs.append((fila[0], fila[1]))
-            filaVisible = fila[2:]
-          else:
-            lista_IDs.append(fila[0])
-            filaVisible = fila[1:]
-
-      for fila in resultado:
-        if nombre_de_la_tabla.lower() == "nota":
-          filaVisible = list(fila[2:])
-        else:
-          filaVisible = list(fila[1:])
-            
-      tablas_de_datos.insert("", "end", values=filaVisible)
-
+    resultado = cursor.fetchall()
+    lista_IDs.clear()
+    
+    filaVisible = []
+    for fila in resultado:
+      if nombre_de_la_tabla.lower() == "nota":
+        lista_IDs.append((fila[0], fila[1]))
+        filaVisible.append(list(fila[2:]))
+      else:
+        lista_IDs.append(fila[0])
+        filaVisible.append(list(fila[1:]))
+  
     desconectar_base_de_datos(conexión)
+    return filaVisible, lista_IDs
 
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
-
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
@@ -186,9 +191,6 @@ def traducir_IDs(nombre_de_la_tabla, datos):
       "enseñanza": {"IDProfesor": ("ID_Profesor","Profesor", "Nombre"), "IDMateria": ("ID_Materia", "Materia", "Nombre")},
       "nota": {"IDAlumno": ("ID_Alumno","Alumno", "Nombre"), "IDMateria": ("ID_Materia","Materia", "Nombre")}
   }
-  #MEJORA IMPLEMENTADA: Ahora la función crea una copia del diccionario original.
-  #Puse las claves primarias y las tablas de referencia en una tupla para facilitar la lectura del código.
-  #y también para no tener que poner un guión bajo en la consulta o query. YA ESTÁ SOLUCIONADO POR COMPLETO.
   if not datos:
     return None
   # Crear un nuevo diccionario para almacenar los datos traducidos
