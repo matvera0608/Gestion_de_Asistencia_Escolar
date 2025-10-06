@@ -1,4 +1,4 @@
-from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, ordenar_datos, exportar_en_PDF, seleccionar_registro
+from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla
 import os
 import tkinter as tk
@@ -53,10 +53,10 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
   return ttk.Combobox(contenedor, width=ancho, state=estado)
 
 def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButton"):
-  ancho = len(texto) + 5 if ancho is None else ancho
+  ancho = len(texto)
   return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2', state=estado)
 
-def crear_tabla_Treeview(contenedor, tabla, estado="none"):
+def crear_tabla_Treeview(contenedor, tabla, estado="browse"):
   global lista_IDs
   columnas = campos_en_db[tabla]
   estilo = ttk.Style()
@@ -96,15 +96,20 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
     listaDesplegable[nombre_de_la_tabla].append(combo)
     cajasDeTexto[nombre_de_la_tabla].append(combo)
 
+def crear_botonesExcluyentes(contenedor, texto, comando, estado="disabled", estilo="Radiobutton.TRadiobutton"):
+  return ttk.Radiobutton(contenedor, text=texto, width=len(texto), command= comando(), state=estado, style=estilo, cursor='hand2')
+  
 nombreActual = None
 
 def habilitar():
   btnModificar.config(state="normal")
   btnEliminar.config(state="normal")
+  btnEliminarTODO.config(state="normal")
   btnOrdenar.config(state="normal")
   btnExportarPDF.config(state="normal")
   btnCancelar.config(state="normal")
-  
+  rbMostrar.config(state="normal")
+  rbOcultar.config(state="normal")
   
   for entry in cajasDeTexto[nombreActual]:
     try:
@@ -115,15 +120,20 @@ def habilitar():
 def deshabilitar():
   btnModificar.config(state="disabled")
   btnEliminar.config(state="disabled")
+  btnEliminarTODO.config(state="disabled")
   btnOrdenar.config(state="disabled")
   btnExportarPDF.config(state="disabled")
   btnCancelar.config(state="disabled")
+  rbMostrar.config(state="disabled")
+  rbOcultar.config(state="disabled")
   
   for entry in cajasDeTexto[nombreActual]:
     try:
       entry.config(state="normal")
     except:
       pass
+
+# --- Función doble ---
 
 def insertar():
   habilitar()
@@ -175,7 +185,7 @@ mi_ventana = tk.Tk()
 def mostrar_pestañas(ventana):
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencias")
-  ventana.geometry("450x200")
+  ventana.geometry("400x200")
   ventana.configure(bg=colores["blanco"])
   ventana.iconbitmap(ícono)
   ventana.resizable(width=False, height=False)
@@ -187,6 +197,8 @@ def mostrar_pestañas(ventana):
     widget.destroy()
   
   estilo = ttk.Style()
+  estilo.theme_use("clam")
+  estilo.configure("TNotebook.Tab", font=("Arial", 8))
   notebook = ttk.Notebook(ventana)
   notebook.pack(expand=True, fill="both")
   
@@ -206,16 +218,15 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
   
-  color_padre = estilo.lookup("TNotebook", "background")
-  lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=color_padre, font=("Arial", 10))
+  lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=ventana.cget("bg"), font=("Arial", 10))
   lb_obligatoriedad.pack(side="bottom", pady=5)
   
   notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(notebook.tab(notebook.select(), "text").lower()))
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
-  global tabla_treeview
+  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
+  global tabla_treeview, rbMostrar, rbOcultar
   nombreActual = nombre_de_la_tabla
 
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
@@ -300,6 +311,7 @@ def abrir_tablas(nombre_de_la_tabla):
   estilo = ttk.Style()
   estilo.theme_use("clam") #clam es el mejor tema para personalizar
   estilo.configure("Boton.TButton", font=("Arial", 10, "bold"), foreground=colores["blanco"], background=colores["celeste_azulado"], padding=10)
+  estilo.configure("Radiobutton.TRadiobutton", font=("Arial", 10, "bold"), foreground=colores["blanco"], background=colores["azul_claro"])
   estilo.configure("Entrada.TEntry", padding=5, relief="flat", foreground=colores["negro"], fieldbackground=colores["blanco"])
   estilo.map("Boton.TButton", background=[("active", colores["celeste_resaltado"])])
 
@@ -312,9 +324,15 @@ def abrir_tablas(nombre_de_la_tabla):
   
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   
-  tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  rbMostrar = crear_botonesExcluyentes(marco_izquierdo, "Mostrar", lambda: None)
+  rbMostrar.grid(row=0, column=1, sticky="n")
+  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar", lambda: None)
+  rbOcultar.grid(row=0, column=2, sticky="n")
   
-  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: [deshabilitar()], 10, "disabled")
+  tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombre_de_la_tabla, tabla_treeview, lista_IDs, cajasDeTexto))
+  
+  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(), 10, "disabled")
   btnCancelar.grid(row=0, column=0, pady=15, padx=2, sticky="ew")
   
   btnAgregar = crear_botón(marco_izquierdo, "Agregar", lambda: insertar(), 10, "normal")
@@ -325,6 +343,9 @@ def abrir_tablas(nombre_de_la_tabla):
   
   btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
   btnEliminar.grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnEliminarTODO.grid(row=3, column=0, pady=15, padx=2, sticky="ew")
   
   btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnOrdenar.grid(row=4, column=0, pady=15, padx=2, sticky="ew")

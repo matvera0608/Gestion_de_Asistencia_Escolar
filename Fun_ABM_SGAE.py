@@ -2,7 +2,6 @@ from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_s
 from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos
 from Fun_Validación_SGAE import validar_datos
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo
-from datetime import datetime as fecha_y_hora
 import tkinter as tk
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
@@ -11,13 +10,19 @@ from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
-def seleccionar_registro(nombre_de_la_tabla,  tablas_de_datos, listaID, cajasDeTexto):
-  selección = tablas_de_datos.selection()
 
+def mostrar():
+  return
+
+def filtrar():
+  return
+
+def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto):
+  selección = tablas_de_datos.selection()
   if not selección:
     return
-
-  índice = selección[0]
+  
+  índice = tablas_de_datos.index(selección[0])
   id = listaID[índice]
   cursor = None
   conexión = conectar_base_de_datos()
@@ -266,6 +271,23 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
   except Exception as e:
       mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
+def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+      return
+  try:
+    with conectar_base_de_datos() as conexión:
+        cursor = conexión.cursor()
+        query = f"DELETE FROM {nombre_de_la_tabla}"
+        cursor.execute(query)
+        conexión.commit()
+        for item in tablas_de_datos.get_children():
+            tablas_de_datos.delete(item)
+            
+        consultar_tabla(nombre_de_la_tabla, listaID)
+        mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron todos los datos!")
+  except Exception as e:
+    mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
+
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
@@ -343,6 +365,27 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
+
+def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  try:
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    valor_busqueda = campo_busqueda.get().strip()
+    consulta = f"SELECT * FROM {nombre_de_la_tabla} WHERE ({campos_db}) LIKE %s"
+    cursor.execute(consulta, (f"%{valor_busqueda}%"), )
+    resultado = cursor.fetchall()
+    
+    for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
+      
+    for fila in resultado:
+      tablas_de_datos.insert("", "end", values=fila)
+    cursor.close()
+    conexión.close()
+  except error_sql as e:
+    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
 
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
