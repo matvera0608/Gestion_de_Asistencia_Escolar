@@ -97,6 +97,8 @@ def seleccionar_registro(nombre_de_la_tabla,  tablas_de_datos, listaID, cajasDeT
       desconectar_base_de_datos(conexión)
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
 
@@ -152,51 +154,102 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     desconectar_base_de_datos(conexión)
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
-    columna_seleccionada = tablas_de_datos.selection()
-    if not columna_seleccionada:
-      mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
-      return
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  columna_seleccionada = tablas_de_datos.selection()
+  if not columna_seleccionada:
+    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
+    return
 
-    selección = columna_seleccionada[0]
-    índice = tablas_de_datos.index(selección)
-    ID_Seleccionado = listaID[índice]
+  selección = columna_seleccionada[0]
+  índice = tablas_de_datos.index(selección)
+  ID_Seleccionado = listaID[índice]
 
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
-    if not datos:
-      return
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
+  if not datos:
+    return
+  
+  if not validar_datos(nombre_de_la_tabla, datos):
+    return
+  
+  datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+  
+  if not datos_traducidos:
+    return
+  
+  valores_sql = []
+  campos_sql = []
+  
+  for campo, valor in datos_traducidos.items():
+    valores_sql.append(valor)
+    campos_sql.append(f"{campo} = %s")
     
-    if not validar_datos(nombre_de_la_tabla, datos):
-      return
-    
-    datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-    
-    if not datos_traducidos:
-      return
-    
-    valores_sql = []
-    campos_sql = []
-    
-    for campo, valor in datos_traducidos.items():
-      valores_sql.append(valor)
-      campos_sql.append(f"{campo} = %s")
+  try:
+    with conectar_base_de_datos() as conexión:
+        cursor = conexión.cursor()
+        set_sql = ', '.join(campos_sql)
+
+        if nombre_de_la_tabla.lower() == "nota":
+          id_alumno, id_materia = ID_Seleccionado
+          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
+          valores_sql.extend([id_alumno, id_materia])
+        else:
+          CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+          valores_sql.append(ID_Seleccionado)
+          
+        cursor.execute(consulta, tuple(valores_sql))
+        conexión.commit()
       
-    try:
+        datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+
+        for item in tablas_de_datos.get_children():
+            tablas_de_datos.delete(item)
+
+        for index, fila in enumerate(datos):
+            tag = "par" if index % 2 == 0 else "impar"
+            tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+
+        listaID[:] = lista_actualizada
+        mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
+
+  except Exception as e:
+    mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
+
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  columna_seleccionada = tablas_de_datos.selection()
+  
+  if not columna_seleccionada:
+      mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
+      return
+  try:
       with conectar_base_de_datos() as conexión:
           cursor = conexión.cursor()
-          set_sql = ', '.join(campos_sql)
-
-          if nombre_de_la_tabla.lower() == "nota":
-            id_alumno, id_materia = ID_Seleccionado
-            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-            valores_sql.extend([id_alumno, id_materia])
-          else:
-            CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-            consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-            valores_sql.append(ID_Seleccionado)
-            
-          cursor.execute(consulta, tuple(valores_sql))
+          # Recorrer las selecciones y eliminarlas una por una
+          for selección in columna_seleccionada:
+            índice = tablas_de_datos.index(selección)
+            ID_Seleccionado = listaID[índice]
+            if nombre_de_la_tabla.lower() == "nota":
+              query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
+              if not isinstance(ID_Seleccionado, tuple):
+                  mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
+                  return
+              cursor.execute(query, ID_Seleccionado)
+            else:
+              # Lógica para otras tablas con clave simple
+              CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+              if not CampoID:
+                  mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+                  return
+              query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
+              if ID_Seleccionado is not None:
+                  cursor.execute(query, (ID_Seleccionado,))
+              else:
+                  mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+                  return
           conexión.commit()
-        
           datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
 
           for item in tablas_de_datos.get_children():
@@ -207,58 +260,11 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
               tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
 
           listaID[:] = lista_actualizada
-          mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
+          consultar_tabla(nombre_de_la_tabla, listaID)
+          mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
-    except Exception as e:
-      mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
-
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
-    columna_seleccionada = tablas_de_datos.selection()
-    
-    if not columna_seleccionada:
-        mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
-        return
-    try:
-        with conectar_base_de_datos() as conexión:
-            cursor = conexión.cursor()
-            # Recorrer las selecciones y eliminarlas una por una
-            for selección in columna_seleccionada:
-              índice = tablas_de_datos.index(selección)
-              ID_Seleccionado = listaID[índice]
-              if nombre_de_la_tabla.lower() == "nota":
-                query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
-                if not isinstance(ID_Seleccionado, tuple):
-                    mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
-                    return
-                cursor.execute(query, ID_Seleccionado)
-              else:
-                # Lógica para otras tablas con clave simple
-                CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-                if not CampoID:
-                    mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-                    return
-                query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
-                if ID_Seleccionado is not None:
-                    cursor.execute(query, (ID_Seleccionado,))
-                else:
-                    mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-                    return
-            conexión.commit()
-            datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
-
-            for item in tablas_de_datos.get_children():
-                tablas_de_datos.delete(item)
-
-            for index, fila in enumerate(datos):
-                tag = "par" if index % 2 == 0 else "impar"
-                tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
-
-            listaID[:] = lista_actualizada
-            consultar_tabla(nombre_de_la_tabla, listaID)
-            mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
-
-    except Exception as e:
-        mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
+  except Exception as e:
+      mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -334,19 +340,20 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
       tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
         
   except error_sql as e:
-      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
   try:
       datos_a_exportar = tablas_de_datos.get_children()
-
-      # Paso 2: Abrir el diálogo para seleccionar la ruta y nombre del archivo PDF
+      
       ruta_archivo_pdf = diálogo.asksaveasfilename(
           defaultextension=".pdf",
           filetypes=[("Archivo PDF", "*.pdf")],
-          initialfile=f"Reporte_{nombre_de_la_tabla}_{fecha_y_hora.now().strftime('%Y %m %d_ %H %M %S')}", # Nombre de archivo más descriptivo
+          initialfile=f"Reporte_{nombre_de_la_tabla}",
           title="Exportar informe en PDF"
       )
       
@@ -356,34 +363,31 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
       pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
       pdf_canvas.setFont("Arial", 12)
 
-      # Coordenadas de inicio para el contenido
-      margen_x = 50 # Margen desde la izquierda
-      y_inicio = letter[1] - 50 # Margen desde arriba (altura de la página - margen superior)
-      line_height = 15 # Espacio entre líneas
       
-      # Añadir un título al PDF
+      margen_x = 80
+      y_inicio = letter[1] - 50
+      line_height = 15
+      
       pdf_canvas.setFont("Arial", 16)
       pdf_canvas.drawString(margen_x, y_inicio + 10, f"Informe: {nombre_de_la_tabla.capitalize()}")
       pdf_canvas.setFont("Arial", 12)
 
       y = y_inicio
 
-      # Iterar sobre los datos y dibujarlos en el PDF
-      for i, fila in enumerate(datos_a_exportar):
-          if y < margen_x: # Si nos quedamos sin espacio en la página, crear una nueva página
-              pdf_canvas.showPage() # Inicia una nueva página
+      for fila in datos_a_exportar:
+          if y < margen_x:
+              pdf_canvas.showPage()
               pdf_canvas.setFont("Arial", 12)
               y = y_inicio
               pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
               y -= line_height
-
-          pdf_canvas.drawString(margen_x, y, f"{fila}")
+          pdf_canvas.drawString(margen_x, y, fila)
           y -= line_height
 
       # Paso 4: Guardar el archivo PDF
       pdf_canvas.save()
       
-      print("ÉXITO", f"El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
+      print(f"✅ ÉXITO: El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
       
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")

@@ -46,14 +46,17 @@ def crear_etiqueta(contenedor, texto, fuenteLetra=("Arial", 10, "bold")):
   color_padre = contenedor.cget("bg")
   return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=fuenteLetra)
 
-def crear_entrada(contenedor, ancho, estilo="Entrada.TEntry"):
-  return ttk.Entry(contenedor, width=ancho, style=estilo)
+def crear_entrada(contenedor, ancho, estado="readonly",estilo="Entrada.TEntry"):
+  return ttk.Entry(contenedor, width=ancho, style=estilo, state=estado)
 
-def crear_botón(contenedor, texto, comando, ancho, estilo="Boton.TButton"):
+def crear_listaDesp(contenedor, ancho, estado="readonly"):
+  return ttk.Combobox(contenedor, width=ancho, state=estado)
+
+def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButton"):
   ancho = len(texto) + 5 if ancho is None else ancho
-  return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2')
+  return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2', state=estado)
 
-def crear_tablas_Treeview(contenedor, tabla):
+def crear_tabla_Treeview(contenedor, tabla, estado="none"):
   global lista_IDs
   columnas = campos_en_db[tabla]
   estilo = ttk.Style()
@@ -63,7 +66,7 @@ def crear_tablas_Treeview(contenedor, tabla):
   estilo.configure(estilo_treeview, font=("Courier New", 10), foreground=colores["negro"], background=colores["blanco"], bordercolor=colores["negro"], fieldbackground=colores["blanco"], relief="solid")
   estilo.configure(estilo_encabezado, font=("Courier New", 10), foreground=colores["negro"], background=colores["celeste"], bordercolor=colores["negro"])
   estilo.layout(estilo_treeview, [('Treeview.treearea', {'sticky': 'nswe'})])
-  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview, selectmode="browse")
+  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview, selectmode=estado)
 
   for columna in columnas:
     tabla_Treeview.heading(columna, anchor="center", text=columna)
@@ -74,15 +77,59 @@ def crear_tablas_Treeview(contenedor, tabla):
 
   datos, lista_IDs = consultar_tabla(tabla, lista_IDs)
   
-  for item in tabla_Treeview.get_children():
-    tabla_Treeview.delete(item)
-
   for index, fila in enumerate(datos):
     tag = "par" if index % 2 == 0 else "impar"
     tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
   
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
-  return tabla_Treeview
+  return tabla_Treeview 
+
+def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
+  listaDesplegable = {}
+  cajasDeTexto.setdefault(nombre_de_la_tabla, [])
+  listaDesplegable.setdefault(nombre_de_la_tabla, [])
+  
+  for i, (texto_etiqueta, nombre_Interno) in enumerate(campos):
+    crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", padx=1, pady=5)
+    combo = crear_listaDesp(marco_izquierdo, 20)
+    combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
+    listaDesplegable[nombre_de_la_tabla].append(combo)
+    cajasDeTexto[nombre_de_la_tabla].append(combo)
+
+nombreActual = None
+
+def habilitar():
+  btnModificar.config(state="normal")
+  btnEliminar.config(state="normal")
+  btnOrdenar.config(state="normal")
+  btnExportarPDF.config(state="normal")
+  btnCancelar.config(state="normal")
+  
+  
+  for entry in cajasDeTexto[nombreActual]:
+    try:
+      entry.config(state="normal")
+    except:
+      pass
+
+def deshabilitar():
+  btnModificar.config(state="disabled")
+  btnEliminar.config(state="disabled")
+  btnOrdenar.config(state="disabled")
+  btnExportarPDF.config(state="disabled")
+  btnCancelar.config(state="disabled")
+  
+  for entry in cajasDeTexto[nombreActual]:
+    try:
+      entry.config(state="normal")
+    except:
+      pass
+
+def insertar():
+  habilitar()
+  if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
+    return
+  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 mi_ventana = tk.Tk()
@@ -139,11 +186,9 @@ def mostrar_pestañas(ventana):
   for widget in ventana.winfo_children():
     widget.destroy()
   
-  
   estilo = ttk.Style()
   notebook = ttk.Notebook(ventana)
   notebook.pack(expand=True, fill="both")
-  
   
   tablaAlumno = tk.Frame(notebook)
   tablaAsistencia = tk.Frame(notebook)
@@ -169,7 +214,9 @@ def mostrar_pestañas(ventana):
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global ventanaSecundaria
+  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
+  global tabla_treeview
+  nombreActual = nombre_de_la_tabla
 
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
@@ -185,7 +232,6 @@ def abrir_tablas(nombre_de_la_tabla):
     }
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
-  ventanaSecundaria.geometry("900x450")
   ventanaSecundaria.resizable(width=False, height=False)
   ventanaSecundaria.configure(bg=colores["azul_claro"])
   
@@ -210,52 +256,46 @@ def abrir_tablas(nombre_de_la_tabla):
   marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
   marco_derecho.grid(row=0, column=1, sticky="nsew")
 
-  
   marco_izquierdo.grid_columnconfigure(0, weight=0)
   marco_izquierdo.grid_columnconfigure(1, weight=1)
   
   marco_derecho.grid_columnconfigure(0, weight=1)
   marco_derecho.grid_rowconfigure(0, weight=1)
 
+  campos_comunes = [("Nombre*", "txBox_Nombre")]
+
   campos_por_tabla = {
-      "alumno": [
-          ("Nombre*", "txBox_NombreAlumno"),
-          ("Fecha de Nacimiento*", "txBox_FechaNacimiento"),
-          ("Carrera*","txBox_NombreCarrera")
+      "alumno": campos_comunes + [
+        ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
+        ("Carrera*", "txBox_Carrera")
       ],
       "asistencia": [
-          ("Estado*", "txBox_EstadoDeAsistencia"),
-          ("Fecha de asistencia*", "txBox_FechaAsistencia"),
-          ("Alumno*", "txBox_NombreAlumno")
+        ("Estado*", "cbBox_EstadoAsistencia"),
+        ("Fecha*", "cbBox_FechaAsistencia"),
+        ("Alumno*", "cbBox_Alumno")
       ],
-      "carrera": [
-          ("Nombre*", "txBox_NombreCarrera"),
+      "carrera": campos_comunes + [
           ("Duración*", "txBox_Duración")
       ],
-      "materia": [
-          ("Nombre*", "txBox_NombreMateria"),
-          ("Horario*", "txBox_HorarioCorrespondiente"),
-          ("Carrera*","txBox_NombreCarrera")
+      "materia": campos_comunes + [
+        ("Horario*", "txBox_Horario")
       ],
-      "enseñanza": [
-          ("Materia*", "txBox_NombreMateria"),
-          ("Profesor*", "txBox_NombreProfesor")
+       "enseñanza": [
+        ("Materia*", "cbBox_NombreMateria"),
+        ("Profesor*", "cbBox_NombreProfesor")
       ],
-      "profesor": [
-          ("Nombre*", "txBox_NombreProfesor")
-      ],
+      "profesor": campos_comunes,
       "nota": [
           ("Nota*", "txBox_Valor"),
-          ("Tipo de evaluación*", "txBox_Tipo"),
-          ("Fecha y Hora*", "txBox_Fecha"),
-          ("Alumno*", "txBox_NombreAlumno"),
-          ("Materia*", "txBox_NombreMateria")
+          ("Evaluación*", "cbBox_TipoEvaluación"),
+          ("Fecha y Hora*", "txBox_FechaHora"),
+          ("Materia*", "txBox_NombreMateria"),
+          ("Alumno*", "txBox_Alumno")
       ]
   }
   
   cajasDeTexto = {}
   cajasDeTexto[nombre_de_la_tabla] = []
-  
   # --- Creamos un estilo global ---
   estilo = ttk.Style()
   estilo.theme_use("clam") #clam es el mejor tema para personalizar
@@ -267,21 +307,31 @@ def abrir_tablas(nombre_de_la_tabla):
   if not campos:
     return
   
-  for i, (texto_etiqueta, _) in enumerate(campos): #Este for agrega dinámicamente siguiendo la longitud del diccionario
-    crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + int(2.5), column=1, sticky="w", padx=1, pady=5)
-    entrada = crear_entrada(marco_izquierdo, 20)
-    entrada.grid(row=i + int(2.5), column=2, sticky="ew", padx=1, pady=5)
-    cajasDeTexto[nombre_de_la_tabla].append(entrada)
-    
-  tabla_treeview = crear_tablas_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
+  crear_entrada(ventanaSecundaria, 20).grid(row=3, column=0)
   
-  crear_botón(marco_izquierdo, "Agregar", lambda: insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=1, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=2, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10).grid(row=3, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10).grid(row=4, column=0, pady=15, padx=2, sticky="ew")
-  crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10).grid(row=5, column=0, pady=15, padx=2, sticky="ew")
+  iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   
-
+  tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  
+  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: [deshabilitar()], 10, "disabled")
+  btnCancelar.grid(row=0, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnAgregar = crear_botón(marco_izquierdo, "Agregar", lambda: insertar(), 10, "normal")
+  btnAgregar.grid(row=1, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnModificar.grid(row=2, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnEliminar.grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
+  btnOrdenar.grid(row=4, column=0, pady=15, padx=2, sticky="ew")
+  
+  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
+  btnExportarPDF.grid(row=5, column=0, pady=15, padx=2, sticky="ew")
+  
 # --- INICIO DEL SISTEMA ---
 
 # pantallaLogin()
