@@ -1,11 +1,12 @@
 from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
-from Fun_adicionales import consultar_tabla
+from Fun_adicionales import consultar_tabla, obtener_selección
 import os
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 
 # --- ELEMENTOS ---
+nombreActual = None
 colores = {
   "blanco": "#FFFFFF",
   "gris": "#AAAAAA",
@@ -98,10 +99,16 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
 
 def crear_botonesExcluyentes(contenedor, texto, comando, estado="disabled", estilo="Radiobutton.TRadiobutton"):
   return ttk.Radiobutton(contenedor, text=texto, width=len(texto), command= comando(), state=estado, style=estilo, cursor='hand2')
-  
-nombreActual = None
+
+def cerrar_abm(ventana):
+    ventana.destroy()
+    ventana = None
 
 def habilitar():
+  tablas_de_datos = tabla_treeview
+  
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
   btnModificar.config(state="normal")
   btnEliminar.config(state="normal")
   btnEliminarTODO.config(state="normal")
@@ -118,6 +125,12 @@ def habilitar():
       pass
 
 def deshabilitar():
+  
+  tablas_de_datos = tabla_treeview
+  
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  
   btnModificar.config(state="disabled")
   btnEliminar.config(state="disabled")
   btnEliminarTODO.config(state="disabled")
@@ -129,13 +142,17 @@ def deshabilitar():
   
   for entry in cajasDeTexto[nombreActual]:
     try:
-      entry.config(state="normal")
+      entry.config(state="readonly")
     except:
       pass
 
 # --- Función doble ---
 
 def insertar():
+  tablas_de_datos = tabla_treeview
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  obtener_selección(tabla_treeview)
   habilitar()
   if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
     return
@@ -320,7 +337,7 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
-  crear_entrada(ventanaSecundaria, 20).grid(row=3, column=0)
+  crear_entrada(ventanaSecundaria, 40).grid(row=3, column=0)
   
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   
@@ -333,28 +350,29 @@ def abrir_tablas(nombre_de_la_tabla):
   tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombre_de_la_tabla, tabla_treeview, lista_IDs, cajasDeTexto))
   
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(), 10, "disabled")
-  btnCancelar.grid(row=0, column=0, pady=15, padx=2, sticky="ew")
+  btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
   btnAgregar = crear_botón(marco_izquierdo, "Agregar", lambda: insertar(), 10, "normal")
-  btnAgregar.grid(row=1, column=0, pady=15, padx=2, sticky="ew")
+  btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
   btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
-  btnModificar.grid(row=2, column=0, pady=15, padx=2, sticky="ew")
+  btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
   btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
-  btnEliminar.grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
   btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
-  btnEliminarTODO.grid(row=3, column=0, pady=15, padx=2, sticky="ew")
+  btnEliminarTODO.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
   btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnOrdenar.grid(row=4, column=0, pady=15, padx=2, sticky="ew")
+  btnOrdenar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnExportarPDF.grid(row=5, column=0, pady=15, padx=2, sticky="ew")
+  btnExportarPDF.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
 # --- INICIO DEL SISTEMA ---
 
 # pantallaLogin()
 mostrar_pestañas(mi_ventana)
+mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
 mi_ventana.mainloop()

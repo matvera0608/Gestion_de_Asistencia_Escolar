@@ -4,6 +4,13 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
+def obtener_selección(treeview):
+    try:
+      return treeview.selection()
+    except tk.TclError:
+      mensajeTexto.showerror("ERROR", "La tabla ya no está disponible.")
+      return None
+
 def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos=True):
   global datos, campos_db, lista_de_cajas
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]

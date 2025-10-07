@@ -1,5 +1,5 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
-from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos
+from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección
 from Fun_Validación_SGAE import validar_datos
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo
 import tkinter as tk
@@ -11,13 +11,17 @@ métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 
-def mostrar():
-  return
+def mostrar(tablas_de_datos):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
 
-def filtrar():
-  return
+def filtrar(tablas_de_datos):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
 
 def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
   selección = tablas_de_datos.selection()
   if not selección:
     return
@@ -102,8 +106,13 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       desconectar_base_de_datos(conexión)
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  selección = obtener_selección(tablas_de_datos)
+  if not selección:
+    return
+  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
 
@@ -159,6 +168,9 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     desconectar_base_de_datos(conexión)
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  selección = obtener_selección(tablas_de_datos)
+  if not selección:
+    return
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   columna_seleccionada = tablas_de_datos.selection()
@@ -214,14 +226,20 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
         for index, fila in enumerate(datos):
             tag = "par" if index % 2 == 0 else "impar"
             tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
-
+            
+        for caja in cajasDeTexto[nombre_de_la_tabla]:
+          caja.delete(0, tk.END)
+        
         listaID[:] = lista_actualizada
         mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
-
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  # selección = obtener_selección(tablas_de_datos)
+  # if not selección:
+  #   return
+  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   columna_seleccionada = tablas_de_datos.selection()
@@ -272,6 +290,10 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+  # selección = obtener_selección(tablas_de_datos)
+  # if not selección:
+  #   return
+  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       return
   try:
@@ -282,13 +304,16 @@ def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_d
         conexión.commit()
         for item in tablas_de_datos.get_children():
             tablas_de_datos.delete(item)
-            
         consultar_tabla(nombre_de_la_tabla, listaID)
         mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron todos los datos!")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
 
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
+  # selección = obtener_selección(tablas_de_datos)
+  # if not selección:
+  #   return
+  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -367,6 +392,10 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
     desconectar_base_de_datos(conexión)
 
 def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda):
+  selección = obtener_selección(tablas_de_datos)
+  if not selección:
+    return
+ 
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -390,48 +419,53 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda)
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  # selección = obtener_selección(tablas_de_datos)
+  # if not selección:
+  #   return  
   try:
-      datos_a_exportar = tablas_de_datos.get_children()
-      
-      ruta_archivo_pdf = diálogo.asksaveasfilename(
-          defaultextension=".pdf",
-          filetypes=[("Archivo PDF", "*.pdf")],
-          initialfile=f"Reporte_{nombre_de_la_tabla}",
-          title="Exportar informe en PDF"
-      )
-      
-      if not ruta_archivo_pdf:
-        return 
+    datos_a_exportar = tablas_de_datos.get_children()
+    
+    ruta_archivo_pdf = diálogo.asksaveasfilename(
+      defaultextension=".pdf",
+      filetypes=[("Archivo PDF", "*.pdf")],
+      initialfile=f"Reporte_{nombre_de_la_tabla}",
+      title="Exportar informe en PDF"
+    )
+    
+    if not ruta_archivo_pdf:
+      return 
 
-      pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
-      pdf_canvas.setFont("Arial", 12)
+    pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
+    pdf_canvas.setFont("Arial", 12)
 
-      
-      margen_x = 80
-      y_inicio = letter[1] - 50
-      line_height = 15
-      
-      pdf_canvas.setFont("Arial", 16)
-      pdf_canvas.drawString(margen_x, y_inicio + 10, f"Informe: {nombre_de_la_tabla.capitalize()}")
-      pdf_canvas.setFont("Arial", 12)
+    margen_x = 50
+    y_inicio = letter[1] - 50
+    line_height = 15
+    y = y_inicio
+    
+    pdf_canvas.setFont("Arial", 16)
+    pdf_canvas.drawString(margen_x, y_inicio + 10, f"Informe: {nombre_de_la_tabla.capitalize()}")
+    y -= line_height
+    pdf_canvas.setFont("Arial", 12)
 
-      y = y_inicio
-
-      for fila in datos_a_exportar:
-          if y < margen_x:
-              pdf_canvas.showPage()
-              pdf_canvas.setFont("Arial", 12)
-              y = y_inicio
-              pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
-              y -= line_height
-          pdf_canvas.drawString(margen_x, y, fila)
-          y -= line_height
-
-      # Paso 4: Guardar el archivo PDF
-      pdf_canvas.save()
+    for fila in datos_a_exportar:
+      valores_del_treeview = tablas_de_datos.item(fila, "values")
+      texto = "".join(map(str, valores_del_treeview))
       
-      print(f"✅ ÉXITO: El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
-      
+      if y < margen_x:
+        pdf_canvas.showPage()
+        pdf_canvas.setFont("Arial", 12)
+        y = y_inicio
+        pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
+        y -= line_height
+      pdf_canvas.drawString(margen_x, y, texto)
+      y -= line_height
+
+    # Paso 4: Guardar el archivo PDF
+    pdf_canvas.save()
+    
+    print(f"✅ ÉXITO: El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
+    
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
