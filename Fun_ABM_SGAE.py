@@ -106,10 +106,6 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       desconectar_base_de_datos(conexión)
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
-  selección = obtener_selección(tablas_de_datos)
-  if not selección:
-    return
-  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   
@@ -236,10 +232,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
-  # selección = obtener_selección(tablas_de_datos)
-  # if not selección:
-  #   return
-  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   columna_seleccionada = tablas_de_datos.selection()
@@ -290,10 +282,6 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
-  # selección = obtener_selección(tablas_de_datos)
-  # if not selección:
-  #   return
-  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       return
   try:
@@ -310,10 +298,6 @@ def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_d
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
 
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
-  # selección = obtener_selección(tablas_de_datos)
-  # if not selección:
-  #   return
-  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -419,9 +403,6 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda)
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
-  # selección = obtener_selección(tablas_de_datos)
-  # if not selección:
-  #   return  
   try:
     datos_a_exportar = tablas_de_datos.get_children()
     

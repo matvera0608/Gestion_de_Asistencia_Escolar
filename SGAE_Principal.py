@@ -5,6 +5,9 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 
+
+os.system(".\Giteo.bat")
+
 # --- ELEMENTOS ---
 nombreActual = None
 colores = {
@@ -152,11 +155,12 @@ def insertar():
   tablas_de_datos = tabla_treeview
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
-  obtener_selección(tabla_treeview)
+  
   habilitar()
   if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
     return
-  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs)
+  else:
+    insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 mi_ventana = tk.Tk()
@@ -243,7 +247,7 @@ def mostrar_pestañas(ventana):
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
-  global tabla_treeview, rbMostrar, rbOcultar
+  global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla
   nombreActual = nombre_de_la_tabla
 
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
@@ -295,7 +299,7 @@ def abrir_tablas(nombre_de_la_tabla):
   campos_por_tabla = {
       "alumno": campos_comunes + [
         ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
-        ("Carrera*", "txBox_Carrera")
+        ("Carrera*", "cbBox_Carrera")
       ],
       "asistencia": [
         ("Estado*", "cbBox_EstadoAsistencia"),
@@ -362,13 +366,13 @@ def abrir_tablas(nombre_de_la_tabla):
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
   btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
-  btnEliminarTODO.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
+  btnEliminarTODO.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnOrdenar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
+  btnOrdenar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnExportarPDF.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
+  btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
   
 # --- INICIO DEL SISTEMA ---
 
