@@ -10,6 +10,18 @@ from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
+def cargar_datos_en_Combobox(tablas_de_datos):
+  with conectar_base_de_datos as conexión:
+    if not conexión:
+      return
+    try:
+      cursor = conexión.Cursor
+      cursor.fetchall()
+    except error_sql as sql_error:
+      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
+      return
+  
+
 
 def mostrar(tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():

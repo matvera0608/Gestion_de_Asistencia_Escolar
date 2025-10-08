@@ -1,13 +1,9 @@
 from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
-from Fun_adicionales import consultar_tabla, obtener_selección
+from Fun_adicionales import consultar_tabla
 import os
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
-
-
-os.system(".\Giteo.bat")
-
 # --- ELEMENTOS ---
 nombreActual = None
 colores = {
@@ -36,6 +32,10 @@ campos_en_db = {
       "nota": ["Alumno", "Materia", "fechaEvaluación", "valorNota", "tipoNota"]
   }
 lista_IDs = [] 
+
+os.system(".\Giteo.bat")
+
+
 # --- FUNCIONES AUXILIARES ---
 def cargar_imagen(nombre_imagen):
   ruta = os.path.join(ruta_imagen, nombre_imagen)
@@ -107,6 +107,12 @@ def cerrar_abm(ventana):
     ventana.destroy()
     ventana = None
 
+def configurar_ciertos_comboboxes():
+  #Acá debería iterar los combobox para luego deshabilitar algunos.
+  #utilizaremos un diccionario ya existente.
+  #Luego poner modo lectura después de recorrer.
+  pass
+  
 def habilitar():
   tablas_de_datos = tabla_treeview
   
@@ -121,11 +127,7 @@ def habilitar():
   rbMostrar.config(state="normal")
   rbOcultar.config(state="normal")
   
-  for entry in cajasDeTexto[nombreActual]:
-    try:
-      entry.config(state="normal")
-    except:
-      pass
+  configurar_ciertos_comboboxes()
 
 def deshabilitar():
   
@@ -297,33 +299,33 @@ def abrir_tablas(nombre_de_la_tabla):
   campos_comunes = [("Nombre*", "txBox_Nombre")]
 
   campos_por_tabla = {
-      "alumno": campos_comunes + [
-        ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
-        ("Carrera*", "cbBox_Carrera")
-      ],
-      "asistencia": [
-        ("Estado*", "cbBox_EstadoAsistencia"),
-        ("Fecha*", "cbBox_FechaAsistencia"),
-        ("Alumno*", "cbBox_Alumno")
-      ],
-      "carrera": campos_comunes + [
-          ("Duración*", "txBox_Duración")
-      ],
-      "materia": campos_comunes + [
-        ("Horario*", "txBox_Horario")
-      ],
-       "enseñanza": [
+    "alumno": campos_comunes + [
+      ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
+      ("Carrera*", "cbBox_Carrera")
+    ],
+    "asistencia": [
+      ("Estado*", "txBox_EstadoAsistencia"),
+      ("Fecha*", "txBox_FechaAsistencia"),
+      ("Alumno*", "cbBox_Alumno")
+    ],
+    "carrera": campos_comunes + [
+        ("Duración*", "txBox_Duración")
+    ],
+    "materia": campos_comunes + [
+      ("Horario*", "txBox_Horario")
+    ],
+      "enseñanza": [
+      ("Materia*", "cbBox_NombreMateria"),
+      ("Profesor*", "cbBox_NombreProfesor")
+    ],
+    "profesor": campos_comunes,
+    "nota": [
+        ("Nota*", "txBox_Valor"),
+        ("Evaluación*", "txBox_TipoEvaluación"),
+        ("Fecha y Hora*", "txBox_FechaHora"),
         ("Materia*", "cbBox_NombreMateria"),
-        ("Profesor*", "cbBox_NombreProfesor")
-      ],
-      "profesor": campos_comunes,
-      "nota": [
-          ("Nota*", "txBox_Valor"),
-          ("Evaluación*", "cbBox_TipoEvaluación"),
-          ("Fecha y Hora*", "txBox_FechaHora"),
-          ("Materia*", "txBox_NombreMateria"),
-          ("Alumno*", "txBox_Alumno")
-      ]
+        ("Alumno*", "cbBox_Alumno")
+    ]
   }
   
   cajasDeTexto = {}
