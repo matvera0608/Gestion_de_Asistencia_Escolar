@@ -1,4 +1,4 @@
-from Fun_ABM_SGAE import insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
+from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla
 import os
 import tkinter as tk
@@ -34,7 +34,6 @@ campos_en_db = {
 lista_IDs = [] 
 
 os.system(".\Giteo.bat")
-
 
 # --- FUNCIONES AUXILIARES ---
 def cargar_imagen(nombre_imagen):
@@ -89,6 +88,7 @@ def crear_tabla_Treeview(contenedor, tabla, estado="browse"):
   return tabla_Treeview 
 
 def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
+  global listaDesplegable
   listaDesplegable = {}
   cajasDeTexto.setdefault(nombre_de_la_tabla, [])
   listaDesplegable.setdefault(nombre_de_la_tabla, [])
@@ -107,43 +107,32 @@ def cerrar_abm(ventana):
     ventana.destroy()
     ventana = None
 
-def configurar_ciertos_comboboxes():
-  #Acá debería iterar los combobox para luego deshabilitar algunos.
-  #utilizaremos un diccionario ya existente.
-  #Luego poner modo lectura después de recorrer.
-  pass
-  
+def configurar_ciertos_comboboxes(cbBox_tabla):
+  campos_clave = ["cbBox_Carrera", "cbBox_Alumno", "cbBox_Profesor", "cbBox_Materia"]
+  combo = listaDesplegable.get(cbBox_tabla, [])
+  for cb in combo:
+    nombre_campo = getattr(cb, "nombreDelCampo", None)
+    if nombre_campo is None and hasattr(cb, "_name"):
+      nombre_campo = cb._name
+    
+    if nombre_campo in campos_clave:
+      cb.config(state="disabled")
+    else:
+      cb.config(state="readonly")
+
 def habilitar():
-  tablas_de_datos = tabla_treeview
-  
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+  if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
     return
-  btnModificar.config(state="normal")
-  btnEliminar.config(state="normal")
-  btnEliminarTODO.config(state="normal")
-  btnOrdenar.config(state="normal")
-  btnExportarPDF.config(state="normal")
-  btnCancelar.config(state="normal")
-  rbMostrar.config(state="normal")
-  rbOcultar.config(state="normal")
+  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
+    botón.config(state="normal")
   
-  configurar_ciertos_comboboxes()
+  configurar_ciertos_comboboxes(nombreActual)
 
 def deshabilitar():
-  
-  tablas_de_datos = tabla_treeview
-  
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+  if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
     return
-  
-  btnModificar.config(state="disabled")
-  btnEliminar.config(state="disabled")
-  btnEliminarTODO.config(state="disabled")
-  btnOrdenar.config(state="disabled")
-  btnExportarPDF.config(state="disabled")
-  btnCancelar.config(state="disabled")
-  rbMostrar.config(state="disabled")
-  rbOcultar.config(state="disabled")
+  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
+    botón.config(state="disabled")
   
   for entry in cajasDeTexto[nombreActual]:
     try:
@@ -205,6 +194,9 @@ mi_ventana = tk.Tk()
 #   # actualizar_la_hora(ventana)
 #   return ventana
 
+#Creo un diccionario para tener como referencia de la tabla con el fin de globalizar nombre de la tabla
+
+
 def mostrar_pestañas(ventana):
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencias")
@@ -251,7 +243,6 @@ def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
   global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla
   nombreActual = nombre_de_la_tabla
-
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
     
@@ -312,18 +303,19 @@ def abrir_tablas(nombre_de_la_tabla):
         ("Duración*", "txBox_Duración")
     ],
     "materia": campos_comunes + [
-      ("Horario*", "txBox_Horario")
+      ("Horario*", "txBox_Horario"),
+      ("Carrera*", "cbBox_Carrera")
     ],
       "enseñanza": [
-      ("Materia*", "cbBox_NombreMateria"),
-      ("Profesor*", "cbBox_NombreProfesor")
+      ("Materia*", "cbBox_Materia"),
+      ("Profesor*", "cbBoxProfesor")
     ],
     "profesor": campos_comunes,
     "nota": [
         ("Nota*", "txBox_Valor"),
         ("Evaluación*", "txBox_TipoEvaluación"),
         ("Fecha y Hora*", "txBox_FechaHora"),
-        ("Materia*", "cbBox_NombreMateria"),
+        ("Materia*", "cbBox_Materia"),
         ("Alumno*", "cbBox_Alumno")
     ]
   }
@@ -343,7 +335,9 @@ def abrir_tablas(nombre_de_la_tabla):
     return
   
   crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
-  crear_entrada(ventanaSecundaria, 40).grid(row=3, column=0)
+  entryBuscar = crear_entrada(ventanaSecundaria, 40)
+  entryBuscar.grid(row=3, column=0)
+  entryBuscar.bind("<<KeyRelease>>", lambda event: buscar_datos(nombre_de_la_tabla, tabla_treeview, campos_en_db))
   
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   

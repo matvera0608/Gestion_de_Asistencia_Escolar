@@ -7,16 +7,23 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics as métricasPDF
 from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
-métricasPDF.registerFont(fuente_TTFont("Arial", "Arial.ttf"))
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
-def cargar_datos_en_Combobox(tablas_de_datos):
-  with conectar_base_de_datos as conexión:
+def cargar_datos_en_Combobox(tablas_de_datos, combo):
+  with conectar_base_de_datos() as conexión:
     if not conexión:
       return
     try:
-      cursor = conexión.Cursor
-      cursor.fetchall()
+      cursor = conexión.cursor()
+      consulta = f"SELECT * FROM {tablas_de_datos}"
+      cursor.execute(consulta)
+      registros = cursor.fetchall()
+      valores = [fila for fila in registros]
+      
+      combo["values"] = valores
+      
     except error_sql as sql_error:
       mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
       return
@@ -417,6 +424,15 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
     return
   try:
     datos_a_exportar = tablas_de_datos.get_children()
+    datos = []
+
+    encabezado = tablas_de_datos["columns"]
+    datos.append(encabezado)
+
+    # Obtener los valores de cada fila de la tabla
+    for item in datos_a_exportar:
+      valores = tablas_de_datos.item(item, "values")
+      datos.append(valores)
     
     ruta_archivo_pdf = diálogo.asksaveasfilename(
       defaultextension=".pdf",
@@ -426,36 +442,24 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
     )
     
     if not ruta_archivo_pdf:
-      return 
+      return   
 
-    pdf_canvas = canvas.Canvas(ruta_archivo_pdf, pagesize=letter)
-    pdf_canvas.setFont("Arial", 12)
+    pdf = SimpleDocTemplate(ruta_archivo_pdf)
+    tabla = Table(datos)
 
-    margen_x = 50
-    y_inicio = letter[1] - 50
-    line_height = 15
-    y = y_inicio
-    
-    pdf_canvas.setFont("Arial", 16)
-    pdf_canvas.drawString(margen_x, y_inicio + 10, f"Informe: {nombre_de_la_tabla.capitalize()}")
-    y -= line_height
-    pdf_canvas.setFont("Arial", 12)
-
-    for fila in datos_a_exportar:
-      valores_del_treeview = tablas_de_datos.item(fila, "values")
-      texto = "".join(map(str, valores_del_treeview))
-      
-      if y < margen_x:
-        pdf_canvas.showPage()
-        pdf_canvas.setFont("Arial", 12)
-        y = y_inicio
-        pdf_canvas.drawString(margen_x, y, f"Informe de Tabla: {nombre_de_la_tabla.capitalize()} (Continuación)")
-        y -= line_height
-      pdf_canvas.drawString(margen_x, y, texto)
-      y -= line_height
+    # Estilo de la tabla
+    tabla.setStyle(TableStyle([
+    ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
+    ('TEXTCOLOR', (0,0), (-1,0), colors.black),
+    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+    ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), 
+    ('FONTSIZE', (0,0), (-1,-1), 12), 
+    ('GRID', (0,0), (-1,-1), 1, colors.grey), # ⬅️ Ajustado a (0,0) para bordes completos
+    ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+    ]))
 
     # Paso 4: Guardar el archivo PDF
-    pdf_canvas.save()
+    pdf.build([tabla])
     
     print(f"✅ ÉXITO: El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
     
