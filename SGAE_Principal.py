@@ -96,6 +96,7 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
   for i, (texto_etiqueta, nombre_Interno) in enumerate(campos):
     crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", padx=1, pady=5)
     combo = crear_listaDesp(marco_izquierdo, 20)
+    combo.widget_interno = nombre_Interno
     combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
     listaDesplegable[nombre_de_la_tabla].append(combo)
     cajasDeTexto[nombre_de_la_tabla].append(combo)
@@ -108,23 +109,27 @@ def cerrar_abm(ventana):
     ventana = None
 
 def configurar_ciertos_comboboxes(cbBox_tabla):
-  campos_clave = ["cbBox_Carrera", "cbBox_Alumno", "cbBox_Profesor", "cbBox_Materia"]
-  combo = listaDesplegable.get(cbBox_tabla, [])
-  for cb in combo:
-    nombre_campo = getattr(cb, "nombreDelCampo", None)
-    if nombre_campo is None and hasattr(cb, "_name"):
-      nombre_campo = cb._name
-    
-    if nombre_campo in campos_clave:
-      cb.config(state="disabled")
-    else:
-      cb.config(state="readonly")
+  for etiqueta, widget_interno in campos_por_tabla.get(cbBox_tabla, []):
+      try:
+        if widget_interno.startswith("cbBox_"):
+          for widget in cajasDeTexto.get(cbBox_tabla, []):
+            if getattr(widget, "widget_interno", "") == widget_interno:
+              widget.config(state="readonly")
+        elif widget_interno.startswith("txBox_"):
+          for widget in cajasDeTexto.get(cbBox_tabla, []):
+            if getattr(widget, "widget_interno", "") == widget_interno:
+              widget.config(state="normal")
+      except Exception as e:
+        print(f"Error configurando {widget}: {e}")
+
 
 def habilitar():
   if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
     return
   for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
     botón.config(state="normal")
+  
+  entryBuscar.config(state="normal")
   
   configurar_ciertos_comboboxes(nombreActual)
 
@@ -241,7 +246,7 @@ def mostrar_pestañas(ventana):
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
-  global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla
+  global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla, entryBuscar
   nombreActual = nombre_de_la_tabla
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
@@ -308,7 +313,7 @@ def abrir_tablas(nombre_de_la_tabla):
     ],
       "enseñanza": [
       ("Materia*", "cbBox_Materia"),
-      ("Profesor*", "cbBoxProfesor")
+      ("Profesor*", "cbBox_Profesor")
     ],
     "profesor": campos_comunes,
     "nota": [
@@ -337,7 +342,7 @@ def abrir_tablas(nombre_de_la_tabla):
   crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
   entryBuscar = crear_entrada(ventanaSecundaria, 40)
   entryBuscar.grid(row=3, column=0)
-  entryBuscar.bind("<<KeyRelease>>", lambda event: buscar_datos(nombre_de_la_tabla, tabla_treeview, campos_en_db))
+  entryBuscar.bind("<KeyRelease>", lambda event: buscar_datos(nombre_de_la_tabla, tabla_treeview, campos_en_db, campos_comunes))
   
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   

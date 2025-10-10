@@ -3,10 +3,7 @@ from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseg
 from Fun_Validación_SGAE import validar_datos
 from tkinter import messagebox as mensajeTexto, filedialog as diálogo
 import tkinter as tk
-from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from reportlab.pdfbase import pdfmetrics as métricasPDF
-from reportlab.pdfbase.ttfonts import TTFont as fuente_TTFont
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
@@ -28,15 +25,27 @@ def cargar_datos_en_Combobox(tablas_de_datos, combo):
       mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
       return
   
-
-
-def mostrar(tablas_de_datos):
+def mostrar(tablas_de_datos, muestra):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
+  for item in tablas_de_datos:
+    tablas_de_datos.delete(item)
+  
+  registros = muestra()
+  
+  for fila in registros:
+    tablas_de_datos.insert("", "end", values=fila) 
 
-def filtrar(tablas_de_datos):
+def filtrar(tablas_de_datos, filtro, criterio):
+  #En esta función voy a filtrar todos los datos de la treeview.
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
+  registros = filtro(criterio)
+  
+  for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
 
 def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
