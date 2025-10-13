@@ -136,19 +136,41 @@ echo.
 echo Usando el mensaje: "%COMMIT_MESSAGE%"
 echo.
 
-:: **** VERIFICACIÓN DE INTERNET ****
+:: **** VERIFICACIÓN DE INTERNET CON INTENTOS****
+
+SET "MÁX_INTENTOS=5"
+SET "INTENTO=1"
+:INTENTAR_CONECTARSE
+echo.
+echo Intentando de nuevo la conexión con Intento %INTENTO%
+
 CALL :CHECK_INTERNET
-IF %INTERNET_STATUS% NEQ 0 (
+IF %INTERNET_STATUS% EQU 0 (
+    color 0A
     echo.
-    echo ERROR: No se detectó la conexión a Internet.
-    echo No se puede gitear sin conexión.
+    echo Conexión a Internet detectada. Continuado con el giteo
     echo.
     pause
-    GOTO END_SCRIPT
+) ELSE (
+	IF %INTENTO% LSS %MÁX_INTENTOS% (
+        SET /A INTENTO+=1
+        echo .
+        color 0C
+        echo ERROR: No se detectó la conexión a Internet. Reintentando en 2 segundos...
+        timeout /t 2 /nobreak >NUL
+        GOTO INTENTAR_CONECTARSE
+        ) 
+        ELSE (
+            color 0C
+            echo.
+            echo ERROR: Falló la conexión a Internet después de %MÁX_INTENTOS% intentos.
+            echo No se puede gitear sin conexión.
+            echo.
+            pause
+            GOTO END_SCRIPT
+            )
 )
-echo.
-echo Conexión a Internet detectada. Continuado con el giteo
-echo.
+
 :: --- SECCIÓN PARA INICIAR O ACTUALIZAR REPOSITORIO ---
 IF NOT EXIST ".git" (
     echo Inicializando nuevo repositorio...

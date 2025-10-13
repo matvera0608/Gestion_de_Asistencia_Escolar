@@ -33,7 +33,7 @@ campos_en_db = {
   }
 lista_IDs = [] 
 
-os.system(".\Giteo.bat")
+# os.system(".\Giteo.bat")
 
 # --- FUNCIONES AUXILIARES ---
 def cargar_imagen(nombre_imagen):
@@ -59,7 +59,7 @@ def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButto
   ancho = len(texto)
   return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2', state=estado)
 
-def crear_tabla_Treeview(contenedor, tabla, estado="browse"):
+def crear_tabla_Treeview(contenedor, tabla):
   global lista_IDs
   columnas = campos_en_db[tabla]
   estilo = ttk.Style()
@@ -69,8 +69,8 @@ def crear_tabla_Treeview(contenedor, tabla, estado="browse"):
   estilo.configure(estilo_treeview, font=("Courier New", 10), foreground=colores["negro"], background=colores["blanco"], bordercolor=colores["negro"], fieldbackground=colores["blanco"], relief="solid")
   estilo.configure(estilo_encabezado, font=("Courier New", 10), foreground=colores["negro"], background=colores["celeste"], bordercolor=colores["negro"])
   estilo.layout(estilo_treeview, [('Treeview.treearea', {'sticky': 'nswe'})])
-  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview, selectmode=estado)
-
+  tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview)
+  
   for columna in columnas:
     tabla_Treeview.heading(columna, anchor="center", text=columna)
     tabla_Treeview.column(columna, anchor="center", width=max(100, len(columna)*12))
@@ -85,6 +85,7 @@ def crear_tabla_Treeview(contenedor, tabla, estado="browse"):
     tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
   
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
+    
   return tabla_Treeview 
 
 def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
@@ -96,6 +97,7 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
   for i, (texto_etiqueta, nombre_Interno) in enumerate(campos):
     crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", padx=1, pady=5)
     combo = crear_listaDesp(marco_izquierdo, 20)
+    cargar_datos_en_Combobox(nombre_de_la_tabla, combo)
     combo.widget_interno = nombre_Interno
     combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
     listaDesplegable[nombre_de_la_tabla].append(combo)
@@ -122,14 +124,18 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
       except Exception as e:
         print(f"Error configurando {widget}: {e}")
 
-
 def habilitar():
   if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
     return
   for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
     botón.config(state="normal")
-  
+    
   entryBuscar.config(state="normal")
+  tabla_treeview.config(selectmode="browse")
+  tabla_treeview.unbind("<Button-1>")
+  tabla_treeview.unbind("<Key>")
+  tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombreActual, tabla_treeview, lista_IDs, cajasDeTexto))
+  
   
   configurar_ciertos_comboboxes(nombreActual)
 
@@ -139,7 +145,12 @@ def deshabilitar():
   for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
     botón.config(state="disabled")
   
+  tabla_treeview.bind("<Button-1>", lambda e: "break")
+  tabla_treeview.bind("<Key>", lambda e: "break")
+  tabla_treeview.selection_remove(tabla_treeview.selection())
+  
   for entry in cajasDeTexto[nombreActual]:
+    entry.delete(0, tk.END)
     try:
       entry.config(state="readonly")
     except:
@@ -352,7 +363,7 @@ def abrir_tablas(nombre_de_la_tabla):
   rbOcultar.grid(row=0, column=2, sticky="n")
   
   tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
-  tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombre_de_la_tabla, tabla_treeview, lista_IDs, cajasDeTexto))
+  tabla_treeview.config(selectmode="none")
   
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(), 10, "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")

@@ -1,11 +1,22 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
 from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección
 from Fun_Validación_SGAE import validar_datos
-from tkinter import messagebox as mensajeTexto, filedialog as diálogo
+from tkinter import messagebox as mensajeTexto, filedialog as diálogo, ttk
 import tkinter as tk
-from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
+
+#ESTAMOS ENFRENTANDO UN PROBLEMA, ESTE DICCIONARIO campos_claves SÓLO MUESTRAN LOS ID PERO A LA HORA DE HACER LA CONSULTA SE REEMPLAZAN LAS VARIABLES
+#id_campo Y campoVisible. CUANDO ME VOY A alumno MUESTRAN SÓLO LOS NOMBRES EN LA COMBO CARRERA, PERO CUANDO VOY A ASISTENCIA ME TIRA ERROR DE QUE NOMBRE NO EXISTE.
+campos_claves = {
+  "alumno": ("IDCarrera","Nombre"),
+  "carrera": ("IDAlumno","Nombre"),
+  
+  "materia": ("IDCarrera","Nombre")
+}
+
+["enseñanza": ("IDProfesor","Nombre", "IDMateria", "Nombre"),
+"nota": ("IDMateria", "Nombre", "IDAlumno", "Nombre")]
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
 def cargar_datos_en_Combobox(tablas_de_datos, combo):
@@ -14,17 +25,22 @@ def cargar_datos_en_Combobox(tablas_de_datos, combo):
       return
     try:
       cursor = conexión.cursor()
-      consulta = f"SELECT * FROM {tablas_de_datos}"
+      id_campo, campoVisible = campos_claves.get(tablas_de_datos, (None, None))
+      if not id_campo or not campoVisible:
+        mensajeTexto.showerror("Error", f"No hay configuración")
+        return
+      consulta = f"SELECT {id_campo}, {campoVisible} FROM {tablas_de_datos.capitalize()}"
       cursor.execute(consulta)
       registros = cursor.fetchall()
-      valores = [fila for fila in registros]
+      valores = [fila[1] for fila in registros]
       
       combo["values"] = valores
-      
+      combo.id_Nombre = {fila[1]:fila[0] for fila in registros}
+
     except error_sql as sql_error:
       mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
       return
-  
+
 def mostrar(tablas_de_datos, muestra):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
@@ -60,6 +76,7 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
   conexión = conectar_base_de_datos()
   if conexión:
     try:
+      cursor = conexión.cursor()
       campos_visibles = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
       "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
@@ -84,7 +101,6 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       if not clave:
           mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
           return
-      cursor = conexión.cursor()
       if isinstance(clave, list):
         condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
         consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {condiciones}"
@@ -121,9 +137,21 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       cajas = cajasDeTexto[nombre_de_la_tabla]
       
       for caja, valor in zip(cajas, datos_convertidos):
+        widgetInterno = getattr(caja, "widget_interno", "")
+        if isinstance(caja, ttk.Combobox) and not widgetInterno.startswith("cbBox_"):
+          caja.config(state="normal")
+          caja.delete(0, tk.END)
+          caja.set(str(valor))
+        elif isinstance(caja, ttk.Combobox) and widgetInterno.startswith("cbBox_"):
+          caja.config(state="readonly")
+          caja.delete(0, tk.END)
+          caja.set(str(valor))
+        else:
+          caja.config(state="normal")
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
       
+    
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
     except error_sql as error:
@@ -329,79 +357,75 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
-    conexión = conectar_base_de_datos()
-    cursor = conexión.cursor()
-    if not conexión:
-      mensajeTexto.showerror("ERROR DE CONEXIÓN", "NO SE PUDO CONECTAR A LA BASE DE DATOS")
-      return
-
-    #Controla que se obtenga nombre reales de las columnas
-    cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
-    columna = [col[0] for col in cursor.fetchall()]
-    
-    if campo is None:
-      nombre_columna = ', '.join(columna)
-      campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
-      if not campo:
-        return
-      campo = campo.strip()
-    
-    coincidencia = [col for col in columna if col.lower() == campo.lower()]
-    
-    if not coincidencia:
-      mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
-      return
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      #Controla que se obtenga nombre reales de las columnas
+      cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
+      columna = [col[0] for col in cursor.fetchall()]
       
-    campo_real = coincidencia[0]
-    
-    orden = "ASC" if ascendencia else "DESC"
-
-    consultas = {
-        "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y')
-                      FROM alumno AS a
-                      JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
-                      ORDER BY {campo_real} {orden}""",
-                  
-        "asistencia": f"""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
-                                    FROM asistencia AS asis
-                                    JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;"""
-      }
-      
-      
-    consultaSQL = consultas.get(nombre_de_la_tabla.lower()), f"SELECT * FROM {nombre_de_la_tabla} ORDER BY {campo_real} {orden}"
-    cursor.execute(consultaSQL)
-    resultado = cursor.fetchall()
-
-    if tablas_de_datos.winfo_exists():
-      for item in tablas_de_datos.get_children():
-        tablas_de_datos.delete(item)
-    
-    #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
-    if not resultado:
-      mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
-      return
-    
-    filasAMostrar = []
-    listasIDs = []
-    
-    for fila in resultado:
-      if nombre_de_la_tabla == "nota":
-        listasIDs.append((fila[0], fila[1]))
-        filaVisible = list(fila[2:])
-      else:
-        listasIDs.append(fila[0])
-        filaVisible = list(fila[1:])
-      
-    filasAMostrar.append(filaVisible)
-  
-    for index, filaVisible in enumerate(filasAMostrar): 
-      tag = "par" if index % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
+      if campo is None:
+        nombre_columna = ', '.join(columna)
+        campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
+        if not campo:
+          return
+        campo = campo.strip()
         
+        if campo.lower() == "Nombre":
+          orden = tk.simpledialog.asktring("Orden", f"¿Que orden deseas para {campo}? ", "palabras válidas: ASCENDENTE o DESCENDENTE")
+          if not orden:
+            return
+      
+      coincidencia = [col for col in columna if col.lower() == campo.lower()]
+      
+      if not coincidencia:
+        mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
+        return
+        
+      campo_real = coincidencia[0]
+
+      consultas = {
+          "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre as nom
+                        FROM alumno AS a
+                        JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
+                        ORDER BY {campo_real} ASC""",
+                    
+          "asistencia": f"""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
+                            FROM asistencia AS asis
+                            JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                            ORDER BY {campo_real} ASC"""
+        }
+        
+      consultaSQL = consultas.get(nombre_de_la_tabla.lower(), f"SELECT * FROM {nombre_de_la_tabla} ORDER BY {campo_real} ASC")
+      cursor.execute(consultaSQL)
+      resultado = cursor.fetchall()
+      
+      if tablas_de_datos.winfo_exists():
+        for item in tablas_de_datos.get_children():
+          tablas_de_datos.delete(item)
+      
+      #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
+      if not resultado:
+        mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
+        return
+      
+      filasAMostrar = []
+      listasIDs = []
+      
+      for fila in resultado:
+        if nombre_de_la_tabla == "nota":
+          listasIDs.append((fila[0], fila[1]))
+          filaVisible = list(fila[2:])
+        else:
+          listasIDs.append(fila[0])
+          filaVisible = list(fila[1:])
+        filasAMostrar.append(filaVisible)
+
+      for index, filaVisible in enumerate(filasAMostrar): 
+        tag = "par" if index % 2 == 0 else "impar"
+        tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
+            
   except error_sql as e:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
-  finally:
-    desconectar_base_de_datos(conexión)
 
 def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda):
   selección = obtener_selección(tablas_de_datos)
