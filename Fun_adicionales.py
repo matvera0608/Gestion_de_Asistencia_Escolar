@@ -49,7 +49,7 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
-              'enseñanza': ["IDProfesor", "IDMateria"],
+              'enseñanza': ["IDMateria", "IDProfesor"],
               'profesor': "ID_Profesor",
               'nota': ["IDAlumno", "IDMateria"]
         }
@@ -192,11 +192,11 @@ def consultar_tabla(nombre_de_la_tabla, lista_IDs):
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
-      "alumno": {"IDCarrera": ("ID_Carrera","Carrera", "Nombre")},
-      "materia": {"IDCarrera": ("ID_Carrera","Carrera", "Nombre")},
-      "asistencia": {"IDAlumno": ("ID_Alumno","Alumno", "Nombre")},
-      "enseñanza": {"IDProfesor": ("ID_Profesor","Profesor", "Nombre"), "IDMateria": ("ID_Materia", "Materia", "Nombre")},
-      "nota": {"IDAlumno": ("ID_Alumno","Alumno", "Nombre"), "IDMateria": ("ID_Materia","Materia", "Nombre")}
+      "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
+      "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
+      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre")},
+      "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"), "IDMateria": ("ID_Materia", "materia", "Nombre")},
+      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDMateria": ("ID_Materia","materia", "Nombre")}
   }
   if not datos:
     return None

@@ -17,13 +17,14 @@ def validar_datos(nombre_de_la_tabla, datos):
                       "carrera":    ["Nombre", "Duración"],
                       "materia":    ["Nombre", "Horario"],
                       "profesor":   ["Nombre",],
+                      "enseñanza":  [],
                       "asistencia": [],
                       "nota":       ["valorNota", "fechaEvaluación", "TipoNota"]
                       }
     
     if nombre_de_la_tabla not in tabla_a_validar:
       mensajeTexto.showerror("Error", "La tabla solicitada no se encuentra")
-      return False
+      return
     
     
     ##Este bloque de validación está bien? ME GUSTARÍA QUE VUELVA A FUNCIONAR COMO ESTABA ANTES
@@ -50,6 +51,8 @@ def validar_datos(nombre_de_la_tabla, datos):
               "Nombre": lambda valor :patrón_nombre.match(valor),
               "Horario": validar_hora,
       },
+      'enseñanza': {
+      },
       'profesor': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
       },
@@ -69,22 +72,17 @@ def validar_datos(nombre_de_la_tabla, datos):
         validador = validaciones[nombre_de_la_tabla][campo]
         esVálido = validador(valor) if callable(validador)  else bool(validador.match(valor))
         if not esVálido:
-          mensajeTexto.showerror("Error", f"El campo '{campo}' tiene un valor inválido.")
-          cursor.close()
           return
-    if nombre_de_la_tabla in ["alumno", "profesor", "carrera"]: 
-      campo_único = "Nombre"
-      cursor.execute(f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo_único} = %s", (datos[campo_único],))
-      resultado = cursor.fetchone()
-      if resultado[0] > 0:
-        mensajeTexto.showinfo("Aviso", "Ya existe datos repetidos")
-        cursor.close()
-        return False
-      cursor.close()
-      desconectar_base_de_datos(conexión)
+      if nombre_de_la_tabla in ["alumno", "profesor", "carrera"]: 
+        campo_único = "Nombre"
+        cursor.execute(f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo_único} = %s", (datos[campo_único],))
+        resultado = cursor.fetchone()
+        if resultado[0] > 0:
+          cursor.close()
+          desconectar_base_de_datos(conexión)
+          return False
       return True
   except ValueError as error_de_validación:
-    print(f"Error de validación: {error_de_validación}")
     return False
   desconectar_base_de_datos(conexión)
   return True

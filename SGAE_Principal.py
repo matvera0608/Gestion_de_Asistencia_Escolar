@@ -96,12 +96,12 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
   
   for i, (texto_etiqueta, nombre_Interno) in enumerate(campos):
     crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", padx=1, pady=5)
-    combo = crear_listaDesp(marco_izquierdo, 20)
-    cargar_datos_en_Combobox(nombre_de_la_tabla, combo)
+    combo = crear_listaDesp(marco_izquierdo, 30)
     combo.widget_interno = nombre_Interno
     combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
     listaDesplegable[nombre_de_la_tabla].append(combo)
     cajasDeTexto[nombre_de_la_tabla].append(combo)
+  cargar_datos_en_Combobox(nombre_de_la_tabla, listaDesplegable[nombre_de_la_tabla])
 
 def crear_botonesExcluyentes(contenedor, texto, comando, estado="disabled", estilo="Radiobutton.TRadiobutton"):
   return ttk.Radiobutton(contenedor, text=texto, width=len(texto), command= comando(), state=estado, style=estilo, cursor='hand2')
@@ -240,7 +240,7 @@ def mostrar_pestañas(ventana):
   tablaMateria_Profesor = tk.Frame(notebook)
   tablaProfesor = tk.Frame(notebook)
   tablaNota = tk.Frame(notebook)
-
+  
   notebook.add(tablaAlumno, text="Alumno")
   notebook.add(tablaAsistencia, text="Asistencia")
   notebook.add(tablaCarrera, text="Carrera")
@@ -248,11 +248,22 @@ def mostrar_pestañas(ventana):
   notebook.add(tablaMateria_Profesor, text="Enseñanza")
   notebook.add(tablaProfesor, text="Profesor")
   notebook.add(tablaNota, text="Nota")
+  notebook.carga_inicial = True
+  
+  def on_tab_change(event):
+    if getattr(notebook, "carga_inicial", False):
+      return
+    pestaña = notebook.tab(notebook.select(), "text").lower()
+    abrir_tablas(pestaña) 
   
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=ventana.cget("bg"), font=("Arial", 10))
   lb_obligatoriedad.pack(side="bottom", pady=5)
   
-  notebook.bind("<<NotebookTabChanged>>", lambda event: abrir_tablas(notebook.tab(notebook.select(), "text").lower()))
+  notebook.bind("<<NotebookTabChanged>>", on_tab_change)
+  
+  notebook.select(None)
+  
+  ventana.after(100, lambda: setattr(notebook, "carga_inicial", False))
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):

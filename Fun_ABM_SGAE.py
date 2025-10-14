@@ -6,40 +6,59 @@ import tkinter as tk
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
 
-#ESTAMOS ENFRENTANDO UN PROBLEMA, ESTE DICCIONARIO campos_claves SÓLO MUESTRAN LOS ID PERO A LA HORA DE HACER LA CONSULTA SE REEMPLAZAN LAS VARIABLES
-#id_campo Y campoVisible. CUANDO ME VOY A alumno MUESTRAN SÓLO LOS NOMBRES EN LA COMBO CARRERA, PERO CUANDO VOY A ASISTENCIA ME TIRA ERROR DE QUE NOMBRE NO EXISTE.
-campos_claves = {
-  "alumno": ("IDCarrera","Nombre"),
-  "carrera": ("IDAlumno","Nombre"),
-  
-  "materia": ("IDCarrera","Nombre")
-}
+campos_con_claves = {
+  "carrera": ("ID_Carrera","Nombre"),
+  "alumno": ("ID_Alumno","Nombre"),
+  "profesor": ("ID_Profesor", "Nombre"),
+  "materia": ("ID_Materia","Nombre")
+  }
 
-["enseñanza": ("IDProfesor","Nombre", "IDMateria", "Nombre"),
-"nota": ("IDMateria", "Nombre", "IDAlumno", "Nombre")]
+campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
+                   "asistencia": ("IDAlumno", "alumno"),
+                   "materia": ("IDCarrera", "carrera"),
+                   "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
+                   "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno")]
+                   }
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
-def cargar_datos_en_Combobox(tablas_de_datos, combo):
-  with conectar_base_de_datos() as conexión:
-    if not conexión:
-      return
-    try:
-      cursor = conexión.cursor()
-      id_campo, campoVisible = campos_claves.get(tablas_de_datos, (None, None))
-      if not id_campo or not campoVisible:
-        mensajeTexto.showerror("Error", f"No hay configuración")
+def cargar_datos_en_Combobox(tablas_de_datos, combos):
+  try:
+    with conectar_base_de_datos() as conexión:
+      if not conexión:
         return
-      consulta = f"SELECT {id_campo}, {campoVisible} FROM {tablas_de_datos.capitalize()}"
-      cursor.execute(consulta)
-      registros = cursor.fetchall()
-      valores = [fila[1] for fila in registros]
+      cursor = conexión.cursor()
+      relación = campos_foráneos.get(tablas_de_datos)
+      if not relación:
+        return
+        
+      if not isinstance(combos, (list, tuple)):
+        combos = [combos]
       
-      combo["values"] = valores
-      combo.id_Nombre = {fila[1]:fila[0] for fila in registros}
-
-    except error_sql as sql_error:
-      mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
-      return
+      if isinstance(relación, tuple):
+        relación = [relación]
+      
+      for comboWid in combos:
+        nombre_combo = getattr(comboWid, "widget_interno", "").lower()
+        # ignorar los que no son combos
+        if not nombre_combo.startswith("cbbox"):
+            continue
+        # limpiar prefijo
+        nombre_combo = nombre_combo.replace("cbbox_", "")
+        for campo_foráneo, tabla_ajena in relación:
+          if nombre_combo == tabla_ajena:
+            id_campo, campoVisible = campos_con_claves[tabla_ajena]
+            
+            consulta = f"SELECT {id_campo}, {campoVisible} FROM {tabla_ajena}"
+            cursor.execute(consulta)
+            registros = cursor.fetchall()
+            valores = [fila[1] for fila in registros]
+            comboWid["values"] = valores
+            comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
+            break
+      
+  except error_sql as sql_error:
+    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
+    return
 
 def mostrar(tablas_de_datos, muestra):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -70,8 +89,9 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
   if not selección:
     return
   
-  índice = tablas_de_datos.index(selección[0])
+  índice = tablas_de_datos.index(selección[:])
   id = listaID[índice]
+ 
   cursor = None
   conexión = conectar_base_de_datos()
   if conexión:
@@ -104,7 +124,7 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       if isinstance(clave, list):
         condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
         consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {condiciones}"
-        cursor.execute(consulta, id)
+        cursor.execute(consulta, id) 
       else:
         consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {clave} = %s"
         cursor.execute(consulta, (id,))
@@ -151,14 +171,12 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
           caja.delete(0, tk.END)
           caja.insert(0, str(valor))
       
-    
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
     except error_sql as error:
         mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
-      if cursor:
-        cursor.close()
+      cursor.close()
       desconectar_base_de_datos(conexión)
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
