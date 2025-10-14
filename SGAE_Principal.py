@@ -1,5 +1,6 @@
 from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla
+from Fun_Validación_SGAE import validar_fecha, validar_fecha_combobox,bloquear_caracter, validar_fecha_final, validar_hora
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -315,7 +316,7 @@ def abrir_tablas(nombre_de_la_tabla):
   marco_derecho.grid_rowconfigure(0, weight=1)
 
   campos_comunes = [("Nombre*", "txBox_Nombre")]
-
+  
   campos_por_tabla = {
     "alumno": campos_comunes + [
       ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
@@ -333,9 +334,9 @@ def abrir_tablas(nombre_de_la_tabla):
       ("Horario*", "txBox_Horario"),
       ("Carrera*", "cbBox_Carrera")
     ],
-      "enseñanza": [
-      ("Materia*", "cbBox_Materia"),
-      ("Profesor*", "cbBox_Profesor")
+    "enseñanza": [
+    ("Materia*", "cbBox_Materia"),
+    ("Profesor*", "cbBox_Profesor")
     ],
     "profesor": campos_comunes,
     "nota": [
@@ -346,9 +347,22 @@ def abrir_tablas(nombre_de_la_tabla):
         ("Alumno*", "cbBox_Alumno")
     ]
   }
-  
   cajasDeTexto = {}
   cajasDeTexto[nombre_de_la_tabla] = []
+  
+  def aplicar_validación_fecha(widget):
+    vcmd_key = (mi_ventana.register(validar_fecha_combobox), "%P")
+    widget.config(validate="key", validatecommand=vcmd_key)
+    widget.bind("<FocusOut>", lambda e: validar_fecha_final(e))
+    widget.bind("<KeyPress>", lambda e: bloquear_caracter(e))
+    
+  for tabla, campos in campos_por_tabla.items():
+    for etiqueta, widget_interno in campos:
+      widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno),None)
+      if widget and widget_interno.startswith("txBox"):
+          aplicar_validación_fecha(widget)
+      
+      
   # --- Creamos un estilo global ---
   estilo = ttk.Style()
   estilo.theme_use("clam") #clam es el mejor tema para personalizar
@@ -367,6 +381,7 @@ def abrir_tablas(nombre_de_la_tabla):
   entryBuscar.bind("<KeyRelease>", lambda event: buscar_datos(nombre_de_la_tabla, tabla_treeview, campos_en_db, campos_comunes))
   
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
+  
   
   rbMostrar = crear_botonesExcluyentes(marco_izquierdo, "Mostrar", lambda: None)
   rbMostrar.grid(row=0, column=1, sticky="n")
@@ -396,7 +411,8 @@ def abrir_tablas(nombre_de_la_tabla):
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
-  
+
+
 # --- INICIO DEL SISTEMA ---
 
 # pantallaLogin()

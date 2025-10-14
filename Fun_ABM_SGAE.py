@@ -108,6 +108,11 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       "nota": ["IDAlumno","IDMateria" , "ValorNota", "TipoNota", "fechaEvaluación"]
       }
       
+      def traducir_fk(tabla, id_valor):
+        cursor.execute(f"SELECT Nombre FROM {tabla} WHERE ID_{tabla.capitalize()} = %s", (id_valor,))
+        res = cursor.fetchone()
+        return res[0] if res else "Desconocido"
+      
       # Diccionario de claves primarias según la tabla
       PKs = {
         "alumno": "ID_Alumno",
@@ -141,8 +146,9 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       if not fila_seleccionada:
         return
       datos_convertidos = []
-      ##Este for recorre cajas con clave simple.
+      ##Este for recorre cajas con clave compuesta.
       for campo, valor in zip(campos_visibles[nombre_de_la_tabla], fila_seleccionada):
+        ##Esta parte recorre cajas con clave simple.
         if campo == "IDAlumno":
           cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
           res = cursor.fetchone()
@@ -159,48 +165,10 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
           cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
           res = cursor.fetchone()
           datos_convertidos.append(res[0] if res else "Desconocido")  
-        elif nombre_de_la_tabla == "nota":
-          id_alumno = fila_seleccionada[campos_visibles["nota"].index("IDAlumno")]
-          id_materia = fila_seleccionada[campos_visibles["nota"].index("IDMateria")]
-          
-          cursor.execute("""
-              SELECT CONCAT(a.Nombre, ' - ', m.Nombre)
-              FROM alumno a
-              JOIN materia m
-              ON a.ID_Alumno = %s AND m.ID_Materia = %s
-          """, (id_alumno, id_materia))
-        
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")
-        elif nombre_de_la_tabla == "enseñanza":
-          id_materia = fila_seleccionada[campos_visibles["enseñanza"].index("IDMateria")]
-          id_profesor = fila_seleccionada[campos_visibles["enseñanza"].index("IDProfesor")]
-          
-          cursor.execute("""
-              SELECT CONCAT(a.Nombre, ' - ', m.Nombre)
-              FROM profesor p
-              JOIN materia m
-              ON p.ID_Profesor = %s AND m.ID_Materia = %s
-          """, (id_materia, id_profesor))
-        
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")  
         else:
           datos_convertidos.append(valor)
       cajas = cajasDeTexto[nombre_de_la_tabla]
-      
-      for caja, valor in zip(cajas, datos_convertidos):
-        widgetInterno = getattr(caja, "widget_interno", "")
-        if isinstance(caja, ttk.Combobox) and not widgetInterno.startswith("cbBox_"):
-          caja.config(state="normal")
-          caja.set(str(valor))
-        elif isinstance(caja, ttk.Combobox) and widgetInterno.startswith("cbBox_"):
-          caja.config(state="readonly")
-          caja.set(str(valor))
-        else:
-          caja.config(state="normal")
-          caja.insert(0, str(valor))
-
+        
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
     except error_sql as error:

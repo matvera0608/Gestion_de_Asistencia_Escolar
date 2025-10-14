@@ -37,11 +37,9 @@ def validar_datos(nombre_de_la_tabla, datos):
     validaciones = {
       'alumno': {
               "Nombre": lambda valor : patrón_nombre.match(valor),
-              "FechaDeNacimiento": validar_fecha,
       },
       'asistencia': {
               "Estado": lambda valor: valor.isalpha(),
-              "Fecha_Asistencia": validar_fecha,
       },
       'carrera': {
               "Nombre": lambda valor :patrón_nombre.match(valor),
@@ -59,7 +57,6 @@ def validar_datos(nombre_de_la_tabla, datos):
       'nota': {
               "tipoNota": lambda valor: patron_alfanumerico_con_espacios.match(valor),
               "valorNota": lambda valor: patrón_númerosDecimales.match(valor),
-              "fechaEvaluación": validar_fecha,
       }
     }
 
@@ -120,3 +117,18 @@ def validar_hora(valor):
     except ValueError:
       return False
   return False
+
+def validar_fecha_combobox(valor):
+  return True if re.fullmatch(r"[0-9]{0,2}(/[0-9]{0,2}(/[0-9]{0,4})?)?", valor) else False
+
+def validar_fecha_final(widget):
+  try:
+      datetime.strptime(widget.get(), "%d/%m/%Y")
+      widget.config(background="white")
+  except ValueError:
+      widget.config(background="salmon")
+
+def bloquear_caracter(evento):
+    if not re.fullmatch(r"[0-9/\-]", evento.char):
+        return "break"
+
