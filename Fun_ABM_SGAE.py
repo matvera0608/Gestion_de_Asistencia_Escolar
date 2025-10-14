@@ -89,8 +89,9 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
   if not selección:
     return
   
-  índice = tablas_de_datos.index(selección[:])
+  índice = tablas_de_datos.index(selección[0])
   id = listaID[índice]
+
  
   cursor = None
   conexión = conectar_base_de_datos()
@@ -113,18 +114,24 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
         "asistencia": "ID_Asistencia",
         "carrera": "ID_Carrera",
         "materia": "ID_Materia",
-        "enseñanza": ["IDProfesor", "IDMateria"],
         "profesor": "ID_Profesor",
-        "nota": ["IDAlumno", "IDMateria"]
+        "enseñanza": ["IDProfesor", "IDMateria"],
+        "nota": ["IDAlumno", "IDMateria"],
       }
       clave = PKs.get(nombre_de_la_tabla)
       if not clave:
-          mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
-          return
+        mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
+        return
       if isinstance(clave, list):
+        if nombre_de_la_tabla in ["enseñanza", "nota"]:
+          valores_fila = tablas_de_datos.item(selección[0])["values"]
+          id = list(valores_fila[:len(clave)])  # tomar los primeros N valores
+        elif not isinstance(id, (list, tuple, dict)):
+          id = (id,)
+          
         condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
         consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {condiciones}"
-        cursor.execute(consulta, id) 
+        cursor.execute(consulta, id)
       else:
         consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {clave} = %s"
         cursor.execute(consulta, (id,))
@@ -134,43 +141,66 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
       if not fila_seleccionada:
         return
       datos_convertidos = []
+      ##Este for recorre cajas con clave simple.
       for campo, valor in zip(campos_visibles[nombre_de_la_tabla], fila_seleccionada):
-          if campo == "IDAlumno":
-            cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-          elif campo == "IDMateria":
-            cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-          elif campo == "IDCarrera":
-            cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-          elif campo == "IDProfesor":
-            cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-          else:
-            datos_convertidos.append(valor)
-            
+        if campo == "IDAlumno":
+          cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDMateria":
+          cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDProfesor":
+          cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDCarrera":
+          cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")  
+        elif nombre_de_la_tabla == "nota":
+          id_alumno = fila_seleccionada[campos_visibles["nota"].index("IDAlumno")]
+          id_materia = fila_seleccionada[campos_visibles["nota"].index("IDMateria")]
+          
+          cursor.execute("""
+              SELECT CONCAT(a.Nombre, ' - ', m.Nombre)
+              FROM alumno a
+              JOIN materia m
+              ON a.ID_Alumno = %s AND m.ID_Materia = %s
+          """, (id_alumno, id_materia))
+        
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")
+        elif nombre_de_la_tabla == "enseñanza":
+          id_materia = fila_seleccionada[campos_visibles["enseñanza"].index("IDMateria")]
+          id_profesor = fila_seleccionada[campos_visibles["enseñanza"].index("IDProfesor")]
+          
+          cursor.execute("""
+              SELECT CONCAT(a.Nombre, ' - ', m.Nombre)
+              FROM profesor p
+              JOIN materia m
+              ON p.ID_Profesor = %s AND m.ID_Materia = %s
+          """, (id_materia, id_profesor))
+        
+          res = cursor.fetchone()
+          datos_convertidos.append(res[0] if res else "Desconocido")  
+        else:
+          datos_convertidos.append(valor)
       cajas = cajasDeTexto[nombre_de_la_tabla]
       
       for caja, valor in zip(cajas, datos_convertidos):
         widgetInterno = getattr(caja, "widget_interno", "")
         if isinstance(caja, ttk.Combobox) and not widgetInterno.startswith("cbBox_"):
           caja.config(state="normal")
-          caja.delete(0, tk.END)
           caja.set(str(valor))
         elif isinstance(caja, ttk.Combobox) and widgetInterno.startswith("cbBox_"):
           caja.config(state="readonly")
-          caja.delete(0, tk.END)
           caja.set(str(valor))
         else:
           caja.config(state="normal")
-          caja.delete(0, tk.END)
           caja.insert(0, str(valor))
-      
+
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
     except error_sql as error:
