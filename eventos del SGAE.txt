@@ -3,7 +3,7 @@
 #Esta función me permite desplazar con barra verticalmente
 #la ListBox para que se pueda ver muchos registros en la tabla
 def barraDesplazadora():
-  global Lista_de_datos, Frame_Lista
+  global Frame_Lista
   # Definimos un frame con tamaño fijo y evitamos que se redimensione automáticamente
   Frame_Lista = tk.Frame(mi_ventana, width=400, height=500)
   Frame_Lista.pack(side=tk.RIGHT, padx=10, pady=10)
@@ -16,36 +16,7 @@ def barraDesplazadora():
   #en la tabla donde dice materias cuando son largas
   barraHorizontal = tk.Scrollbar(Frame_Lista, orient="horizontal")
   barraHorizontal.pack(side=tk.BOTTOM, fill=tk.X)
-  
-  # La ListBox se define con dimensiones menores para no ocupar toda la pantalla
-  Lista_de_datos = tk.Listbox(Frame_Lista, exportselection=0, width=45, height=60)
-  Lista_de_datos.config(fg="blue", bg=colores["amarillo_claro"], font=("Courier New", 12, "bold"))
-  Lista_de_datos.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-  
-  Lista_de_datos.config(yscrollcommand=barraVertical.set)
-  Lista_de_datos.config(xscrollcommand=barraHorizontal.set)
-  barraVertical.config(command=Lista_de_datos.yview)
-  barraHorizontal.config(command=Lista_de_datos.xview)
-  
-  Lista_de_datos.bind("<<ListboxSelect>>", manejar_selección)
-  Lista_de_datos.bind("<Down>", mover_con_flechas)
-  Lista_de_datos.bind("<Up>", mover_con_flechas)
-  
-#Esta función maneja la selección de la ListBox con todos los registros de la base de datos
-#y me permite seleccionar un registro para modificarlo o eliminarlo más facilemnte
-def manejar_selección(event=None):
-  global cajasDeTexto
-  índice_seleccionado = Lista_de_datos.curselection()
-  if índice_seleccionado:
-    Lista_de_datos.activate(índice_seleccionado[0])
-    Lista_de_datos.selection_set(índice_seleccionado[0])
-    seleccionar_registro()
-  else:
-    try:
-      for txBox in cajasDeTexto.values():
-        txBox.delete(0, tk.END)
-    except:
-      return
+
 
 #Este evento me sirve para agregar, modificar y eliminar un registro de la tabla
 #sin la necesidad de tener que presionar el botón cada vez que quiero agregar, modificar o eliminar un registro haciendo click en la ListBox
@@ -72,20 +43,12 @@ def mover_con_flechas(event=None):
   widget = event.widget
   tecla = event.keysym
   
-  botones_funcionales = [ botón_agregar,
-                          botón_modificar, 
-                          botón_eliminar, 
-                          botón_ordenar, 
-                          botón_exportar
+  botones_funcionales = [ btn_agregar,
+                          btn_modificar, 
+                          btn_eliminar, 
+                          btn_ordenar, 
+                          btn_exportar
                         ]
-  
-  cajasDeTexto = [  txBox_FechaNacimiento, txBox_NombreAlumno, 
-                    txBox_EstadoDeAsistencia, txBox_FechaAsistencia, 
-                    txBox_NombreCarrera, txBox_Duración, 
-                    txBox_NombreMateria, txBox_HorarioCorrespondiente, 
-                    txBox_NombreProfesor, 
-                    txBox_Valor, txBox_Tipo
-                 ]
   
   caja_activa = []
   
@@ -122,24 +85,7 @@ def mover_con_flechas(event=None):
 
     #Acá lo que hace es mover el foco desde la ListBox hacia la caja de texto correspondiente
     if desde_lista_izquierda_hacia_caja or desde_lista_derecha_hacia_caja:
-      if tabla_de_alumno:
-          txBox_NombreAlumno.focus_set()
-          caja_activa = [txBox_FechaNacimiento, txBox_NombreAlumno]
-      elif tabla_de_asistencia:
-          txBox_EstadoDeAsistencia.focus_set()
-          caja_activa = [txBox_EstadoDeAsistencia, txBox_FechaAsistencia]
-      elif tabla_de_carrera:
-          txBox_NombreCarrera.focus_set()
-          caja_activa = [txBox_NombreCarrera, txBox_Duración]
-      elif tabla_de_materia:
-          txBox_NombreMateria.focus_set()
-          caja_activa = [txBox_NombreMateria, txBox_HorarioCorrespondiente]
-      elif tabla_de_profesor:
-          txBox_NombreProfesor.focus_set()
-          caja_activa = [txBox_NombreProfesor]
-      elif tabla_de_nota:
-          txBox_Valor.focus_set()
-          caja_activa = [txBox_Valor, txBox_Tipo]
+      
       return "break"
     
   # Si el foco está en alguno de los 5 botones funcionales, navegamos entre ellos.

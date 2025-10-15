@@ -30,7 +30,7 @@ campos_en_db = {
       "materia": ["Nombre", "Horario", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
       "profesor": ["Nombre"],
-      "nota": ["Alumno", "Materia", "fechaEvaluación", "valorNota", "tipoNota"]
+      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
   }
 lista_IDs = [] 
 
@@ -67,7 +67,7 @@ def crear_tabla_Treeview(contenedor, tabla):
   estilo_treeview = f"Custom.Treeview"
   estilo_encabezado = f"Custom.Treeview.Heading"
   
-  estilo.configure(estilo_treeview, font=("Courier New", 10), foreground=colores["negro"], background=colores["blanco"], bordercolor=colores["negro"], fieldbackground=colores["blanco"], relief="solid")
+  estilo.configure(estilo_treeview, font=("Arial", 8), foreground=colores["negro"], background=colores["blanco"], bordercolor=colores["negro"], fieldbackground=colores["blanco"], relief="solid")
   estilo.configure(estilo_encabezado, font=("Courier New", 10), foreground=colores["negro"], background=colores["celeste"], bordercolor=colores["negro"])
   estilo.layout(estilo_treeview, [('Treeview.treearea', {'sticky': 'nswe'})])
   tabla_Treeview = ttk.Treeview(contenedor, columns=columnas, show="headings", style=estilo_treeview)
@@ -79,11 +79,20 @@ def crear_tabla_Treeview(contenedor, tabla):
   tabla_Treeview.tag_configure("par", background=colores["blanco"])
   tabla_Treeview.tag_configure("impar", background=colores["celeste"])
 
-  datos, lista_IDs = consultar_tabla(tabla, lista_IDs)
+  datos = consultar_tabla(tabla)
   
-  for index, fila in enumerate(datos):
-    tag = "par" if index % 2 == 0 else "impar"
-    tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
+  for item in tabla_Treeview.get_children():
+    tabla_Treeview.delete(item)
+  
+  for fila in datos:
+    id_val = fila[0]
+    valores_visibles = fila[1:]
+    tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles)
+
+
+  # for index, fila in enumerate(datos):
+  #   tag = "par" if index % 2 == 0 else "impar"
+  #   tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
   
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
     
@@ -135,7 +144,7 @@ def habilitar():
   tabla_treeview.config(selectmode="browse")
   tabla_treeview.unbind("<Button-1>")
   tabla_treeview.unbind("<Key>")
-  tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombreActual, tabla_treeview, lista_IDs, cajasDeTexto))
+  tabla_treeview.bind("<<TreeviewSelect>>", lambda event: mostrar_registro(nombreActual, tabla_treeview, cajasDeTexto))
   
   
   configurar_ciertos_comboboxes(nombreActual)
@@ -167,8 +176,7 @@ def insertar():
   habilitar()
   if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
     return
-  else:
-    insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs)
+  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 mi_ventana = tk.Tk()
@@ -340,11 +348,11 @@ def abrir_tablas(nombre_de_la_tabla):
     ],
     "profesor": campos_comunes,
     "nota": [
+        ("Alumno*", "cbBox_Alumno"),
+        ("Materia*", "cbBox_Materia"),
         ("Nota*", "txBox_Valor"),
         ("Evaluación*", "txBox_TipoEvaluación"),
         ("Fecha y Hora*", "txBox_FechaHora"),
-        ("Materia*", "cbBox_Materia"),
-        ("Alumno*", "cbBox_Alumno")
     ]
   }
   cajasDeTexto = {}

@@ -50,9 +50,9 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'asistencia': "ID_Asistencia",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
-              'enseñanza': ["IDMateria", "IDProfesor"],
+              'enseñanza': "ID",
               'profesor': "ID_Profesor",
-              'nota': ["IDAlumno", "IDMateria"]
+              'nota': "ID"
         }
   return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
 
@@ -134,60 +134,71 @@ def convertir_datos(campos_db, lista_de_cajas):
 #   desconectar_base_de_datos(conexión)
 
 # Esta función sirve sólo para leer datos de la bases de datos escuela
-def consultar_tabla(nombre_de_la_tabla, lista_IDs):
+
+def construir_query(nombre_de_la_tabla, filtros):
+  consulta_base = ""
+  filtro = ""
+
+  if filtros:
+      condiciones = [f'{campo} = %s' for campo in filtros.keys()]
+      filtro = " WHERE " + " AND ".join(condiciones)
+
+  match nombre_de_la_tabla.lower():
+      case "alumno":
+          consulta_base = """SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS FechaNacimiento, c.Nombre AS Carrera
+                                      FROM alumno AS a
+                                      JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
+                                      ORDER BY a.Nombre;
+                          """
+      case "asistencia":
+          consulta_base = """SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
+                              FROM asistencia AS asis
+                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                              ORDER BY asis.Fecha_Asistencia"""
+      case "carrera":
+          consulta_base = """SELECT c.ID_Carrera, c.Nombre, c.Duración
+                              FROM carrera AS c
+                              ORDER BY c.Nombre"""
+      case "materia":
+          consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i') AS Horario, c.Nombre AS Carrera
+                              FROM materia AS m
+                              JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
+                              ORDER BY m.Nombre"""
+      case "enseñanza":
+          consulta_base = """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
+                              FROM enseñanza AS e
+                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                              JOIN materia AS m ON e.IDMateria = m.ID_Materia
+                              ORDER BY m.Nombre, p.Nombre"""
+      case "profesor":
+          consulta_base = """SELECT pro.ID_Profesor pro.Nombre
+                              FROM profesor AS pro
+                              ORDER BY pro.Nombre"""
+      case "nota":
+          consulta_base = """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
+                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
+                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
+                              FROM nota AS n
+                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                              JOIN materia AS m ON n.IDMateria = m.ID_Materia
+                              ORDER BY al.Nombre, m.Nombre"""
+      case _:
+          consulta_base = f"SELECT * FROM {nombre_de_la_tabla}"
+
+  return consulta_base + filtro
+
+def consultar_tabla(nombre_de_la_tabla):
   try:
     conexión = conectar_base_de_datos()
     if conexión:
       cursor = conexión.cursor()
-      match nombre_de_la_tabla.lower():
-          case "alumno":
-              cursor.execute("""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre
-                              FROM alumno AS a
-                              JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera;""")
-          case "asistencia":
-              cursor.execute("""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
-                              FROM asistencia AS asis
-                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno;""")
-          case "carrera":
-              cursor.execute("""SELECT c.ID_Carrera, c.Nombre, c.Duración
-                              FROM carrera AS c;""")
-          case "materia":
-              cursor.execute("""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i'), c.Nombre
-                              FROM materia AS m
-                              JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera;""")
-          case "enseñanza":
-              cursor.execute("""SELECT e.IDMateria, m.Nombre, p.Nombre FROM enseñanza AS e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia;""")
-          case "profesor":
-              cursor.execute("""SELECT pro.ID_Profesor, pro.Nombre FROM profesor AS pro;""")
-          case "nota":
-              cursor.execute("""SELECT n.IDAlumno, n.IDMateria, 
-                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS valorNota, 
-                              n.tipoNota, 
-                              al.Nombre AS NombreAlumno, 
-                              m.Nombre AS NombreMateria
-                              FROM nota AS n
-                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia;""")
-          case _:
-              cursor.execute(f"SELECT * FROM {nombre_de_la_tabla};")
-
-    resultado = cursor.fetchall()
-    lista_IDs.clear()
-    
-    filaVisible = []
-    for fila in resultado:
-      if nombre_de_la_tabla.lower() == "nota":
-        lista_IDs.append((fila[0], fila[1]))
-        filaVisible.append(list(fila[2:]))
-      else:
-        lista_IDs.append(fila[0])
-        filaVisible.append(list(fila[1:]))
-  
-    desconectar_base_de_datos(conexión)
-    return filaVisible, lista_IDs
-
+      query = construir_query(nombre_de_la_tabla, {})
+      cursor.execute(query)
+      res = cursor.fetchall()
+      
+      cursor.close()
+      desconectar_base_de_datos(conexión)
+      return res
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
 

@@ -150,7 +150,6 @@ IF %INTERNET_STATUS% EQU 0 (
     echo.
     echo Conexión a Internet detectada. Continuado con el giteo
     echo.
-    pause
 ) ELSE (
 	IF %INTENTO% LSS %MÁX_INTENTOS% (
         SET /A INTENTO+=1
@@ -187,9 +186,8 @@ IF NOT EXIST ".git" (
     git add .
     git commit -m "%COMMIT_MESSAGE%"
 	rem esta sección es para dar control al pull
-    git pull --rebase
+    rem git pull --rebase
 )
-
 echo Intentando subir cambios a GitHub...
 git push -u origin main
 

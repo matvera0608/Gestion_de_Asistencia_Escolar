@@ -82,37 +82,25 @@ def filtrar(tablas_de_datos, filtro, criterio):
   for item in tablas_de_datos.get_children():
       tablas_de_datos.delete(item)
 
-def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto):
+def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+
   selección = tablas_de_datos.selection()
   if not selección:
     return
   
-  índice = tablas_de_datos.index(selección[0])
-  id = listaID[índice]
-
- 
+  iid = selección[0]
+  try:
+    idSeleccionado = int(iid)
+  except ValueError:
+    idSeleccionado = iid
+  
   cursor = None
   conexión = conectar_base_de_datos()
   if conexión:
     try:
       cursor = conexión.cursor()
-      campos_visibles = {
-      "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
-      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
-      "carrera": ["Nombre", "Duración"],
-      "materia": ["Nombre", "Horario", "IDCarrera"],
-      "enseñanza": ["IDMateria", "IDProfesor"],
-      "profesor": [ "Nombre"],
-      "nota": ["IDAlumno","IDMateria" , "ValorNota", "TipoNota", "fechaEvaluación"]
-      }
-      
-      def traducir_fk(tabla, id_valor):
-        cursor.execute(f"SELECT Nombre FROM {tabla} WHERE ID_{tabla.capitalize()} = %s", (id_valor,))
-        res = cursor.fetchone()
-        return res[0] if res else "Desconocido"
-      
       # Diccionario de claves primarias según la tabla
       PKs = {
         "alumno": "ID_Alumno",
@@ -120,67 +108,73 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, listaID, cajasDeTexto)
         "carrera": "ID_Carrera",
         "materia": "ID_Materia",
         "profesor": "ID_Profesor",
-        "enseñanza": ["IDProfesor", "IDMateria"],
-        "nota": ["IDAlumno", "IDMateria"],
+        "enseñanza": "ID",
+        "nota": "ID",
       }
+      
       clave = PKs.get(nombre_de_la_tabla)
       if not clave:
         mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
         return
-      if isinstance(clave, list):
-        if nombre_de_la_tabla in ["enseñanza", "nota"]:
-          valores_fila = tablas_de_datos.item(selección[0])["values"]
-          id = list(valores_fila[:len(clave)])  # tomar los primeros N valores
-        elif not isinstance(id, (list, tuple, dict)):
-          id = (id,)
-          
-        condiciones = ' AND '.join([f"{campo} = %s" for campo in clave])
-        consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {condiciones}"
-        cursor.execute(consulta, id)
-      else:
-        consulta = f"SELECT {', '.join(campos_visibles[nombre_de_la_tabla])} FROM {nombre_de_la_tabla} WHERE {clave} = %s"
-        cursor.execute(consulta, (id,))
-      
+      campos_visibles = {
+      "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"], #Los que empiezan con ID sin guión bajo son claves ajenas o FKs.
+      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
+      "carrera": ["Nombre", "Duración"],
+      "materia": ["Nombre", "Horario", "IDCarrera"],
+      "enseñanza": ["IDMateria", "IDProfesor"],
+      "profesor": ["Nombre"],
+      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
+      }
+
+      columnas = ', '.join(campos_visibles[nombre_de_la_tabla.lower()])
+      consulta = f"SELECT {columnas} FROM {nombre_de_la_tabla.lower()} WHERE {clave} = %s"
+      cursor.execute(consulta, (idSeleccionado,))
       fila_seleccionada = cursor.fetchone()
       
       if not fila_seleccionada:
         return
+      
       datos_convertidos = []
-      ##Este for recorre cajas con clave compuesta.
-      for campo, valor in zip(campos_visibles[nombre_de_la_tabla], fila_seleccionada):
-        ##Esta parte recorre cajas con clave simple.
-        if campo == "IDAlumno":
-          cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")
+
+      for campo, valor in zip(campos_visibles[nombre_de_la_tabla.lower()], fila_seleccionada):
+        if campo == "IDProfesor":
+            cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
         elif campo == "IDMateria":
-          cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")
-        elif campo == "IDProfesor":
-          cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")
+            cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDAlumno":
+            cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
         elif campo == "IDCarrera":
-          cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
-          res = cursor.fetchone()
-          datos_convertidos.append(res[0] if res else "Desconocido")  
+            cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
         else:
-          datos_convertidos.append(valor)
+            datos_convertidos.append(valor)
+            continue
+          
       cajas = cajasDeTexto[nombre_de_la_tabla]
-        
+      for campo, valor, caja in zip(campos_visibles[nombre_de_la_tabla], datos_convertidos, cajas):
+        caja.config(state="normal")
+        caja.set(str(valor))
+        caja.config(state="readonly" if getattr(caja, "widget_interno", "").startswith("cbBox_") else "normal")
+          
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
     except error_sql as error:
-        mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
     finally:
       cursor.close()
       desconectar_base_de_datos(conexión)
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
-  
+
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
 
@@ -189,30 +183,15 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
 
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
 
-  valores_sql = []
-  campos_sql = []
-  for campo, valor in datos_traducidos.items():
-    valores_sql.append(valor)
-    campos_sql.append(campo)
-
-  if nombre_de_la_tabla.lower() == "nota":
-    id_alumno = datos.get("IDAlumno")
-    id_materia = datos.get("IDMateria")
-
-    campos = ', '.join(list(datos_traducidos.keys()) + ["IDAlumno", "IDMateria"])
-    valores = ', '.join(['%s'] * (len(datos_traducidos) + 2))
-    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-    valores_sql.extend([id_alumno, id_materia])
-  else:
-    campos = ', '.join(datos_traducidos.keys())
-    valores = ', '.join(['%s'] * len(datos_traducidos))
-    consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-    valores_sql = list(datos_traducidos.values())
+  campos = ', '.join(datos_traducidos.keys())
+  valores = ', '.join(['%s'] * len(datos_traducidos))
+  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
+  valores_sql = list(datos_traducidos.values())
   try:
     cursor = conexión.cursor()
     cursor.execute(consulta, tuple(valores_sql))
     conexión.commit()
-    datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+    datos = consultar_tabla(nombre_de_la_tabla)
 
     for item in tablas_de_datos.get_children():
         tablas_de_datos.delete(item)
@@ -220,8 +199,6 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     for index, fila in enumerate(datos):
         tag = "par" if index % 2 == 0 else "impar"
         tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
-
-    listaID[:] = lista_actualizada
     mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
     # Limpiar las cajas de texto después de insertar
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
@@ -348,6 +325,9 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
 
           listaID[:] = lista_actualizada
           consultar_tabla(nombre_de_la_tabla, listaID)
+          for i, (campo, valor) in enumerate(datos.items()):
+            entry = cajasDeTexto[nombre_de_la_tabla][i]
+            entry.delete(0, tk.END)
           mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
   except Exception as e:
