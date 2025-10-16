@@ -39,10 +39,8 @@ def cargar_datos_en_Combobox(tablas_de_datos, combos):
       
       for comboWid in combos:
         nombre_combo = getattr(comboWid, "widget_interno", "").lower()
-        # ignorar los que no son combos
         if not nombre_combo.startswith("cbbox"):
-            continue
-        # limpiar prefijo
+          continue
         nombre_combo = nombre_combo.replace("cbbox_", "")
         for campo_foráneo, tabla_ajena in relación:
           if nombre_combo == tabla_ajena:
@@ -54,7 +52,7 @@ def cargar_datos_en_Combobox(tablas_de_datos, combos):
             valores = [fila[1] for fila in registros]
             comboWid["values"] = valores
             comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
-            break
+            
       
   except error_sql as sql_error:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
@@ -279,68 +277,60 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   
-  columna_seleccionada = tablas_de_datos.selection()
+  selección = tablas_de_datos.selection()
   
-  if not columna_seleccionada:
-      mensajeTexto.showwarning("ADVERTENCIA", "⚠️ NO SELECCIONASTE NINGUNA FILA")
-      return
   try:
-      with conectar_base_de_datos() as conexión:
-        cursor = conexión.cursor()
-        # Recorrer las selecciones y eliminarlas una por una
-        for selección in columna_seleccionada:
-          try:
-            iid = selección[0]
-            ID_Seleccionado = int(iid)
-          except ValueError:
-            ID_Seleccionado = iid
+    iid = selección[0]
+    ID_Seleccionado = int(iid)
+  except ValueError:
+    ID_Seleccionado = iid
           
-          CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-          if not CampoID:
-              mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-              return
-          query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
-          if ID_Seleccionado is not None:
-              cursor.execute(query, (ID_Seleccionado,))
-          else:
-              mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-              return
-        conexión.commit()
-        datos = consultar_tabla(nombre_de_la_tabla)
+  if not selección:
+    return
+  try:
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+      if not CampoID:
+        return
+      query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
+      cursor.execute(query, (ID_Seleccionado,))
+      conexión.commit()
 
-        for item in tablas_de_datos.get_children():
-            tablas_de_datos.delete(item)
+      for item in tablas_de_datos.get_children():
+        tablas_de_datos.delete(item)
 
-        for index, fila in enumerate(datos):
-            tag = "par" if index % 2 == 0 else "impar"
-            tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+      datos = consultar_tabla(nombre_de_la_tabla)
 
-        consultar_tabla(nombre_de_la_tabla)
-        for i, (campo, valor) in enumerate(datos.items()):
-          entry = cajasDeTexto[nombre_de_la_tabla][i]
-          entry.delete(0, tk.END)
-        mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
-
+      for índice, fila in enumerate(datos):
+        id_val = fila[0]
+        valores_visibles = fila[1:]
+        tag = "par" if índice % 2 == 0 else "impar"
+        tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      
+      for entry in cajasDeTexto[nombre_de_la_tabla]:
+        entry.delete(0, tk.END)
+      print("✅ ¡Se eliminaron los datos correctamente!")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
-def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+def eliminar_completamente(nombre_de_la_tabla, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-      return
+    return
   try:
     with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
         query = f"DELETE FROM {nombre_de_la_tabla}"
         cursor.execute(query)
         conexión.commit()
-        for item in tablas_de_datos.get_children():
-            tablas_de_datos.delete(item)
-        consultar_tabla(nombre_de_la_tabla, listaID)
-        mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron todos los datos!")
+        
+        tablas_de_datos.delete(*tablas_de_datos.get_children())
+        consultar_tabla(nombre_de_la_tabla)
+        print("✅ ¡Se eliminaron todos los datos!")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
 

@@ -1,6 +1,6 @@
 from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla
-from Fun_Validación_SGAE import validar_fecha, validar_fecha_combobox,bloquear_caracter, validar_fecha_final, validar_hora
+from Fun_Validación_SGAE import aplicar_validación_fecha
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -60,7 +60,6 @@ def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButto
   return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2', state=estado)
 
 def crear_tabla_Treeview(contenedor, tabla):
-  global lista_IDs
   columnas = campos_en_db[tabla]
   estilo = ttk.Style()
   estilo_treeview = f"Custom.Treeview"
@@ -78,16 +77,15 @@ def crear_tabla_Treeview(contenedor, tabla):
   tabla_Treeview.tag_configure("par", background=colores["blanco"])
   tabla_Treeview.tag_configure("impar", background=colores["celeste"])
 
-  datos = consultar_tabla(tabla)
-  
   for item in tabla_Treeview.get_children():
     tabla_Treeview.delete(item)
   
+  datos = consultar_tabla(tabla)
+  
   for índice, fila in enumerate(datos):
     id_val = fila[0]
-    valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+    valores_visibles = fila[1:]
     tag = "par" if índice % 2 == 0 else "impar"
-    # insertamos con iid = id_val (como string)
     tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
@@ -107,7 +105,13 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
     combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
     listaDesplegable[nombre_de_la_tabla].append(combo)
     cajasDeTexto[nombre_de_la_tabla].append(combo)
-  cargar_datos_en_Combobox(nombre_de_la_tabla, listaDesplegable[nombre_de_la_tabla])
+    
+  cargar_datos_en_Combobox(nombre_de_la_tabla, combo)  
+  for tabla, campos in campos_por_tabla.items():
+    for etiqueta, widget_interno in campos:
+      widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno), None)
+      if widget and widget_interno.startswith("txBox_Fecha") and any(palabra in widget_interno.lower() for palabra in ["fecha", "hora"]):
+        aplicar_validación_fecha(widget, mi_ventana)
 
 def crear_botonesExcluyentes(contenedor, texto, comando, estado="disabled", estilo="Radiobutton.TRadiobutton"):
   return ttk.Radiobutton(contenedor, text=texto, width=len(texto), command= comando(), state=estado, style=estilo, cursor='hand2')
@@ -352,20 +356,7 @@ def abrir_tablas(nombre_de_la_tabla):
     ]
   }
   cajasDeTexto = {}
-  cajasDeTexto[nombre_de_la_tabla] = []
-  
-  def aplicar_validación_fecha(widget):
-    vcmd_key = (mi_ventana.register(validar_fecha_combobox), "%P")
-    widget.config(validate="key", validatecommand=vcmd_key)
-    widget.bind("<FocusOut>", lambda e: validar_fecha_final(e))
-    widget.bind("<KeyPress>", lambda e: bloquear_caracter(e))
-    
-  for tabla, campos in campos_por_tabla.items():
-    for etiqueta, widget_interno in campos:
-      widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno),None)
-      if widget and widget_interno.startswith("txBox"):
-          aplicar_validación_fecha(widget)
-      
+  cajasDeTexto[nombre_de_la_tabla] = [] 
       
   # --- Creamos un estilo global ---
   estilo = ttk.Style()
@@ -404,10 +395,10 @@ def abrir_tablas(nombre_de_la_tabla):
   btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
+  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), 10, "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
+  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnEliminarTODO.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
@@ -415,7 +406,6 @@ def abrir_tablas(nombre_de_la_tabla):
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
-
 
 # --- INICIO DEL SISTEMA ---
 

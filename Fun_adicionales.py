@@ -59,19 +59,18 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 def convertir_datos(campos_db, lista_de_cajas):
   for campo, caja in zip(campos_db, lista_de_cajas):
     valor = caja.get()
-    # Si el campo es una fecha, lo convierte al formato "DD/MM/YYYY"
+    
     if isinstance(valor, str) and "fecha" in campo.lower():
         try:
             fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
         except ValueError:
             continue
         valor = fecha_obj
-    # Si el campo es una hora, lo convierte al formato "HH:MM"
     elif isinstance(valor, str) and "hora" in campo.lower():
         try:
             hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S").strftime("%H:%M")
         except ValueError:
-            continue  # Si no es una hora válida, no la convierte
+            continue
         valor = hora_obj
     caja.delete(0, tk.END)  # Limpia el entry
     caja.insert(0, str(valor))  # Inserta el valor convertido
@@ -146,14 +145,14 @@ def construir_query(nombre_de_la_tabla, filtros):
   match nombre_de_la_tabla.lower():
       case "alumno":
           consulta_base = """SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS FechaNacimiento, c.Nombre AS Carrera
-                                      FROM alumno AS a
-                                      JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
-                                      ORDER BY a.Nombre;
+                              FROM alumno AS a
+                              LEFT JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
+                              ORDER BY a.Nombre;
                           """
       case "asistencia":
           consulta_base = """SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
                               FROM asistencia AS asis
-                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                              LEFT JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
                               ORDER BY asis.Fecha_Asistencia"""
       case "carrera":
           consulta_base = """SELECT c.ID_Carrera, c.Nombre, c.Duración
@@ -162,16 +161,16 @@ def construir_query(nombre_de_la_tabla, filtros):
       case "materia":
           consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i') AS Horario, c.Nombre AS Carrera
                               FROM materia AS m
-                              JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
+                              LEFT JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
                               ORDER BY m.Nombre"""
       case "enseñanza":
           consulta_base = """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
                               FROM enseñanza AS e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia
+                              LEFT JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                              LEFT JOIN materia AS m ON e.IDMateria = m.ID_Materia
                               ORDER BY m.Nombre, p.Nombre"""
       case "profesor":
-          consulta_base = """SELECT pro.ID_Profesor pro.Nombre
+          consulta_base = """SELECT pro.ID_Profesor, pro.Nombre
                               FROM profesor AS pro
                               ORDER BY pro.Nombre"""
       case "nota":
@@ -179,8 +178,8 @@ def construir_query(nombre_de_la_tabla, filtros):
                               REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
                               n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
                               FROM nota AS n
-                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia
+                              LEFT JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                              LEFT JOIN materia AS m ON n.IDMateria = m.ID_Materia
                               ORDER BY al.Nombre, m.Nombre"""
       case _:
           consulta_base = f"SELECT * FROM {nombre_de_la_tabla}"
@@ -195,7 +194,6 @@ def consultar_tabla(nombre_de_la_tabla):
       query = construir_query(nombre_de_la_tabla, {})
       cursor.execute(query)
       res = cursor.fetchall()
-      
       cursor.close()
       desconectar_base_de_datos(conexión)
       return res

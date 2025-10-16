@@ -96,15 +96,12 @@ def normalizar_valor_nota(datos):
 
 ## Estas funciones se encargan de validar los datos de fecha, hora y nota. Pero de una forma muy forzada,
 ## es decir, para que SQL no sepa principalmente la fecha en formato 'YYYY-MM-DD' está así. Buscamos que se haga 'DD/MM/YYYY'
-def validar_fecha(valor):
-  if isinstance(valor, fecha):
-    return True
-  if isinstance(valor, str):
-    try:
-      datetime.strptime(valor, '%d/%m/%Y').date()
-      return True
-    except ValueError:
-      return False
+def validar_fecha(widget):
+  try:
+      datetime.strptime(widget.get(), "%d/%m/%Y")
+      widget.config(background="white")
+  except ValueError:
+      widget.config(background="salmon")
   return False
 
 def validar_hora(valor):
@@ -118,17 +115,17 @@ def validar_hora(valor):
       return False
   return False
 
+
+def aplicar_validación_fecha(widget, mi_ventana):
+  vcmd_key = (mi_ventana.register(validar_fecha_combobox), "%P")
+  widget.config(validate="key", validatecommand=vcmd_key)
+  widget.bind("<FocusOut>", lambda e: validar_fecha(widget))
+  widget.bind("<KeyPress>", bloquear_caracter)
+
 def validar_fecha_combobox(valor):
   return True if re.fullmatch(r"[0-9]{0,2}(/[0-9]{0,2}(/[0-9]{0,4})?)?", valor) else False
 
-def validar_fecha_final(widget):
-  try:
-      datetime.strptime(widget.get(), "%d/%m/%Y")
-      widget.config(background="white")
-  except ValueError:
-      widget.config(background="salmon")
 
-def bloquear_caracter(evento):
-    if not re.fullmatch(r"[0-9/\-]", evento.char):
-        return "break"
-
+def bloquear_caracter(event):
+  if not re.match(r"[0-9/]", event.char) and event.keysym not in ("BackSpace", "Delete", "Tab", "Left", "Right"):
+      return "break"
