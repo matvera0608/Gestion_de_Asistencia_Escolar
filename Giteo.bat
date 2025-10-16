@@ -160,6 +160,7 @@ GOTO CONTINUE_GIT_OPERATIONS
 SET /P "COMMIT_MESSAGE=Commitea tu mensaje: "
 
 IF "!COMMIT_MESSAGE!"=="" ( 
+    color 0C
     echo El mensaje personalizado no puede estar vacío.
     Volviendo al menú...
     GOTO SELECT_COMMIT_MSG
@@ -174,6 +175,7 @@ echo.
 CALL :CHECK_INTERNET
 IF %INTERNET_STATUS% NEQ 0 (
     echo.
+    color 0C
     echo ERROR: No se detectó la conexión a Internet.
     echo No se puede gitear sin conexión.
     echo.
@@ -225,6 +227,8 @@ IF %ERRORLEVEL% NEQ 0 (
     git pull --rebase 
     
     IF %ERRORLEVEL% NEQ 0 (
+        color 0C REM Cambiar color a rojo para indicar error
+        echo.
         :: CONFLICTO REAL (Detener y mostrar pasos manuales)
         echo.
         echo ERROR: No se pudo hacer el pull/rebase. Hubo un conflicto de fusion.
@@ -243,10 +247,11 @@ IF %ERRORLEVEL% NEQ 0 (
     ) ELSE (
         :: Rebase exitoso, reintentar push
         echo Rebase exitoso. Reintentando la subida...
-        git push -u origin main
     )
-
-
+)
+git push -u origin main
+echo.
+color 0A
 echo.
 echo ¡Giteo completado exitosamente!
 pause
