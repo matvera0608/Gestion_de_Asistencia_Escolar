@@ -196,36 +196,42 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
     for item in tablas_de_datos.get_children():
         tablas_de_datos.delete(item)
 
-    for index, fila in enumerate(datos):
-        tag = "par" if index % 2 == 0 else "impar"
-        tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
-    mensajeTexto.showinfo("CORRECTO", "SE AGREGÓ LOS DATOS NECESARIOS")
+    for índice, fila in enumerate(datos):
+      id_val = fila[0]
+      valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+      tag = "par" if índice % 2 == 0 else "impar"
+      # insertamos con iid = id_val (como string)
+      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+    print("SE AGREGÓ LOS DATOS NECESARIOS")
     # Limpiar las cajas de texto después de insertar
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
-    # Si usas Treeview, no necesitas modificar aquí, porque consultar_tabla debe actualizar el Treeview.
-    # Si antes usabas Listbox y ahora Treeview, asegúrate que consultar_tabla inserte los datos en el Treeview.
-    # No necesitas modificar esta función para Treeview, solo la función de refresco de la tabla.
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
-def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
   selección = obtener_selección(tablas_de_datos)
   if not selección:
     return
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
   columna_seleccionada = tablas_de_datos.selection()
   if not columna_seleccionada:
-    mensajeTexto.showwarning("ADVERTENCIA", "FALTA SELECCIONAR UNA FILA")
     return
 
-  selección = columna_seleccionada[0]
-  índice = tablas_de_datos.index(selección)
-  ID_Seleccionado = listaID[índice]
+  selección = tablas_de_datos.selection()
+  if not selección:
+    return
+  
+  try:
+    iid = selección[0]
+    idSeleccionado = int(iid)
+  except ValueError:
+    idSeleccionado = iid
 
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
   if not datos:
@@ -239,50 +245,44 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   if not datos_traducidos:
     return
   
-  valores_sql = []
-  campos_sql = []
+  valores_sql = list(datos_traducidos.values())
+  campos_sql = [f"{cam} = %s" for cam in datos_traducidos.keys()]
+  set_sql = ', '.join(campos_sql)
+  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+  consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
   
-  for campo, valor in datos_traducidos.items():
-    valores_sql.append(valor)
-    campos_sql.append(f"{campo} = %s")
-    
+  valores_sql.append(idSeleccionado)
   try:
     with conectar_base_de_datos() as conexión:
+      
+      try:
         cursor = conexión.cursor()
-        set_sql = ', '.join(campos_sql)
-
-        if nombre_de_la_tabla.lower() == "nota":
-          id_alumno, id_materia = ID_Seleccionado
-          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE IDAlumno = %s AND IDMateria = %s"
-          valores_sql.extend([id_alumno, id_materia])
-        else:
-          CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-          consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
-          valores_sql.append(ID_Seleccionado)
-          
         cursor.execute(consulta, tuple(valores_sql))
         conexión.commit()
-      
-        datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+      finally:
+        desconectar_base_de_datos(conexión)
+      datos = consultar_tabla(nombre_de_la_tabla)
 
-        for item in tablas_de_datos.get_children():
-            tablas_de_datos.delete(item)
+      for item in tablas_de_datos.get_children():
+          tablas_de_datos.delete(item)
 
-        for index, fila in enumerate(datos):
-            tag = "par" if index % 2 == 0 else "impar"
-            tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
-            
-        for caja in cajasDeTexto[nombre_de_la_tabla]:
-          caja.delete(0, tk.END)
-        
-        listaID[:] = lista_actualizada
-        mensajeTexto.showinfo("CORRECTO", "✅ SE MODIFICÓ EXITOSAMENTE")
+      for índice, fila in enumerate(datos):
+        id_val = fila[0]
+        valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+        tag = "par" if índice % 2 == 0 else "impar"
+        # insertamos con iid = id_val (como string)
+        tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+          
+      for caja in cajasDeTexto[nombre_de_la_tabla]:
+        caja.delete(0, tk.END)
+      print("✅ SE MODIFICÓ EXITOSAMENTE")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
   columna_seleccionada = tablas_de_datos.selection()
   
   if not columna_seleccionada:
@@ -290,48 +290,43 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       return
   try:
       with conectar_base_de_datos() as conexión:
-          cursor = conexión.cursor()
-          # Recorrer las selecciones y eliminarlas una por una
-          for selección in columna_seleccionada:
-            índice = tablas_de_datos.index(selección)
-            ID_Seleccionado = listaID[índice]
-            if nombre_de_la_tabla.lower() == "nota":
-              query = f"DELETE FROM {nombre_de_la_tabla} WHERE IDAlumno = %s AND IDMateria = %s"
-              if not isinstance(ID_Seleccionado, tuple):
-                  mensajeTexto.showerror("ERROR", "ID de nota no es una tupla válida")
-                  return
-              cursor.execute(query, ID_Seleccionado)
-            else:
-              # Lógica para otras tablas con clave simple
-              CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-              if not CampoID:
-                  mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
-                  return
-              query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
-              if ID_Seleccionado is not None:
-                  cursor.execute(query, (ID_Seleccionado,))
-              else:
-                  mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
-                  return
-          conexión.commit()
-          datos, lista_actualizada = consultar_tabla(nombre_de_la_tabla, listaID)
+        cursor = conexión.cursor()
+        # Recorrer las selecciones y eliminarlas una por una
+        for selección in columna_seleccionada:
+          try:
+            iid = selección[0]
+            ID_Seleccionado = int(iid)
+          except ValueError:
+            ID_Seleccionado = iid
+          
+          CampoID = conseguir_campo_ID(nombre_de_la_tabla)
+          if not CampoID:
+              mensajeTexto.showerror("ERROR", "No se ha podido determinar el campo ID para esta tabla")
+              return
+          query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
+          if ID_Seleccionado is not None:
+              cursor.execute(query, (ID_Seleccionado,))
+          else:
+              mensajeTexto.showerror("ERROR", "NO SE HA ENCONTRADO EL ID VÁLIDO")
+              return
+        conexión.commit()
+        datos = consultar_tabla(nombre_de_la_tabla)
 
-          for item in tablas_de_datos.get_children():
-              tablas_de_datos.delete(item)
+        for item in tablas_de_datos.get_children():
+            tablas_de_datos.delete(item)
 
-          for index, fila in enumerate(datos):
-              tag = "par" if index % 2 == 0 else "impar"
-              tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+        for index, fila in enumerate(datos):
+            tag = "par" if index % 2 == 0 else "impar"
+            tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
 
-          listaID[:] = lista_actualizada
-          consultar_tabla(nombre_de_la_tabla, listaID)
-          for i, (campo, valor) in enumerate(datos.items()):
-            entry = cajasDeTexto[nombre_de_la_tabla][i]
-            entry.delete(0, tk.END)
-          mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
+        consultar_tabla(nombre_de_la_tabla)
+        for i, (campo, valor) in enumerate(datos.items()):
+          entry = cajasDeTexto[nombre_de_la_tabla][i]
+          entry.delete(0, tk.END)
+        mensajeTexto.showinfo("ÉXITO", "✅ ¡Se eliminaron los datos correctamente!")
 
   except Exception as e:
-      mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
+    mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 def eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, listaID):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():

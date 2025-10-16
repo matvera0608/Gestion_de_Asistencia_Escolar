@@ -32,7 +32,6 @@ campos_en_db = {
       "profesor": ["Nombre"],
       "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
   }
-lista_IDs = [] 
 
 # os.system(".\Giteo.bat")
 
@@ -84,16 +83,13 @@ def crear_tabla_Treeview(contenedor, tabla):
   for item in tabla_Treeview.get_children():
     tabla_Treeview.delete(item)
   
-  for fila in datos:
+  for índice, fila in enumerate(datos):
     id_val = fila[0]
-    valores_visibles = fila[1:]
-    tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles)
+    valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+    tag = "par" if índice % 2 == 0 else "impar"
+    # insertamos con iid = id_val (como string)
+    tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
-
-  # for index, fila in enumerate(datos):
-  #   tag = "par" if index % 2 == 0 else "impar"
-  #   tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
-  
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
     
   return tabla_Treeview 
@@ -405,13 +401,13 @@ def abrir_tablas(nombre_de_la_tabla):
   btnAgregar = crear_botón(marco_izquierdo, "Agregar", lambda: insertar(), 10, "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
-  btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, lista_IDs), 10, "disabled")
+  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
   btnEliminarTODO.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
