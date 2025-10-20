@@ -1,7 +1,8 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
-from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección
+from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección, consultar_tabla_dinámica
 from Fun_Validación_SGAE import validar_datos
-from tkinter import messagebox as mensajeTexto, filedialog as diálogo, ttk
+from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
+from tkinter import simpledialog
 import tkinter as tk
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
 from reportlab.lib import colors
@@ -45,40 +46,15 @@ def cargar_datos_en_Combobox(tablas_de_datos, combos):
         for campo_foráneo, tabla_ajena in relación:
           if nombre_combo == tabla_ajena:
             id_campo, campoVisible = campos_con_claves[tabla_ajena]
-            
             consulta = f"SELECT {id_campo}, {campoVisible} FROM {tabla_ajena}"
             cursor.execute(consulta)
             registros = cursor.fetchall()
             valores = [fila[1] for fila in registros]
             comboWid["values"] = valores
             comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
-            
-      
   except error_sql as sql_error:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
     return
-
-def mostrar(tablas_de_datos, muestra):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  
-  for item in tablas_de_datos:
-    tablas_de_datos.delete(item)
-  
-  registros = muestra()
-  
-  for fila in registros:
-    tablas_de_datos.insert("", "end", values=fila) 
-
-def filtrar(tablas_de_datos, filtro, criterio):
-  #En esta función voy a filtrar todos los datos de la treeview.
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  
-  registros = filtro(criterio)
-  
-  for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
 
 def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -102,7 +78,7 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
       # Diccionario de claves primarias según la tabla
       PKs = {
         "alumno": "ID_Alumno",
-        "asistencia": "ID_Asistencia",
+        "asistencia": "ID",
         "carrera": "ID_Carrera",
         "materia": "ID_Materia",
         "profesor": "ID_Profesor",
@@ -324,7 +300,7 @@ def eliminar_completamente(nombre_de_la_tabla, tablas_de_datos):
   try:
     with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
-        query = f"DELETE FROM {nombre_de_la_tabla}"
+        query = f"TRUNCATE TABLE {nombre_de_la_tabla}"
         cursor.execute(query)
         conexión.commit()
         
@@ -351,8 +327,8 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
           return
         campo = campo.strip()
         
-        if campo.lower() == "Nombre":
-          orden = tk.simpledialog.asktring("Orden", f"¿Que orden deseas para {campo}? ", "palabras válidas: ASCENDENTE o DESCENDENTE")
+        if campo:
+          orden = tk.simpledialog.askstring("Orden", f"¿Que orden deseas para {campo}? ", "palabras válidas: ASCENDENTE o DESCENDENTE")
           if not orden:
             return
       
@@ -365,12 +341,12 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
       campo_real = coincidencia[0]
 
       consultas = {
-          "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre as nom
+          "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre as Carrera
                         FROM alumno AS a
                         JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
                         ORDER BY {campo_real} ASC""",
                     
-          "asistencia": f"""SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
+          "asistencia": f"""SELECT asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
                             FROM asistencia AS asis
                             JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
                             ORDER BY {campo_real} ASC"""
@@ -389,66 +365,77 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
         mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
         return
       
-      filasAMostrar = []
-      listasIDs = []
       
-      for fila in resultado:
-        if nombre_de_la_tabla == "nota":
-          listasIDs.append((fila[0], fila[1]))
-          filaVisible = list(fila[2:])
-        else:
-          listasIDs.append(fila[0])
-          filaVisible = list(fila[1:])
-        filasAMostrar.append(filaVisible)
-
-      for index, filaVisible in enumerate(filasAMostrar): 
+      for index, filaVisible in enumerate(tablas_de_datos): 
         tag = "par" if index % 2 == 0 else "impar"
         tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
             
   except error_sql as e:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
 
-def buscar_datos(nombre_de_la_tabla, tablas_de_datos, campos_db, campo_busqueda):
-  selección = obtener_selección(tablas_de_datos)
-  if not selección:
-    return
- 
+def buscar_datos(nombre_de_la_tabla, tablas_de_datos, entry_busqueda, consultas):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
+  
   try:
     conexión = conectar_base_de_datos()
     cursor = conexión.cursor()
-    valor_busqueda = campo_busqueda.get().strip()
-    consulta = f"SELECT * FROM {nombre_de_la_tabla} WHERE ({campos_db}) LIKE %s"
-    cursor.execute(consulta, (f"%{valor_busqueda}%"), )
+    valor_busqueda = entry_busqueda.get().strip()
+    sql, params = consultar_tabla_dinámica(consultas, nombre_de_la_tabla, valor_busqueda or "", operador_like="{}%")
+    cursor.execute(sql, params)
     resultado = cursor.fetchall()
     
     for item in tablas_de_datos.get_children():
       tablas_de_datos.delete(item)
-      
-    for fila in resultado:
-      tablas_de_datos.insert("", "end", values=fila)
-    cursor.close()
-    conexión.close()
-  except error_sql as e:
-    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
+    
+    for i, fila in enumerate(resultado):
+      id_a_ocultar = fila[0]
+      datos_visibles = fila[1:]
+      tag = "par" if i % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
 
+   
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
+  finally:
+    if cursor:
+      cursor.close()
+    if conexión:
+      conexión.close()
+    
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
     datos_a_exportar = tablas_de_datos.get_children()
     datos = []
+    
+    #ACÁ ME ARREGLÉ SOLO, AHÍ PUSE UN alias PARA MOSTRAR DATOS LEGIBLES Y OCULTANDO LOS DATOS CRUDOS.
+    #Y ME GUSTA, PORQUE EL PROFESOR ME PIDIÓ QUE MUESTREN LOS DATOS LEGIBLE COMO DE IDCarrera A Carrera. 
+    
+    alias = {
+      "IDCarrera": "Carrera",
+      "IDMateria": "Materia",
+      "IDProfesor": "Profesor",
+      "IDAlumno": "Alumno",
+      "FechaDeNacimiento": "Fecha de nacimiento",
+      "valorNota": "Nota",
+      "tipoNota": "Evaluación",
+      "Fecha_Asistencia": "Fecha",
+    }
 
     encabezado = tablas_de_datos["columns"]
-    datos.append(encabezado)
+    
+    enc_legible = [alias.get(col, col) for col in encabezado]
+    
+    datos.append(enc_legible)
 
     # Obtener los valores de cada fila de la tabla
     for item in datos_a_exportar:
       valores = tablas_de_datos.item(item, "values")
       datos.append(valores)
     
-    ruta_archivo_pdf = diálogo.asksaveasfilename(
+    ruta_archivo_pdf = diálogoArchivo.asksaveasfilename(
       defaultextension=".pdf",
       filetypes=[("Archivo PDF", "*.pdf")],
       initialfile=f"Reporte_{nombre_de_la_tabla}",

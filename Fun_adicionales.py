@@ -4,13 +4,151 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
+consultas = {
+      "alumno": {
+          "select": """SELECT a.ID_Alumno, a.Nombre, 
+                      DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha, 
+                      c.Nombre AS Carrera
+                      FROM alumno a
+                      JOIN carrera c ON a.IDCarrera = c.ID_Carrera""",
+          "buscables": ["a.Nombre", "c.Nombre"],
+          "orden": "a.Nombre"
+      },
+      "materia": {
+          "select": """SELECT m.ID_Materia, m.Nombre, 
+                              TIME_FORMAT(m.Horario,'%H:%i') AS Horario, 
+                              c.Nombre AS Carrera
+                      FROM materia m
+                      JOIN carrera c ON m.IDCarrera = c.ID_Carrera""",
+          "buscables": ["m.Nombre", "c.Nombre"],
+          "orden": "m.Nombre"
+      },
+      "carrera":{
+          "select": """SELECT c.ID_Carrera, c.Nombre, c.Duración
+                              FROM carrera AS c""",
+          "buscables": ["c.Nombre", "c.Duración"],
+          "orden": "m.Nombre"
+          },
+      "asistencia":{
+          "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
+                              FROM asistencia AS asis
+                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno""",
+          "buscables": ["asis.Estado", "al.Nombre"],
+          "orden": "asis.Fecha_Asistencia"
+          },
+       "enseñanza":{
+          "select": """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
+                              FROM enseñanza AS e
+                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                              JOIN materia AS m ON e.IDMateria = m.ID_Materia""",
+          "buscables": ["m.Nombre", "p.Nombre"],
+          "orden": "m.Nombre"
+          },
+      "profesor":{
+          "select":"""SELECT pro.ID_Profesor, pro.Nombre
+                              FROM profesor AS pro""",
+          "buscables": ["pro.Nombre"],
+          "orden": "pro.Nombre"
+          },
+      "nota":{
+          "select": """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
+                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
+                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
+                              FROM nota AS n
+                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                              JOIN materia AS m ON n.IDMateria = m.ID_Materia,
+          "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"],
+          "orden": "al.Nombre"""
+                              }
+  }
+
+def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like):
+    """
+    Devuelve (sql, params) listos para ejecutar.
+    - consultas_meta: tu diccionario 'consultas'
+    - nombre_de_la_tabla: clave en consultas_meta (p.ej. "alumno")
+    - valorBúsqueda: texto a buscar
+    - operador_like: formato del patrón, por defecto '%valor%'
+    """
+    meta = consultas_meta.get(nombre_de_la_tabla.lower())
+    if not meta:
+        raise ValueError(f"No existe metadata para la tabla '{nombre_de_la_tabla}'")
+
+    select_sql = meta["select"].strip()
+    buscables = meta.get("buscables", [])
+    orden = meta.get("orden")
+
+    if buscables:
+        condiciones = " OR ".join(f"{campo} LIKE %s" for campo in buscables)
+        sql = f"{select_sql} WHERE {condiciones}"
+        if orden:
+            sql = f"{sql} ORDER BY {orden}"
+        params = tuple(operador_like.format(valorBúsqueda) for _ in buscables)
+    else:
+       
+        sql = select_sql
+        if orden:
+            sql = f"{sql} ORDER BY {orden}"
+        params = ()
+
+    return sql, params
+
+
+def guardar_snapshot(treeview):
+  #Guardamos el contenido de los datos como la selección y la copia de datos de manera temporal#
+  copia_de_datos = {
+    "filas": [],
+    "selección": treeview.selection()
+  }
+  
+  for item in treeview.get_children():
+    valor = treeview.item(item, "values")
+    tags = treeview.item(item, "tags")
+    fila = { "iid": item, "valores": valor, "tags": tags}
+    copia_de_datos["filas"].append(fila)
+    
+  return copia_de_datos
+
+def restaurar_snapshot(treeview, copia_de_datos):
+  #Restauramos cuando se deshabilitan los botones#
+  
+  treeview.delete(*treeview.get_children()) #Esto hace que limpie visualmente
+  
+  for fila in copia_de_datos["filas"]:
+    treeview.insert("", "end", iid=fila["iid"], values=fila["valores"], tags=fila["tags"]) #Mientras recorro los datos voy volviendo a insertar todo
+    
+  treeview.selection_set(copia_de_datos["selección"]) #Y Este lo restaura todo
+
+
+def filtrar(tablas_de_datos, nombre_tabla, selección=None):
+  #En esta función voy a filtrar todos los datos de la treeview.
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return 
+  
+  for item in tablas_de_datos.get_children():
+    tablas_de_datos.delete(item)
+  
+  registros_ocultos = consultar_tabla(nombre_tabla)
+  for índice, fila in enumerate(registros_ocultos):
+    if len(fila) > 1:
+      valores_visibles = fila[1:]
+      id_iid = fila[0]
+    else:
+      valores_visibles = fila
+      id_iid = None
+
+    tag = "par" if índice % 2 == 0 else "impar"
+    if id_iid is not None:
+      tablas_de_datos.insert("", "end", iid=str(id_iid), values=valores_visibles, tags=(tag,))
+    else:
+      tablas_de_datos.insert("", "end", values=valores_visibles, tags=(tag,))
+
 def obtener_selección(treeview):
     try:
       return treeview.selection()
     except tk.TclError:
       mensajeTexto.showerror("ERROR", "La tabla ya no está disponible.")
       return None
-
 
 def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos=True):
   global datos, campos_db, lista_de_cajas
@@ -33,7 +171,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
       elif texto.count(":") == 1 and len(texto) <= 5:
         texto = fecha_y_hora.strptime(texto, "%H:%M").time()
     except ValueError:
-      mensajeTexto.showerror("Error", f"Formato inválido en '{campo}': {texto}")
       return None
     datos[campo] = texto
   
@@ -42,12 +179,10 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
       return None
   return datos
 
-#Esta función me permite obtener el ID de cualquier tabla que se encuentre en mi base de datos antes de eliminar
-#ya que SQL obliga poner una condición antes de ejecutar una tarea
 def conseguir_campo_ID(nombre_de_la_tabla):
   IDs_mapeados = {
               'alumno': "ID_Alumno",
-              'asistencia': "ID_Asistencia",
+              'asistencia': "ID",
               'carrera': "ID_Carrera",
               'materia': "ID_Materia",
               'enseñanza': "ID",
@@ -109,31 +244,6 @@ def convertir_datos(campos_db, lista_de_cajas):
 #     iniciar_reloj(reloj)
 #     return reloj
 
-
-# --- FUNCIONES DE LECTURA ---
-
-# def cargar_datos(tabla_Treeview, tabla):
-#   conexión = conectar_base_de_datos()
-#   if not conexión:
-#     return
-  
-#   for item in tabla_Treeview.get_children():
-#     tabla_Treeview.delete(item)
-
-#   cursor = conexión.cursor()
-#   # Limpiar datos existentes en el Treeview
-  
-#   cursor.execute(f"SELECT * FROM {tabla}")
-#   filas = cursor.fetchall()
-  
-#   for i, fila in enumerate(filas):
-#     tag = "evenrow" if i % 2 == 0 else "oddrow"
-#     tabla_Treeview.insert("", "end", values=fila, tags=(tag,))
-#   print(filas)
-#   desconectar_base_de_datos(conexión)
-
-# Esta función sirve sólo para leer datos de la bases de datos escuela
-
 def construir_query(nombre_de_la_tabla, filtros):
   consulta_base = ""
   filtro = ""
@@ -146,13 +256,13 @@ def construir_query(nombre_de_la_tabla, filtros):
       case "alumno":
           consulta_base = """SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS FechaNacimiento, c.Nombre AS Carrera
                               FROM alumno AS a
-                              LEFT JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
+                              JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
                               ORDER BY a.Nombre;
                           """
       case "asistencia":
-          consulta_base = """SELECT asis.ID_Asistencia, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
+          consulta_base = """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
                               FROM asistencia AS asis
-                              LEFT JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
                               ORDER BY asis.Fecha_Asistencia"""
       case "carrera":
           consulta_base = """SELECT c.ID_Carrera, c.Nombre, c.Duración
@@ -161,13 +271,13 @@ def construir_query(nombre_de_la_tabla, filtros):
       case "materia":
           consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i') AS Horario, c.Nombre AS Carrera
                               FROM materia AS m
-                              LEFT JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
+                              JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
                               ORDER BY m.Nombre"""
       case "enseñanza":
           consulta_base = """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
                               FROM enseñanza AS e
-                              LEFT JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              LEFT JOIN materia AS m ON e.IDMateria = m.ID_Materia
+                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                              JOIN materia AS m ON e.IDMateria = m.ID_Materia
                               ORDER BY m.Nombre, p.Nombre"""
       case "profesor":
           consulta_base = """SELECT pro.ID_Profesor, pro.Nombre
@@ -178,8 +288,8 @@ def construir_query(nombre_de_la_tabla, filtros):
                               REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
                               n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
                               FROM nota AS n
-                              LEFT JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              LEFT JOIN materia AS m ON n.IDMateria = m.ID_Materia
+                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
+                              JOIN materia AS m ON n.IDMateria = m.ID_Materia
                               ORDER BY al.Nombre, m.Nombre"""
       case _:
           consulta_base = f"SELECT * FROM {nombre_de_la_tabla}"

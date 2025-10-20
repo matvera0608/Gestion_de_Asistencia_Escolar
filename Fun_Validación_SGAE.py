@@ -62,24 +62,20 @@ def validar_datos(nombre_de_la_tabla, datos):
 
     for campo, valor in datos.items():
       if campo in validaciones[nombre_de_la_tabla]:
-        # Validar vacío solo si es str
         if isinstance(valor, str) and not valor.strip():
-            mensajeTexto.showerror("Error", f"El campo '{campo}' está vacío.")
             return False
         validador = validaciones[nombre_de_la_tabla][campo]
-        esVálido = validador(valor) if callable(validador)  else bool(validador.match(valor))
+        esVálido = validador(valor) if callable(validador) else bool(validador.match(valor))
         if not esVálido:
           return
       if nombre_de_la_tabla in ["alumno", "profesor", "carrera"]: 
         campo_único = "Nombre"
         cursor.execute(f"SELECT COUNT(*) FROM {nombre_de_la_tabla} WHERE {campo_único} = %s", (datos[campo_único],))
-        resultado = cursor.fetchone()
-        if resultado[0] > 0:
-          cursor.close()
-          desconectar_base_de_datos(conexión)
-          return False
+        cursor.fetchone()
+        cursor.close()
+        desconectar_base_de_datos(conexión)
       return True
-  except ValueError as error_de_validación:
+  except ValueError:
     return False
   desconectar_base_de_datos(conexión)
   return True
@@ -104,28 +100,26 @@ def validar_fecha(widget):
       widget.config(background="salmon")
   return False
 
-def validar_hora(valor):
-  if isinstance(valor, hora):
-    return True
-  if isinstance(valor, str):
-    try:
-      datetime.strptime(valor, '%H:%M').time()
-      return True
-    except ValueError:
-      return False
+def validar_hora(widget):
+  try:
+      datetime.strptime(widget.get(), "%H:%M")
+      widget.config(background="white")
+  except ValueError:
+      widget.config(background="salmon")
   return False
-
 
 def aplicar_validación_fecha(widget, mi_ventana):
   vcmd_key = (mi_ventana.register(validar_fecha_combobox), "%P")
   widget.config(validate="key", validatecommand=vcmd_key)
   widget.bind("<FocusOut>", lambda e: validar_fecha(widget))
-  widget.bind("<KeyPress>", bloquear_caracter)
+
+def aplicar_validación_hora(widget, mi_ventana):
+  vcmd_key = (mi_ventana.register(validar_hora_combobox), "%P")
+  widget.config(validate="key", validatecommand=vcmd_key)
+  widget.bind("<FocusOut>", lambda e: validar_hora(widget))
 
 def validar_fecha_combobox(valor):
   return True if re.fullmatch(r"[0-9]{0,2}(/[0-9]{0,2}(/[0-9]{0,4})?)?", valor) else False
 
-
-def bloquear_caracter(event):
-  if not re.match(r"[0-9/]", event.char) and event.keysym not in ("BackSpace", "Delete", "Tab", "Left", "Right"):
-      return "break"
+def validar_hora_combobox(valor):
+    return True if re.fullmatch(r"[0-9]{0,2}(:[0-9]{0,2})?", valor) else False

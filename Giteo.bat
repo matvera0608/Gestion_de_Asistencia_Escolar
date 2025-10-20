@@ -218,41 +218,39 @@ IF NOT EXIST ".git" (
 )
 echo Intentando subir cambios a GitHub
 :: --- MANEJO DE ERROR REJECTED (La clave para la automatización) ---
-IF %ERRORLEVEL% NEQ 0 (
-    echo.
-    echo ERROR: Falló la subida (Rejected). Tu rama no está actualizada.
-    echo Intentando sincronizar y subir de nuevo...
+@REM IF %ERRORLEVEL% NEQ 0 (
+@REM     echo.
+@REM     echo ERROR: Falló la subida (Rejected). Tu rama no está actualizada.
+@REM     echo Intentando sincronizar y subir de nuevo...
     
-    :: AUTOMATIZACIÓN: Usar git pull --rebase para sincronizar
-    git pull --rebase 
+@REM     :: AUTOMATIZACIÓN: Usar git pull --rebase para sincronizar
+@REM     git pull --rebase 
     
-    IF %ERRORLEVEL% NEQ 0 (
-        color 0C REM Cambiar color a rojo para indicar error
-        echo.
-        :: CONFLICTO REAL (Detener y mostrar pasos manuales)
-        echo.
-        echo ERROR: No se pudo hacer el pull/rebase. Hubo un conflicto de fusion.
-        echo.
-        echo Por favor, sigue estos pasos para resolverlo:
-        echo 1. Abre el editor de codigo y resuelve los conflictos.
-        echo 2. Una vez resueltos, usa la terminal para ejecutar:
-        echo    git add .
-        echo    git rebase --continue
-        echo.
-        echo Si quieres cancelar el rebase, usa:
-        echo git rebase --abort
-        echo.
-        pause
-        GOTO END_SCRIPT
-    ) ELSE (
-        :: Rebase exitoso, reintentar push
-        echo Rebase exitoso. Reintentando la subida...
-    )
-)
+@REM     IF %ERRORLEVEL% NEQ 0 (
+@REM         color 0C REM Cambiar color a rojo para indicar error
+@REM         echo.
+@REM         :: CONFLICTO REAL (Detener y mostrar pasos manuales)
+@REM         echo.
+@REM         echo ERROR: No se pudo hacer el pull/rebase. Hubo un conflicto de fusion.
+@REM         echo.
+@REM         echo Por favor, sigue estos pasos para resolverlo:
+@REM         echo 1. Abre el editor de codigo y resuelve los conflictos.
+@REM         echo 2. Una vez resueltos, usa la terminal para ejecutar:
+@REM         echo    git add .
+@REM         echo    git rebase --continue
+@REM         echo.
+@REM         echo Si quieres cancelar el rebase, usa:
+@REM         echo git rebase --abort
+@REM         echo.
+@REM         pause
+@REM         GOTO END_SCRIPT
+@REM     ) ELSE (
+@REM         :: Rebase exitoso, reintentar push
+@REM         echo Rebase exitoso. Reintentando la subida...
+@REM     )
+@REM )
 git push -u origin main
-echo.
 color 0A
-echo.
 echo ¡Giteo completado exitosamente!
 pause
 
