@@ -249,7 +249,6 @@ echo Intentando subir cambios a GitHub
 @REM         echo Rebase exitoso. Reintentando la subida...
 @REM     )
 @REM )
-git push -u origin main
 color 0A
 echo ¡Giteo completado exitosamente!
 pause

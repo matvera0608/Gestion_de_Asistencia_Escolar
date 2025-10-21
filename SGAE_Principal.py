@@ -1,7 +1,7 @@
 from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla, consultas
 from Fun_Validación_SGAE import aplicar_validación_fecha, aplicar_validación_hora
-from Eventos import ejecutar_acción_presionando_Enter, mover_con_flechas
+from Eventos import mover_con_flechas
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -248,9 +248,13 @@ def insertar(tabla_treeview):
     return
   insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview)
 
+
+  # --- ESTOS SON PARA LOS EVENTOS.
+
+
+
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 mi_ventana = tk.Tk()
-
 # def pantallaLogin():
 #   ventana = mi_ventana
 #   ventana.title("Sistema Gestor de Asistencias")
@@ -349,8 +353,7 @@ def mostrar_pestañas(ventana):
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
-  global tabla_treeview, rbOcultar, campos_por_tabla, entryBuscar
-  global botones, acciones
+  global tabla_treeview, rbOcultar, campos_por_tabla, entryBuscar, botones, acciones
   nombreActual = nombre_de_la_tabla
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
@@ -482,8 +485,6 @@ def abrir_tablas(nombre_de_la_tabla):
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
-  # --- ESTOS SON PARA LOS EVENTOS.
-
   botones = {
     "Cancelar": btnCancelar,
     "Agregar": btnAgregar,
@@ -504,14 +505,14 @@ def abrir_tablas(nombre_de_la_tabla):
       "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
       "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
   }
+  # --- BINDEOS DE EVENTOS ---
   
-  return botones, acciones
+  ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(tabla_treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
+  
   
 
 # --- INICIO DEL SISTEMA ---
-
 # pantallaLogin()
 mostrar_pestañas(mi_ventana)
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
-mi_ventana.bind("<Button-1>", lambda e: ejecutar_acción_presionando_Enter(botones, acciones, e))
 mi_ventana.mainloop()
