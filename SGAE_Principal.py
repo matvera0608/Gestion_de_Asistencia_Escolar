@@ -272,38 +272,51 @@ def pantallaLogin():
   txBox_usuario.grid(row=1, column=0, pady=(0, 20), sticky="n")
   txBox_usuario.insert(0, "docente")
   
+  rolesVálidos = {
+    "profesor": ("alumno", "asistencia", "materia", "nota"),
+    "profesora": ("alumno", "asistencia", "materia", "nota"),
+    "docente": ("alumno", "asistencia", "materia", "nota"),
+
+    "administrativo": ("carrera", "profesor", "materia", "enseñanza"),
+    "personal administrativo": ("carrera", "profesor", "materia", "enseñanza"),
+    "coordinador": ("carrera", "profesor", "materia", "enseñanza"),
+    "coordinadora": ("carrera", "profesor", "materia", "enseñanza"),
+    "secretario": ("carrera", "profesor", "materia", "enseñanza"),
+    "secretaria": ("carrera", "profesor", "materia", "enseñanza")
+    }
+  
   #Esta función controla que rol es cada usuario
   def validarRol(txBox=txBox_usuario):
-    rol = txBox.get().strip().lower()
-    rolesVálidos = ["profesor", "docente", "administrativo", "personal administrativo", "coordinador", "secretario"]
-    
-    if rol in rolesVálidos:
-      mostrar_pestañas(ventana)
-    else:
-      print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
-      return
+    try:
+      rol = txBox.get().strip().lower()
+      if rol in rolesVálidos:
+        permiso = rolesVálidos[rol]
+        print(f"ACCESO CONCEDIDO: BIENVENIDOS A {rol.title()}")
+        mostrar_pestañas(ventana, permiso)
+      else:
+        print(f"ACCESO DENEGADO: Los roles permitidos son: {', '.join(rolesVálidos.keys())}")
+        
+    except Exception as e:
+      print(f"ERROR DE TIPEO {e}")
   
   #Iniciar Sesión
   botón_login = tk.Button(ventana, text="Iniciar Sesión", width=15)
   botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command=validarRol)
   botón_login.grid(row=2, column=0, pady=30, sticky="s")
   
-  # actualizar_la_hora(ventana)
   return ventana
 
-#Creo un diccionario para tener como referencia de la tabla con el fin de globalizar nombre de la tabla
 
-
-def mostrar_pestañas(ventana):
+def mostrar_pestañas(ventana, permiso):
   # ventana = mi_ventana
   # ventana.title("Sistema Gestor de Asistencias")
-  # ventana.geometry("400x200")
+  ventana.geometry("300x200")
   # ventana.configure(bg=colores["blanco"])
   # ventana.iconbitmap(ícono)
   # ventana.resizable(width=False, height=False)
   # ventana.grid_columnconfigure(0, weight=1)
   # ventana.grid_rowconfigure(2, weight=1)
-  global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
+  global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateriaProfesor, tablaProfesor, tablaNota, color_padre
   
   for widget in ventana.winfo_children():
     widget.destroy()
@@ -311,24 +324,40 @@ def mostrar_pestañas(ventana):
   estilo = ttk.Style()
   estilo.theme_use("clam")
   estilo.configure("TNotebook.Tab", font=("Arial", 8))
+  
   notebook = ttk.Notebook(ventana)
   notebook.pack(expand=True, fill="both")
   
-  tablaAlumno = tk.Frame(notebook)
-  tablaAsistencia = tk.Frame(notebook)
-  tablaCarrera = tk.Frame(notebook)
-  tablaMateria = tk.Frame(notebook)
-  tablaMateria_Profesor = tk.Frame(notebook)
-  tablaProfesor = tk.Frame(notebook)
-  tablaNota = tk.Frame(notebook)
+  pestañas = {
+    "alumno": ("Alumno", lambda: tk.Frame(notebook)),
+    "asistencia": ("Asistencia", lambda: tk.Frame(notebook)),
+    "carrera": ("Carrera", lambda: tk.Frame(notebook)),
+    "materia": ("Materia", lambda: tk.Frame(notebook)),
+    "enseñanza": ("Enseñanza", lambda: tk.Frame(notebook)),
+    "profesor": ("Profesor", lambda: tk.Frame(notebook)),
+    "nota": ("nota", lambda: tk.Frame(notebook))
+  }
   
-  notebook.add(tablaAlumno, text="Alumno")
-  notebook.add(tablaAsistencia, text="Asistencia")
-  notebook.add(tablaCarrera, text="Carrera")
-  notebook.add(tablaMateria, text="Materia")
-  notebook.add(tablaMateria_Profesor, text="Enseñanza")
-  notebook.add(tablaProfesor, text="Profesor")
-  notebook.add(tablaNota, text="Nota")
+  for clave, (texto, frame) in pestañas.items():
+    if clave in permiso:
+      marco = frame()
+      notebook.add(marco, text=texto)
+      
+      match clave:
+        case "alumno":
+          tablaAlumno = marco
+        case "asistencia":
+          tablaAsistencia = marco
+        case "carrera":
+          tablaCarrera = marco
+        case "materia":
+          tablaMateria = marco
+        case "enseñanza":
+          tablaMateriaProfesor = marco
+        case "profesor":
+          tablaProfesor = marco
+        case "nota":
+          tablaNota = marco
   
   notebook.carga_inicial = True
   
@@ -341,13 +370,12 @@ def mostrar_pestañas(ventana):
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=ventana.cget("bg"), font=("Arial", 10))
   lb_obligatoriedad.pack(side="bottom", pady=5)
   
-  notebook.select(tablaAlumno)
+  # notebook.select(tablaAlumno)
   
   notebook.bind("<<NotebookTabChanged>>", on_tab_change)
   
   ventana.after(100, setattr(notebook, "carga_inicial", False))
-  
-  
+
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual

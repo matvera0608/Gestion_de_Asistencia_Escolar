@@ -304,7 +304,7 @@ def eliminar_completamente(nombre_de_la_tabla, tablas_de_datos):
   try:
     with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
-        query = f"TRUNCATE TABLE {nombre_de_la_tabla}"
+        query = f"SET FOREIGN_KEY_CHECK = 0 TRUNCATE TABLE {nombre_de_la_tabla}"
         cursor.execute(query)
         conexión.commit()
         
