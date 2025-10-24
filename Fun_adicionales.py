@@ -11,8 +11,7 @@ consultas = {
                       c.Nombre AS Carrera
                       FROM alumno a
                       JOIN carrera c ON a.IDCarrera = c.ID_Carrera""",
-          "buscables": ["a.Nombre", "c.Nombre"],
-          "orden": "a.Nombre"
+          "buscables": ["a.Nombre", "c.Nombre"]
       },
       "materia": {
           "select": """SELECT m.ID_Materia, m.Nombre, 
@@ -20,35 +19,30 @@ consultas = {
                               c.Nombre AS Carrera
                       FROM materia m
                       JOIN carrera c ON m.IDCarrera = c.ID_Carrera""",
-          "buscables": ["m.Nombre", "c.Nombre"],
-          "orden": "m.Nombre"
+          "buscables": ["m.Nombre", "c.Nombre"]
       },
       "carrera":{
           "select": """SELECT c.ID_Carrera, c.Nombre, c.Duración
                               FROM carrera AS c""",
-          "buscables": ["c.Nombre", "c.Duración"],
-          "orden": "m.Nombre"
+          "buscables": ["c.Nombre", "c.Duración"]
           },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
                               FROM asistencia AS asis
                               JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno""",
-          "buscables": ["asis.Estado", "al.Nombre"],
-          "orden": "asis.Fecha_Asistencia"
+          "buscables": ["asis.Estado", "al.Nombre"]
           },
        "enseñanza":{
           "select": """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
                               FROM enseñanza AS e
                               JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
                               JOIN materia AS m ON e.IDMateria = m.ID_Materia""",
-          "buscables": ["m.Nombre", "p.Nombre"],
-          "orden": "m.Nombre"
+          "buscables": ["m.Nombre", "p.Nombre"]
           },
       "profesor":{
           "select":"""SELECT pro.ID_Profesor, pro.Nombre
                               FROM profesor AS pro""",
-          "buscables": ["pro.Nombre"],
-          "orden": "pro.Nombre"
+          "buscables": ["pro.Nombre"]
           },
       "nota":{
           "select": """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
@@ -56,10 +50,9 @@ consultas = {
                               n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
                               FROM nota AS n
                               JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia,
-          "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"],
-          "orden": "al.Nombre"""
-                              }
+                              JOIN materia AS m ON n.IDMateria = m.ID_Materia""",
+          "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"]
+          }
   }
 
 def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like):

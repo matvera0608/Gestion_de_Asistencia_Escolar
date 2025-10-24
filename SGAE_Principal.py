@@ -250,52 +250,10 @@ def insertar(tabla_treeview):
   # --- ESTOS SON PARA LOS EVENTOS.
 
 
-
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
 mi_ventana = tk.Tk()
-# def pantallaLogin():
-#   ventana = mi_ventana
-#   ventana.title("Sistema Gestor de Asistencias")
-#   ventana.geometry("450x200")
-#   ventana.configure(bg=colores["blanco"])
-#   ventana.iconbitmap(ícono)
-#   ventana.resizable(width=False, height=False)
-#   ventana.grid_columnconfigure(0, weight=1)
-#   ventana.grid_rowconfigure(2, weight=1)
-
-#   #Etiqueta para rol
-#   label_usuario_rol = tk.Label(ventana, text="ROL", bg=colores["blanco"], fg=colores["negro"], font=("Arial", 15, "bold"))
-#   label_usuario_rol.grid(row=0, column=0, pady=(20, 5), sticky="n")
-  
-#   #Entry para el usuario
-#   txBox_usuario = tk.Entry(ventana, font=("Arial", 15), width=20, fg=colores["negro_resaltado"])
-#   txBox_usuario.grid(row=1, column=0, pady=(0, 20), sticky="n")
-#   txBox_usuario.insert(0, "docente")
-  
-#   #Esta función controla que rol es cada usuario
-#   def validarRol(txBox=txBox_usuario):
-#     rol = txBox.get().strip().lower()
-#     rolesVálidos = ["profesor", "docente", "administrativo", "personal administrativo"]
-    
-#     if rol in rolesVálidos:
-#       mostrar_pestañas(ventana)
-#     else:
-#       print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
-#       return
-  
-#   #Iniciar Sesión
-#   botón_login = tk.Button(ventana, text="Iniciar Sesión", width=15)
-#   botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command=validarRol)
-#   botón_login.grid(row=2, column=0, pady=30, sticky="s")
-  
-#   # actualizar_la_hora(ventana)
-#   return ventana
-
-#Creo un diccionario para tener como referencia de la tabla con el fin de globalizar nombre de la tabla
-
-
-def mostrar_pestañas(ventana):
+def pantallaLogin():
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencias")
   ventana.geometry("400x200")
@@ -304,6 +262,47 @@ def mostrar_pestañas(ventana):
   ventana.resizable(width=False, height=False)
   ventana.grid_columnconfigure(0, weight=1)
   ventana.grid_rowconfigure(2, weight=1)
+
+  #Etiqueta para rol
+  label_usuario_rol = tk.Label(ventana, text="ROL", bg=colores["blanco"], fg=colores["negro"], font=("Arial", 15, "bold"))
+  label_usuario_rol.grid(row=0, column=0, pady=(20, 5), sticky="n")
+  
+  #Entry para el usuario
+  txBox_usuario = tk.Entry(ventana, font=("Arial", 15), width=20, fg=colores["negro_resaltado"])
+  txBox_usuario.grid(row=1, column=0, pady=(0, 20), sticky="n")
+  txBox_usuario.insert(0, "docente")
+  
+  #Esta función controla que rol es cada usuario
+  def validarRol(txBox=txBox_usuario):
+    rol = txBox.get().strip().lower()
+    rolesVálidos = ["profesor", "docente", "administrativo", "personal administrativo", "coordinador", "secretario"]
+    
+    if rol in rolesVálidos:
+      mostrar_pestañas(ventana)
+    else:
+      print("Error de Login", f"Los roles permitidos son: {', '.join(rolesVálidos).title()}. Ingresar bien los datos")
+      return
+  
+  #Iniciar Sesión
+  botón_login = tk.Button(ventana, text="Iniciar Sesión", width=15)
+  botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command=validarRol)
+  botón_login.grid(row=2, column=0, pady=30, sticky="s")
+  
+  # actualizar_la_hora(ventana)
+  return ventana
+
+#Creo un diccionario para tener como referencia de la tabla con el fin de globalizar nombre de la tabla
+
+
+def mostrar_pestañas(ventana):
+  # ventana = mi_ventana
+  # ventana.title("Sistema Gestor de Asistencias")
+  # ventana.geometry("400x200")
+  # ventana.configure(bg=colores["blanco"])
+  # ventana.iconbitmap(ícono)
+  # ventana.resizable(width=False, height=False)
+  # ventana.grid_columnconfigure(0, weight=1)
+  # ventana.grid_rowconfigure(2, weight=1)
   global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateria_Profesor, tablaProfesor, tablaNota, color_padre
   
   for widget in ventana.winfo_children():
@@ -471,6 +470,7 @@ def abrir_tablas(nombre_de_la_tabla):
   for col in tabla_treeview["columns"]:
     nombre_legible = alias.get(col, col)
     tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: ordenar_datos(nombre_de_la_tabla, tabla_treeview, campo, opciónSeleccionado.get()))
+    tabla_treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, tabla_treeview, cajasDeTexto))
   
  
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(tabla_treeview), 10, "disabled")
@@ -521,7 +521,6 @@ def abrir_tablas(nombre_de_la_tabla):
   
 
 # --- INICIO DEL SISTEMA ---
-# pantallaLogin()
-mostrar_pestañas(mi_ventana)
+pantallaLogin()
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
 mi_ventana.mainloop()
