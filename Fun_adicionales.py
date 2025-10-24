@@ -56,13 +56,6 @@ consultas = {
   }
 
 def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like):
-    """
-    Devuelve (sql, params) listos para ejecutar.
-    - consultas_meta: tu diccionario 'consultas'
-    - nombre_de_la_tabla: clave en consultas_meta (p.ej. "alumno")
-    - valorBúsqueda: texto a buscar
-    - operador_like: formato del patrón, por defecto '%valor%'
-    """
     meta = consultas_meta.get(nombre_de_la_tabla.lower())
     if not meta:
         raise ValueError(f"No existe metadata para la tabla '{nombre_de_la_tabla}'")
@@ -85,7 +78,6 @@ def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda
         params = ()
 
     return sql, params
-
 
 def guardar_snapshot(treeview):
   #Guardamos el contenido de los datos como la selección y la copia de datos de manera temporal#
@@ -112,16 +104,32 @@ def restaurar_snapshot(treeview, copia_de_datos):
     
   treeview.selection_set(copia_de_datos["selección"]) #Y Este lo restaura todo
 
+def ocultar_encabezado(treeview, selección):
+  
+  columna = list(treeview["columns"])
+  
+  if selección in columna:
+    treeview.column(selección, width=0, stretch=False)
+    treeview.heading(selección, text="")
 
-def filtrar(tablas_de_datos, nombre_tabla, selección=None):
+def mostrar_encabezado(treeview, selección, texto):
+  treeview.column(selección, width=100, strech=True)
+  treeview.heading(selección, text=texto)
+
+def filtrar(tablas_de_datos, nombre_tabla, selecciónEncabezado):
   #En esta función voy a filtrar todos los datos de la treeview.
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return 
   
+  with conectar_base_de_datos() as conexión:
+    cursor = conexión.cursor()
   for item in tablas_de_datos.get_children():
     tablas_de_datos.delete(item)
   
-  registros_ocultos = consultar_tabla(nombre_tabla)
+  sql, parametros = consultar_tabla_dinámica(consultas, nombre_tabla, selecciónEncabezado, "%{}%")
+  cursor.execute(sql, parametros)
+  registros_ocultos = cursor.fetchall()
+  cursor.close()
   for índice, fila in enumerate(registros_ocultos):
     if len(fila) > 1:
       valores_visibles = fila[1:]
@@ -135,6 +143,7 @@ def filtrar(tablas_de_datos, nombre_tabla, selección=None):
       tablas_de_datos.insert("", "end", iid=str(id_iid), values=valores_visibles, tags=(tag,))
     else:
       tablas_de_datos.insert("", "end", values=valores_visibles, tags=(tag,))
+  desconectar_base_de_datos(conexión)
 
 def obtener_selección(treeview):
     try:

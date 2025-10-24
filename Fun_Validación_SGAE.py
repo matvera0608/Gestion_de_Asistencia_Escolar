@@ -3,15 +3,17 @@ from datetime import datetime, date as fecha, time as hora
 from tkinter import messagebox as mensajeTexto
 import re
 
+patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
+patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
+#patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
+patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
+
+
 #Esta función validar_datos valida los datos antes de agregarlo a la listbox para evitar redundancias
 def validar_datos(nombre_de_la_tabla, datos):
   try:
     conexión = conectar_base_de_datos()
     cursor = conexión.cursor()
-    patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
-    patrón_númerosDecimales = re.compile(r'^\d+([.,]\d+)?$')
-    #patrón_alfanumérico = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
-    patron_alfanumerico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
     
     tabla_a_validar = {"alumno":    ["Nombre", "FechaDeNacimiento"],
                       "carrera":    ["Nombre", "Duración"],
@@ -123,3 +125,6 @@ def validar_fecha_combobox(valor):
 
 def validar_hora_combobox(valor):
     return True if re.fullmatch(r"[0-9]{0,2}(:[0-9]{0,2})?", valor) else False
+  
+def validar_nombre_combobox(valor):
+  return True if re.fullmatch(patrón_nombre, valor) else False

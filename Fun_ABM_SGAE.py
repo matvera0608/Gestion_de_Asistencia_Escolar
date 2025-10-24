@@ -9,8 +9,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+# from reportlab.pdfbase import pdfmetrics
+# from reportlab.pdfbase.ttfonts import TTFont
 
 
 campos_con_claves = {
@@ -363,11 +363,11 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
           "select": f"""SELECT pro.ID_Profesor, pro.Nombre
                         FROM profesor AS pro""",
           "buscables": ["pro.Nombre"]},
-      "nota":{
+      "nota": {
           "select": f"""SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
                               REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
                               n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS Fecha
-                              FROM nota AS n
+                              FROM nota n
                               JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
                               JOIN materia AS m ON n.IDMateria = m.ID_Materia""",
           "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"]}

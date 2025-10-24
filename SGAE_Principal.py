@@ -1,5 +1,5 @@
-from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente ,buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
-from Fun_adicionales import consultar_tabla, consultas
+from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente, buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
+from Fun_adicionales import consultar_tabla,ocultar_encabezado, mostrar_encabezado, consultas
 from Fun_Validación_SGAE import aplicar_validación_fecha, aplicar_validación_hora
 from Eventos import mover_con_flechas
 import os
@@ -35,7 +35,6 @@ campos_en_db = {
       "profesor": ["Nombre"],
       "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
   }
-
 alias = {
 "IDCarrera": "Carrera",
 "IDMateria": "Materia",
@@ -109,9 +108,8 @@ def crear_tabla_Treeview(contenedor, tabla):
   tabla_Treeview.bind("<ButtonRelease-1>", fijar_ancho)
   
   barraVertical = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_Treeview.yview)
-
   barraHorizontal = tk.Scrollbar(frame_tabla, orient="horizontal", command=tabla_Treeview.xview)
-  
+
   tabla_Treeview.configure(yscrollcommand=barraVertical.set, xscrollcommand=barraHorizontal.set)
 
   tabla_Treeview.grid(row=0, column=0, sticky="nsew")
@@ -164,7 +162,7 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
         aplicar_validación_hora(widget, mi_ventana)
 
 
-def crear_botonesExcluyentes(contenedor, texto, comando=None, estado="disabled", estilo="Radiobutton.TRadiobutton"):
+def crear_botonesExcluyentes(contenedor, texto, estado="disabled", estilo="Radiobutton.TRadiobutton"):
   return ttk.Radiobutton(contenedor, text=texto, width=len(texto), state=estado, style=estilo, cursor='hand2')
 
 
@@ -187,6 +185,15 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
       except Exception as e:
         print(f"Error configurando {widget}: {e}")
 
+def seleccionar_encabezado(event, treeview):
+  región = treeview.identify_region(event.x, event.y)
+  
+  if región == "heading":
+    columna = treeview.identify_column(event.x)
+    selección = treeview["columns"][int(columna.replace("#","")) - 1]
+    texto = alias.get(selección, selección)
+    ocultar_encabezado(treeview, selección)
+    print(f"OCULTANDO {texto}")
 
 def habilitar(treeview):
   tabla_treeview.delete(*tabla_treeview.get_children())
@@ -305,7 +312,6 @@ def pantallaLogin():
   botón_login.grid(row=2, column=0, pady=30, sticky="s")
   
   return ventana
-
 
 def mostrar_pestañas(ventana, permiso):
   # ventana = mi_ventana
@@ -486,14 +492,17 @@ def abrir_tablas(nombre_de_la_tabla):
 
   rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar")
   rbOcultar.grid(row=0, column=1, sticky="n")
-  
-  
+  rbOcultar.bind("<ButtonPress-1>", lambda e: seleccionar_encabezado(e, tabla_treeview))
+                 
+  # rbOcultar.bind("<ButtonRelease-1>", lambda e: mostrar_encabezado(tabla_treeview, alias, alias.get()))
+
+  crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=0, column=2, sticky="n")
   opciones = ["ASCENDENTE", "DESCENDENTE"]
   opciónSeleccionado = tk.StringVar(value=opciones[0])
     
   orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado,state="readonly", values=opciones)
   opciónSeleccionado.get()
-  orden.grid(row=0, column=2, sticky="n")
+  orden.grid(row=1, column=2, sticky="n", pady=5)
 
   for col in tabla_treeview["columns"]:
     nombre_legible = alias.get(col, col)
@@ -546,8 +555,6 @@ def abrir_tablas(nombre_de_la_tabla):
   
   ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(tabla_treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
   
-  
-
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
