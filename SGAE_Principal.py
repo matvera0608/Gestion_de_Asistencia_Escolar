@@ -36,6 +36,16 @@ campos_en_db = {
       "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
   }
 
+alias = {
+"IDCarrera": "Carrera",
+"IDMateria": "Materia",
+"IDProfesor": "Profesor",
+"IDAlumno": "Alumno",
+"FechaDeNacimiento": "Fecha de nacimiento",
+"valorNota": "Nota",
+"tipoNota": "Evaluación",
+"Fecha_Asistencia": "Fecha",
+}
 
 # os.system(".\Giteo.bat")
 
@@ -70,17 +80,6 @@ def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButto
 
 def crear_tabla_Treeview(contenedor, tabla):
   columnas = campos_en_db[tabla]
-  alias = {
-    "IDCarrera": "Carrera",
-    "IDMateria": "Materia",
-    "IDProfesor": "Profesor",
-    "IDAlumno": "Alumno",
-    "FechaDeNacimiento": "Fecha de nacimiento",
-    "valorNota": "Nota",
-    "tipoNota": "Evaluación",
-    "Fecha_Asistencia": "Fecha",
-  }
-
 
   estilo = ttk.Style()
   estilo_treeview = f"Custom.Treeview"
@@ -103,7 +102,6 @@ def crear_tabla_Treeview(contenedor, tabla):
       event.widget.column(col, width=ancho, minwidth=ancho, stretch=False)
       for col in columnas 
       ])
-
   for columna in columnas:
     nombre_legible = alias.get(columna, columna)
     tabla_Treeview.heading(columna, anchor="center", text=nombre_legible)
@@ -166,8 +164,8 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
         aplicar_validación_hora(widget, mi_ventana)
 
 
-def crear_botonesExcluyentes(contenedor, texto, comando, estado="disabled", estilo="Radiobutton.TRadiobutton"):
-  return ttk.Radiobutton(contenedor, text=texto, width=len(texto), command= lambda: comando(), state=estado, style=estilo, cursor='hand2')
+def crear_botonesExcluyentes(contenedor, texto, comando=None, estado="disabled", estilo="Radiobutton.TRadiobutton"):
+  return ttk.Radiobutton(contenedor, text=texto, width=len(texto), state=estado, style=estilo, cursor='hand2')
 
 
 def cerrar_abm(ventana):
@@ -202,7 +200,7 @@ def habilitar(treeview):
     tag = "par" if índice % 2 == 0 else "impar"
     treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
-  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
+  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar]:
     botón.config(state="normal")
   
   for radiobutton in [rbOcultar]:
@@ -221,7 +219,7 @@ def deshabilitar(treeview):
   
   tabla_treeview.delete(*tabla_treeview.get_children())
   
-  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar]:
+  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar]:
     botón.config(state="disabled")
   
   for radiobutton in [rbOcultar]:
@@ -254,6 +252,7 @@ def insertar(tabla_treeview):
 
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
+
 mi_ventana = tk.Tk()
 # def pantallaLogin():
 #   ventana = mi_ventana
@@ -352,7 +351,7 @@ def mostrar_pestañas(ventana):
   
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnOrdenar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
+  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
   global tabla_treeview, rbOcultar, campos_por_tabla, entryBuscar, botones, acciones
   nombreActual = nombre_de_la_tabla
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
@@ -453,17 +452,27 @@ def abrir_tablas(nombre_de_la_tabla):
 
   iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos)
   
-
-  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar", None)
-  rbOcultar.grid(row=0, column=1, sticky="n")
-  
   tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
   tabla_treeview.config(selectmode="none")
 
-
   tabla_treeview.delete(*tabla_treeview.get_children())
-  
 
+  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar")
+  rbOcultar.grid(row=0, column=1, sticky="n")
+  
+  
+  opciones = ["ASCENDENTE", "DESCENDENTE"]
+  opciónSeleccionado = tk.StringVar(value=opciones[0])
+    
+  orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado,state="readonly", values=opciones)
+  opciónSeleccionado.get()
+  orden.grid(row=0, column=2, sticky="n")
+
+  for col in tabla_treeview["columns"]:
+    nombre_legible = alias.get(col, col)
+    tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: ordenar_datos(nombre_de_la_tabla, tabla_treeview, campo, opciónSeleccionado.get()))
+  
+ 
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(tabla_treeview), 10, "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
@@ -479,21 +488,21 @@ def abrir_tablas(nombre_de_la_tabla):
   btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnEliminarTODO.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  btnOrdenar = crear_botón(marco_izquierdo, "Ordenar", lambda: ordenar_datos(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnOrdenar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
+  btnImportar = crear_botón(marco_izquierdo, "Importar Registros", lambda: None, 10, "disabled")
+  btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
-  botones = {
-    "Cancelar": btnCancelar,
-    "Agregar": btnAgregar,
-    "Modificar": btnModificar,
-    "Eliminar": btnEliminar,
-    "Eliminar TODO": btnEliminarTODO,
-    "Ordenar": btnOrdenar,
-    "Exportar": btnExportarPDF
-  }
+  botones = [
+    btnCancelar,
+    btnAgregar,
+    btnModificar,
+    btnEliminar,
+    btnEliminarTODO,
+    btnImportar,
+    btnExportarPDF
+  ]
 
   acciones = {
       "Cancelar": partial(deshabilitar, tabla_treeview),

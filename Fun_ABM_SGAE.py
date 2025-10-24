@@ -1,11 +1,17 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
 from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección, consultar_tabla_dinámica
 from Fun_Validación_SGAE import validar_datos
-from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
-from tkinter import simpledialog
 import tkinter as tk
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo, simpledialog as diálogo
+
+#IMPORTACIÓN PARA CREAR PDF#
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
 
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),
@@ -174,10 +180,8 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
       id_val = fila[0]
       valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
       tag = "par" if índice % 2 == 0 else "impar"
-      # insertamos con iid = id_val (como string)
       tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
     print("SE AGREGÓ LOS DATOS NECESARIOS")
-    # Limpiar las cajas de texto después de insertar
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
@@ -310,7 +314,7 @@ def eliminar_completamente(nombre_de_la_tabla, tablas_de_datos):
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
 
-def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=True):
+def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -319,19 +323,8 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
       #Controla que se obtenga nombre reales de las columnas
       cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
       columna = [col[0] for col in cursor.fetchall()]
-      
-      if campo is None:
-        nombre_columna = ', '.join(columna)
-        campo = tk.simpledialog.askstring("Ordenar", f"¿Qué campo querés ordenar los datos de {nombre_de_la_tabla}?\nCampos válidos: {nombre_columna}")
-        if not campo:
-          return
-        campo = campo.strip()
+      campo = campo.strip()
         
-        if campo:
-          orden = tk.simpledialog.askstring("Orden", f"¿Que orden deseas para {campo}? ", "palabras válidas: ASCENDENTE o DESCENDENTE")
-          if not orden:
-            return
-      
       coincidencia = [col for col in columna if col.lower() == campo.lower()]
       
       if not coincidencia:
@@ -339,37 +332,34 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo=None, ascendencia=T
         return
         
       campo_real = coincidencia[0]
-
+      orden_sql = "ASC" if orden.upper().startswith("ASC") else "DESC"
       consultas = {
-          "alumno":  f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre as Carrera
+          "alumno":  f"""SELECT a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y'), c.Nombre as Carrera
                         FROM alumno AS a
                         JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
-                        ORDER BY {campo_real} ASC""",
+                        ORDER BY {campo_real} {orden_sql}""",
                     
           "asistencia": f"""SELECT asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y'), al.Nombre
                             FROM asistencia AS asis
                             JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
-                            ORDER BY {campo_real} ASC"""
+                            ORDER BY {campo_real} {orden_sql}"""
         }
-        
-      consultaSQL = consultas.get(nombre_de_la_tabla.lower(), f"SELECT * FROM {nombre_de_la_tabla} ORDER BY {campo_real} ASC")
+      
+      consultaSQL = consultas.get(nombre_de_la_tabla.lower())
       cursor.execute(consultaSQL)
       resultado = cursor.fetchall()
       
       if tablas_de_datos.winfo_exists():
         for item in tablas_de_datos.get_children():
           tablas_de_datos.delete(item)
-      
-      #Controlo que haya resultados, en caso contrario, me imprime un mensaje de que no hay resultados para criterios específicos
+          
       if not resultado:
-        mensajeTexto.showinfo("SIN RESULTADOS", "NO SE ENCONTRARON REGISTROS PARA LOS CRITERIOS ESPECÍFICOS")
         return
       
-      
-      for index, filaVisible in enumerate(tablas_de_datos): 
-        tag = "par" if index % 2 == 0 else "impar"
-        tablas_de_datos.insert("", "end", value=filaVisible, tags=(tag,))
-            
+    for index, fila in enumerate(resultado):
+      tag = "par" if index % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", values=fila, tags=(tag,))
+  
   except error_sql as e:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
 
@@ -404,14 +394,11 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, entry_busqueda, consultas)
       conexión.close()
     
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
   try:
+    if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+      return
     datos_a_exportar = tablas_de_datos.get_children()
     datos = []
-    
-    #ACÁ ME ARREGLÉ SOLO, AHÍ PUSE UN alias PARA MOSTRAR DATOS LEGIBLES Y OCULTANDO LOS DATOS CRUDOS.
-    #Y ME GUSTA, PORQUE EL PROFESOR ME PIDIÓ QUE MUESTREN LOS DATOS LEGIBLE COMO DE IDCarrera A Carrera. 
     
     alias = {
       "IDCarrera": "Carrera",
@@ -430,40 +417,93 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
     
     datos.append(enc_legible)
 
-    # Obtener los valores de cada fila de la tabla
-    for item in datos_a_exportar:
-      valores = tablas_de_datos.item(item, "values")
+    for i in datos_a_exportar:
+      valores = tablas_de_datos.item(i, "values")
       datos.append(valores)
+
+    
     
     ruta_archivo_pdf = diálogoArchivo.asksaveasfilename(
-      defaultextension=".pdf",
-      filetypes=[("Archivo PDF", "*.pdf")],
-      initialfile=f"Reporte_{nombre_de_la_tabla}",
-      title="Exportar informe en PDF"
-    )
+        defaultextension=".pdf",
+        filetypes=[("Archivo PDF", "*.pdf")],
+        initialfile=f"Reporte_{nombre_de_la_tabla}",
+        title="Exportar informe en PDF"
+      )
     
     if not ruta_archivo_pdf:
       return   
+    
+    # ancho_col = [max(len(str(fila[i])) for fila in datos) * 5 for i in range(len(enc_legible))]
+    
+    pdf = SimpleDocTemplate(
+      ruta_archivo_pdf,
+      pagesize=A4,
+      rightMargin=40, leftMargin=40,
+      topMargin=20, bottomMargin=40
+    )
+    
+    # pdfmetrics.registerFont(TTFont("Arial", "Arial.ttf"))
+    # pdfmetrics.registerFont(TTFont("Arial-Bold", "Arialbd.ttf"))
+    # pdfmetrics.registerFont(TTFont("Arial-Italic", "Ariali.ttf"))
+    # pdfmetrics.registerFont(TTFont("Arial-BoldItalic", "Arialbi.ttf"))
+    
+    estilos = getSampleStyleSheet()
+    
+    título_con_estilo = ParagraphStyle(
+      'título',
+      parent=estilos['Title'],
+      fontName='Helvetica-Bold',
+      fontSize=25,
+      alignment=1,
+      spaceAfter=25
+    )
 
-    pdf = SimpleDocTemplate(ruta_archivo_pdf)
-    tabla = Table(datos)
+    
+    encabezado_estilo = ParagraphStyle(
+    'encabezado',
+    parent=estilos['Normal'],
+    fontName='Helvetica-Bold',
+    fontSize=16,
+    alignment=1
+    )
 
-    # Estilo de la tabla
+    celda_estilo = ParagraphStyle(
+        'celda',
+        parent=estilos['Normal'],
+        fontName='Helvetica',
+        fontSize=12,
+        alignment=1
+    )
+    
+    datos_con_estilo = []
+    for i, fila in enumerate(datos):
+      estilo = encabezado_estilo if i == 0 else celda_estilo
+      datos_con_estilo.append([Paragraph(str(c), estilo) for c in fila])
+
+
+    
+    tabla = Table(datos_con_estilo, repeatRows=1)
+    
     tabla.setStyle(TableStyle([
-    ('BACKGROUND', (0,0), (-1,0), colors.lightblue),
-    ('TEXTCOLOR', (0,0), (-1,0), colors.black),
-    ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-    ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'), 
-    ('FONTSIZE', (0,0), (-1,-1), 12), 
-    ('GRID', (0,0), (-1,-1), 1, colors.grey), # ⬅️ Ajustado a (0,0) para bordes completos
-    ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey])
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0000ff")),
+        ('FONTSIZE', (0, 0), (-1, 0), 14),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
+        ('BOX', (0, 0), (-1, -1), 1, colors.black),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#a8f3ff")]),
     ]))
+    
+    titulo = Paragraph(f"<b>Reporte de {nombre_de_la_tabla.capitalize()}</b>", título_con_estilo)
+    espacio = Spacer(1, 30)
 
-    # Paso 4: Guardar el archivo PDF
-    pdf.build([tabla])
+    pdf.build([titulo, espacio, tabla])
     
-    print(f"✅ ÉXITO: El informe de '{nombre_de_la_tabla}' ha sido exportado correctamente a:\n{ruta_archivo_pdf}")
-    
+    print("EXPORTADO")
+      
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
