@@ -1,59 +1,9 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos
 from Fun_Validación_SGAE import validar_datos
+from Elementos import consultas
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-
-consultas = {
-      "alumno": {
-          "select": """SELECT a.ID_Alumno, a.Nombre, 
-                      DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha, 
-                      c.Nombre AS Carrera
-                      FROM alumno a
-                      JOIN carrera c ON a.IDCarrera = c.ID_Carrera""",
-          "buscables": ["a.Nombre", "c.Nombre"]
-      },
-      "materia": {
-          "select": """SELECT m.ID_Materia, m.Nombre, 
-                              TIME_FORMAT(m.Horario,'%H:%i') AS Horario, 
-                              c.Nombre AS Carrera
-                      FROM materia m
-                      JOIN carrera c ON m.IDCarrera = c.ID_Carrera""",
-          "buscables": ["m.Nombre", "c.Nombre"]
-      },
-      "carrera":{
-          "select": """SELECT c.ID_Carrera, c.Nombre, c.Duración
-                              FROM carrera AS c""",
-          "buscables": ["c.Nombre", "c.Duración"]
-          },
-      "asistencia":{
-          "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
-                              FROM asistencia AS asis
-                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno""",
-          "buscables": ["asis.Estado", "al.Nombre"]
-          },
-       "enseñanza":{
-          "select": """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
-                              FROM enseñanza AS e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia""",
-          "buscables": ["m.Nombre", "p.Nombre"]
-          },
-      "profesor":{
-          "select":"""SELECT pro.ID_Profesor, pro.Nombre
-                              FROM profesor AS pro""",
-          "buscables": ["pro.Nombre"]
-          },
-      "nota":{
-          "select": """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
-                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
-                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
-                              FROM nota AS n
-                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia""",
-          "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"]
-          }
-  }
 
 def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like):
     meta = consultas_meta.get(nombre_de_la_tabla.lower())
@@ -104,17 +54,23 @@ def restaurar_snapshot(treeview, copia_de_datos):
     
   treeview.selection_set(copia_de_datos["selección"]) #Y Este lo restaura todo
 
-def ocultar_encabezado(treeview, selección):
+def ocultar_encabezado(treeview, selección, var_rb):
   
   columna = list(treeview["columns"])
-  
   if selección in columna:
-    treeview.column(selección, width=0, stretch=False)
+    treeview.column(selección, width=0, stretch=True)
     treeview.heading(selección, text="")
-
-def mostrar_encabezado(treeview, selección, texto):
-  treeview.column(selección, width=100, strech=True)
-  treeview.heading(selección, text=texto)
+    
+  var_rb.set("")
+  
+def mostrar_encabezado(treeview, alias, var_rb):
+  
+  for campo in treeview["columns"]:
+    texto = alias.get(campo, campo)
+    treeview.column(campo, width=100, stretch=True)
+    treeview.heading(campo, text=texto)
+  
+  var_rb.set("")
 
 def filtrar(tablas_de_datos, nombre_tabla, selecciónEncabezado):
   #En esta función voy a filtrar todos los datos de la treeview.

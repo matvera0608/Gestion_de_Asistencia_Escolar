@@ -3,7 +3,6 @@ from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseg
 from Fun_Validación_SGAE import validar_datos
 import tkinter as tk
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo, simpledialog as diálogo
-
 #IMPORTACIÓN PARA CREAR PDF#
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -263,14 +262,16 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
   
   selección = tablas_de_datos.selection()
   
+  if not selección:
+    return
+  
   try:
     iid = selección[0]
     ID_Seleccionado = int(iid)
   except ValueError:
     ID_Seleccionado = iid
           
-  if not selección:
-    return
+  
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
@@ -298,21 +299,32 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
-def eliminar_completamente(nombre_de_la_tabla, tablas_de_datos):
+def guardar_datos(nombre_de_la_tabla, tablas_de_datos, caja, campos_db):
+  #Esta función se encargará de sólo grabar los datos editados en la tabla.
+  #El objetivo de esta función es evitar tener que usar forms para modificar datos.
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
-    with conectar_base_de_datos() as conexión:
-        cursor = conexión.cursor()
-        query = f"SET FOREIGN_KEY_CHECK = 0 TRUNCATE TABLE {nombre_de_la_tabla}"
-        cursor.execute(query)
-        conexión.commit()
-        
-        tablas_de_datos.delete(*tablas_de_datos.get_children())
-        consultar_tabla(nombre_de_la_tabla)
-        print("✅ ¡Se eliminaron todos los datos!")
+    selecciónDatos = tablas_de_datos.selection()
+    if not selecciónDatos:
+      print("FALTA SELECCIONAR 1 FILA")
+      return False
+    if not all(entry.get().strip() for entry in caja[nombre_de_la_tabla]):
+      mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
+      return False
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db, True)
+    if not datos:
+      print("NO HAY DATOS QUE GUARDAR")
+      return False
+
+    insertar_datos(nombre_de_la_tabla, caja, datos, tablas_de_datos)
+    for entry in caja[nombre_de_la_tabla]:
+      entry.delete(0, tk.END)
+    mensajeTexto.showinfo("ÉXITO", "GUARDADO EXITOSAMENTE")
+    return True
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR TODOS: {str(e)}")
+    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    return False
 
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():

@@ -1,3 +1,5 @@
+from Elementos import colores
+
 def mover_con_flechas(treeview, cajas, botones, acciones, event):
     widget = event.widget
     tecla = event.keysym

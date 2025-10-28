@@ -1,30 +1,15 @@
-from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, eliminar_completamente, buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
+from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, guardar_datos, buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
 from Fun_adicionales import consultar_tabla,ocultar_encabezado, mostrar_encabezado, consultas
 from Fun_Validación_SGAE import aplicar_validación_fecha, aplicar_validación_hora
 from Eventos import mover_con_flechas
+from Elementos import colores, ícono, ruta_base, cargar_imagen
 import os
 import tkinter as tk
 from tkinter import ttk
 from functools import partial
-from PIL import Image, ImageTk
+
 # --- ELEMENTOS ---
 nombreActual = None
-colores = {
-  "blanco": "#FFFFFF",
-  "gris": "#AAAAAA",
-  "negro": "#000000",
-  "negro_resaltado": "#3A3A3A",
-  "celeste_azulado": "#004CFF",
-  "celeste": "#90C0FF",
-  "celeste_resaltado": "#3F72FD",
-  "azul": "#0000FF",
-  "azul_claro": "#A8A8FF",
-  "azul_oscuro": "#00004D"
-}
-dirección_del_ícono = os.path.dirname(__file__)
-ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
-ruta_base = os.path.dirname(__file__)
-ruta_imagen = os.path.join(ruta_base, "imágenes")
 ventanaAbierta = {}
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
@@ -46,18 +31,6 @@ alias = {
 "Fecha_Asistencia": "Fecha",
 }
 
-# os.system(".\Giteo.bat")
-
-# --- FUNCIONES AUXILIARES ---
-def cargar_imagen(nombre_imagen):
-  ruta = os.path.join(ruta_imagen, nombre_imagen)
-  if(not os.path.exists(ruta)):
-    print(f"Imagen no encontrada: {ruta}")
-    return None
-  imagen = Image.open(ruta)
-  imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
-  return ImageTk.PhotoImage(imagen)
-
 
 def crear_etiqueta(contenedor, texto, fuenteLetra=("Arial", 10, "bold")):
   color_padre = contenedor.cget("bg")
@@ -72,9 +45,8 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
   return ttk.Combobox(contenedor, width=ancho, state=estado)
 
 
-def crear_botón(contenedor, texto, comando, ancho, estado ,estilo="Boton.TButton"):
-  ancho = len(texto)
-  return ttk.Button(contenedor, text=texto, width=ancho, command= lambda: comando(), style=estilo, cursor='hand2', state=estado)
+def crear_botón(contenedor, texto, imágen, comando, estado, estilo="Boton.TButton"):
+  return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, state=estado, cursor='hand2')
 
 
 def crear_tabla_Treeview(contenedor, tabla):
@@ -162,8 +134,8 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
         aplicar_validación_hora(widget, mi_ventana)
 
 
-def crear_botonesExcluyentes(contenedor, texto, estado="disabled", estilo="Radiobutton.TRadiobutton"):
-  return ttk.Radiobutton(contenedor, text=texto, width=len(texto), state=estado, style=estilo, cursor='hand2')
+def crear_botonesExcluyentes(contenedor, texto, vari, valor, estado="disabled", estilo="Radiobutton.TRadiobutton"):
+  return ttk.Radiobutton(contenedor, text=texto, width=len(texto),variable=vari, value=valor, state=estado, style=estilo, cursor='hand2')
 
 
 def cerrar_abm(ventana):
@@ -185,15 +157,23 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
       except Exception as e:
         print(f"Error configurando {widget}: {e}")
 
-def seleccionar_encabezado(event, treeview):
+
+def seleccionar_encabezado(event, treeview, var_rb):
   región = treeview.identify_region(event.x, event.y)
-  
   if región == "heading":
     columna = treeview.identify_column(event.x)
-    selección = treeview["columns"][int(columna.replace("#","")) - 1]
-    texto = alias.get(selección, selección)
-    ocultar_encabezado(treeview, selección)
-    print(f"OCULTANDO {texto}")
+    if columna == "#0":
+      print("Clic en la columna de ítems (no en las definidas)")
+      return
+    
+    idx = int(columna.replace("#", "")) - 1
+    columnas = treeview["columns"]
+    if 0 <= idx < len(columnas):
+        selección = treeview["columns"][idx]
+        texto = alias.get(selección, selección)
+        ocultar_encabezado(treeview, selección, var_rb)
+        print(f"OCULTANDO {texto}")
+
 
 def habilitar(treeview):
   tabla_treeview.delete(*tabla_treeview.get_children())
@@ -207,10 +187,10 @@ def habilitar(treeview):
     tag = "par" if índice % 2 == 0 else "impar"
     treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
-  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar]:
+  for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
     botón.config(state="normal")
   
-  for radiobutton in [rbOcultar]:
+  for radiobutton in [rbMostrar, rbOcultar]:
     radiobutton.config(state="normal")
   
   entryBuscar.config(state="normal")
@@ -226,11 +206,12 @@ def deshabilitar(treeview):
   
   tabla_treeview.delete(*tabla_treeview.get_children())
   
-  for botón in [btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar]:
+  for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
     botón.config(state="disabled")
   
-  for radiobutton in [rbOcultar]:
+  for radiobutton in [rbMostrar, rbOcultar]:
     radiobutton.config(state="disabled")
+  var_rb.set("")
 
   treeview.bind("<Button-1>", lambda e: "break")
   treeview.bind("<Key>", lambda e: "break")
@@ -260,6 +241,27 @@ def insertar(tabla_treeview):
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
 mi_ventana = tk.Tk()
+
+íconos_por_tabla = {
+  "alumno": os.path.join(ruta_base, "imágenes", "alumno.ico"),
+  "asistencia": os.path.join(ruta_base, "imágenes", "asistencia.ico"),
+  "carrera": os.path.join(ruta_base, "imágenes", "carrera.ico"),
+  "materia": os.path.join(ruta_base, "imágenes", "materia.ico"),
+  "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
+  "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
+  "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
+}
+
+imágenes_por_botón = {
+  "cancelar": cargar_imagen("botones", "cancelar.png"),
+  "agregar": cargar_imagen("botones", "agregar.png"),
+  "modificar": cargar_imagen("botones", "modificar.png"),
+  "eliminar": cargar_imagen("botones", "eliminar.png"),
+  "guardar": cargar_imagen("botones", "guardar.png"),
+  "importar": cargar_imagen("botones", "importar_desde.png"),
+  "exportar": cargar_imagen("botones", "exportar_como_pdf.png")
+}
+
 def pantallaLogin():
   ventana = mi_ventana
   ventana.title("Sistema Gestor de Asistencias")
@@ -314,14 +316,7 @@ def pantallaLogin():
   return ventana
 
 def mostrar_pestañas(ventana, permiso):
-  # ventana = mi_ventana
-  # ventana.title("Sistema Gestor de Asistencias")
-  ventana.geometry("300x200")
-  # ventana.configure(bg=colores["blanco"])
-  # ventana.iconbitmap(ícono)
-  # ventana.resizable(width=False, height=False)
-  # ventana.grid_columnconfigure(0, weight=1)
-  # ventana.grid_rowconfigure(2, weight=1)
+  ventana.geometry("350x200")
   global tablaAlumno, tablaAsistencia, tablaCarrera, tablaMateria, tablaMateriaProfesor, tablaProfesor, tablaNota, color_padre
   
   for widget in ventana.winfo_children():
@@ -341,7 +336,7 @@ def mostrar_pestañas(ventana, permiso):
     "materia": ("Materia", lambda: tk.Frame(notebook)),
     "enseñanza": ("Enseñanza", lambda: tk.Frame(notebook)),
     "profesor": ("Profesor", lambda: tk.Frame(notebook)),
-    "nota": ("nota", lambda: tk.Frame(notebook))
+    "nota": ("Nota", lambda: tk.Frame(notebook))
   }
   
   for clave, (texto, frame) in pestañas.items():
@@ -373,7 +368,7 @@ def mostrar_pestañas(ventana, permiso):
     pestaña = notebook.tab(notebook.select(), "text").lower()
     abrir_tablas(pestaña) 
   
-  lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios, es decir, no puede estar vacíos", bg=ventana.cget("bg"), font=("Arial", 10))
+  lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios", bg=ventana.cget("bg"), font=("Arial", 8))
   lb_obligatoriedad.pack(side="bottom", pady=5)
   
   # notebook.select(tablaAlumno)
@@ -384,21 +379,12 @@ def mostrar_pestañas(ventana, permiso):
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
-  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnEliminarTODO, btnImportar, btnExportarPDF, btnCancelar, cajasDeTexto, nombreActual
-  global tabla_treeview, rbOcultar, campos_por_tabla, entryBuscar, botones, acciones
+  global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
+  global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla, entryBuscar, botones, acciones, var_rb
   nombreActual = nombre_de_la_tabla
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
     
-  íconos_por_tabla = {
-    "alumno": os.path.join(ruta_base, "imágenes", "alumno.ico"),
-    "asistencia": os.path.join(ruta_base, "imágenes", "asistencia.ico"),
-    "carrera": os.path.join(ruta_base, "imágenes", "carrera.ico"),
-    "materia": os.path.join(ruta_base, "imágenes", "materia.ico"),
-    "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
-    "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
-    "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
-    }
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
   ventanaSecundaria.resizable(width=False, height=False)
@@ -410,6 +396,7 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.grid_columnconfigure(1, weight=1, uniform="panels")
   ventanaSecundaria.grid_rowconfigure(0, weight=1)
   
+
   ruta_ícono = íconos_por_tabla.get(nombre_de_la_tabla)
   if ruta_ícono and os.path.exists(ruta_ícono):
     try:
@@ -421,7 +408,7 @@ def abrir_tablas(nombre_de_la_tabla):
 
   marco_izquierdo = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
   marco_izquierdo.grid(row=0, column=0, sticky="nsew")
-  
+
   marco_derecho = tk.Frame(ventanaSecundaria, bg=colores["azul_claro"], padx=15, pady=15)
   marco_derecho.grid(row=0, column=1, sticky="nsew")
 
@@ -489,14 +476,19 @@ def abrir_tablas(nombre_de_la_tabla):
   tabla_treeview.config(selectmode="none")
 
   tabla_treeview.delete(*tabla_treeview.get_children())
+  
+  var_rb = tk.StringVar(value="")
 
-  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar")
+  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar",var_rb, "Ocultar")
   rbOcultar.grid(row=0, column=1, sticky="n")
-  rbOcultar.bind("<ButtonPress-1>", lambda e: seleccionar_encabezado(e, tabla_treeview))
-                 
-  # rbOcultar.bind("<ButtonRelease-1>", lambda e: mostrar_encabezado(tabla_treeview, alias, alias.get()))
+  rbOcultar.bind("<ButtonPress-1>", lambda e: seleccionar_encabezado(e, tabla_treeview, var_rb))
+           
+  rbMostrar = crear_botonesExcluyentes(marco_izquierdo, "Mostrar",var_rb, "Mostrar")
+  rbMostrar.grid(row=0, column=2, sticky="n")
+  rbMostrar.bind("<ButtonPress-1>", lambda e: mostrar_encabezado(tabla_treeview, alias, var_rb))
+  
 
-  crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=0, column=2, sticky="n")
+  crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=1, column=1, sticky="n")
   opciones = ["ASCENDENTE", "DESCENDENTE"]
   opciónSeleccionado = tk.StringVar(value=opciones[0])
     
@@ -510,25 +502,25 @@ def abrir_tablas(nombre_de_la_tabla):
     tabla_treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, tabla_treeview, cajasDeTexto))
   
  
-  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", lambda: deshabilitar(tabla_treeview), 10, "disabled")
+  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: deshabilitar(tabla_treeview), "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
-  btnAgregar = crear_botón(marco_izquierdo, "Agregar", lambda: insertar(tabla_treeview), 10, "normal")
+  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: insertar(tabla_treeview), "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
-  btnModificar = crear_botón(marco_izquierdo, "Modificar", lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), 10, "disabled")
+  btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminar = crear_botón(marco_izquierdo, "Eliminar", lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), 10, "disabled")
+  btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminarTODO = crear_botón(marco_izquierdo, "Eliminar Todo", lambda: eliminar_completamente(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
-  btnEliminarTODO.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
+  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, tabla_treeview, cajasDeTexto, campos_en_db), "disabled")
+  btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  btnImportar = crear_botón(marco_izquierdo, "Importar Registros", lambda: None, 10, "disabled")
+  btnImportar = crear_botón(marco_izquierdo,"Importar Registros", imágenes_por_botón["importar"], lambda: None, "disabled")
   btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
-  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), 10, "disabled")
+  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
   botones = [
@@ -536,7 +528,7 @@ def abrir_tablas(nombre_de_la_tabla):
     btnAgregar,
     btnModificar,
     btnEliminar,
-    btnEliminarTODO,
+    btnGuardar,
     btnImportar,
     btnExportarPDF
   ]
@@ -546,8 +538,7 @@ def abrir_tablas(nombre_de_la_tabla):
       "Agregar": partial(insertar, tabla_treeview),
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
-      "Eliminar TODO": partial(eliminar_completamente, nombreActual, tabla_treeview),
-      "Ordenar": partial(ordenar_datos, nombreActual, tabla_treeview),
+      "Guardar": partial(guardar_datos, nombreActual, tabla_treeview),
       "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
       "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
   }
