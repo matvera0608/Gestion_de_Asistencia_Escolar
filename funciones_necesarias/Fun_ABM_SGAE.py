@@ -203,7 +203,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     tipos_de_archivos = (
       ("bloc de notas","*.txt"),
       ("hoja con comas separadas","*.csv"),
-      ("hoja_de_excel","*.xslx"),
+      ("hoja de excel","*.xslx"),
       ("todos","*.*"))
     
     ruta_archivo = diálogoArchivo.askopenfilename(
@@ -219,9 +219,9 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     
     match extensión:
       case "xlsx":
-        datos = pd.read_excel(ruta_archivo)
+        datos = pd.read_excel(ruta_archivo, encoding="utf-8")
       case "csv":
-        datos = pd.read_csv(ruta_archivo)
+        datos = pd.read_csv(ruta_archivo, encoding="utf-8")
       case "txt":
         with open(ruta_archivo, "r", encoding="utf-8") as archivo:
           lector = csv.reader(archivo, delimiter="\t")
