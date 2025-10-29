@@ -1,8 +1,8 @@
-from Conexión import conectar_base_de_datos, desconectar_base_de_datos, error_sql
-from Fun_adicionales import obtener_datos_de_Formulario, consultar_tabla, conseguir_campo_ID, traducir_IDs, convertir_datos, obtener_selección, consultar_tabla_dinámica
-from Fun_Validación_SGAE import validar_datos
+from Conexión import *
+from .Fun_adicionales import *
+from .Fun_Validación_SGAE import *
 import tkinter as tk
-from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo, simpledialog as diálogo
+from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 #IMPORTACIÓN PARA CREAR PDF#
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -11,144 +11,10 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 # from reportlab.pdfbase import pdfmetrics
 # from reportlab.pdfbase.ttfonts import TTFont
 
-
-campos_con_claves = {
-  "carrera": ("ID_Carrera","Nombre"),
-  "alumno": ("ID_Alumno","Nombre"),
-  "profesor": ("ID_Profesor", "Nombre"),
-  "materia": ("ID_Materia","Nombre")
-  }
-
-campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
-                   "asistencia": ("IDAlumno", "alumno"),
-                   "materia": ("IDCarrera", "carrera"),
-                   "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
-                   "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno")]
-                   }
-
-#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
-def cargar_datos_en_Combobox(tablas_de_datos, combos):
-  try:
-    with conectar_base_de_datos() as conexión:
-      if not conexión:
-        return
-      cursor = conexión.cursor()
-      relación = campos_foráneos.get(tablas_de_datos)
-      if not relación:
-        return
-        
-      if not isinstance(combos, (list, tuple)):
-        combos = [combos]
-      
-      if isinstance(relación, tuple):
-        relación = [relación]
-      
-      for comboWid in combos:
-        nombre_combo = getattr(comboWid, "widget_interno", "").lower()
-        if not nombre_combo.startswith("cbbox"):
-          continue
-        nombre_combo = nombre_combo.replace("cbbox_", "")
-        for campo_foráneo, tabla_ajena in relación:
-          if nombre_combo == tabla_ajena:
-            id_campo, campoVisible = campos_con_claves[tabla_ajena]
-            consulta = f"SELECT {id_campo}, {campoVisible} FROM {tabla_ajena}"
-            cursor.execute(consulta)
-            registros = cursor.fetchall()
-            valores = [fila[1] for fila in registros]
-            comboWid["values"] = valores
-            comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
-  except error_sql as sql_error:
-    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
-    return
-
-def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-
-  selección = tablas_de_datos.selection()
-  if not selección:
-    return
-  
-  iid = selección[0]
-  try:
-    idSeleccionado = int(iid)
-  except ValueError:
-    idSeleccionado = iid
-  
-  cursor = None
-  conexión = conectar_base_de_datos()
-  if conexión:
-    try:
-      cursor = conexión.cursor()
-      # Diccionario de claves primarias según la tabla
-      PKs = {
-        "alumno": "ID_Alumno",
-        "asistencia": "ID",
-        "carrera": "ID_Carrera",
-        "materia": "ID_Materia",
-        "profesor": "ID_Profesor",
-        "enseñanza": "ID",
-        "nota": "ID",
-      }
-      
-      clave = PKs.get(nombre_de_la_tabla)
-      if not clave:
-        mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
-        return
-      campos_visibles = {
-      "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"], #Los que empiezan con ID sin guión bajo son claves ajenas o FKs.
-      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
-      "carrera": ["Nombre", "Duración"],
-      "materia": ["Nombre", "Horario", "IDCarrera"],
-      "enseñanza": ["IDMateria", "IDProfesor"],
-      "profesor": ["Nombre"],
-      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
-      }
-
-      columnas = ', '.join(campos_visibles[nombre_de_la_tabla.lower()])
-      consulta = f"SELECT {columnas} FROM {nombre_de_la_tabla.lower()} WHERE {clave} = %s"
-      cursor.execute(consulta, (idSeleccionado,))
-      fila_seleccionada = cursor.fetchone()
-      
-      if not fila_seleccionada:
-        return
-      
-      datos_convertidos = []
-
-      for campo, valor in zip(campos_visibles[nombre_de_la_tabla.lower()], fila_seleccionada):
-        if campo == "IDProfesor":
-            cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-        elif campo == "IDMateria":
-            cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-        elif campo == "IDAlumno":
-            cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-        elif campo == "IDCarrera":
-            cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
-            res = cursor.fetchone()
-            datos_convertidos.append(res[0] if res else "Desconocido")
-        else:
-            datos_convertidos.append(valor)
-            continue
-          
-      cajas = cajasDeTexto[nombre_de_la_tabla]
-      for campo, valor, caja in zip(campos_visibles[nombre_de_la_tabla], datos_convertidos, cajas):
-        caja.config(state="normal")
-        caja.set(str(valor))
-        caja.config(state="readonly" if getattr(caja, "widget_interno", "").startswith("cbBox_") else "normal")
-          
-      convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
-      
-    except error_sql as error:
-      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
-    finally:
-      cursor.close()
-      desconectar_base_de_datos(conexión)
+#IMPORTACIÓN PARA IMPORTAR ARCHIVOS TXT, EXCEL O CSV
+import csv
+import pandas as pd
+#-------------------------------------#
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -299,9 +165,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
-def guardar_datos(nombre_de_la_tabla, tablas_de_datos, caja, campos_db):
-  #Esta función se encargará de sólo grabar los datos editados en la tabla.
-  #El objetivo de esta función es evitar tener que usar forms para modificar datos.
+def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -309,15 +173,19 @@ def guardar_datos(nombre_de_la_tabla, tablas_de_datos, caja, campos_db):
     if not selecciónDatos:
       print("FALTA SELECCIONAR 1 FILA")
       return False
+    
+    ítem = selecciónDatos[0]
     if not all(entry.get().strip() for entry in caja[nombre_de_la_tabla]):
       mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
       return False
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db, True)
+    
     if not datos:
       print("NO HAY DATOS QUE GUARDAR")
       return False
-
-    insertar_datos(nombre_de_la_tabla, caja, datos, tablas_de_datos)
+    
+    valores = list(datos.values())
+    tablas_de_datos.item(ítem, values=valores)
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
     mensajeTexto.showinfo("ÉXITO", "GUARDADO EXITOSAMENTE")
@@ -325,6 +193,55 @@ def guardar_datos(nombre_de_la_tabla, tablas_de_datos, caja, campos_db):
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
+
+def importar_datos(nombre_de_la_tabla, tablas_de_datos):
+  try:
+    if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+      print("La tabla visual no existe o fue cerrada.")
+      return
+    
+    tipos_de_archivos = (
+      ("bloc de notas","*.txt"),
+      ("hoja con comas separadas","*.csv"),
+      ("hoja_de_excel","*.xslx"),
+      ("todos","*.*"))
+    
+    ruta_archivo = diálogoArchivo.askopenfilename(
+        title="Seleccionar archivo a importar",
+        filetypes=tipos_de_archivos
+      )
+    
+    if not ruta_archivo:
+      print("NO SE SELECCIONÓ NINGÚN ARCHIVO")
+      return
+    
+    extensión = ruta_archivo.split(".")[-1].lower() #<= Obtiene la extensión del archivo, el -1 es para tomar la última parte después del punto, si pusiera 0 tomaría todo el nombre del archivo.
+    
+    match extensión:
+      case "xlsx":
+        datos = pd.read_excel(ruta_archivo)
+      case "csv":
+        datos = pd.read_csv(ruta_archivo)
+      case "txt":
+        with open(ruta_archivo, "r", encoding="utf-8") as archivo:
+          lector = csv.reader(archivo, delimiter="\t")
+          datos = list(lector)
+          
+          datos = pd.DataFrame(datos[1:],columns=datos[0])
+      case _:
+        print("No compatible el formato de archivo")
+        return
+        
+    for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
+        
+    for índice, fila in datos.iterrows():
+      tablas_de_datos.insert("", "end", values=tuple(fila))
+    
+    print(f"{len(datos)} registros importados correctamente en {nombre_de_la_tabla}")
+    
+  except Exception as e:
+    print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
 
 def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():

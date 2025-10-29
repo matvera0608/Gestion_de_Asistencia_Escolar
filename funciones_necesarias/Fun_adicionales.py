@@ -1,5 +1,5 @@
-from Conexión import conectar_base_de_datos, desconectar_base_de_datos
-from Fun_Validación_SGAE import validar_datos
+from Conexión import *
+from .Fun_Validación_SGAE import *
 from Elementos import consultas
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
@@ -58,7 +58,7 @@ def ocultar_encabezado(treeview, selección, var_rb):
   
   columna = list(treeview["columns"])
   if selección in columna:
-    treeview.column(selección, width=0, stretch=True)
+    treeview.column(selección, width=0, stretch=False)
     treeview.heading(selección, text="")
     
   var_rb.set("")
@@ -108,8 +108,7 @@ def obtener_selección(treeview):
       mensajeTexto.showerror("ERROR", "La tabla ya no está disponible.")
       return None
 
-def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos=True):
-  global datos, campos_db, lista_de_cajas
+def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos):
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
   lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
   
@@ -179,28 +178,6 @@ def convertir_datos(campos_db, lista_de_cajas):
 # #     contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
 # #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
 # #   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
-
-# def actualizar_la_hora(contenedor):
-#   color_padre = contenedor.cget('bg')
-  
-#   label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
-#   label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-#   label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-#   actualizar_la_hora(contenedor)
-
-# --- Fun_adicionales.py ---
-
-
-# def iniciar_reloj(etiqueta):
-#     hora_actual = time.strftime("%H:%M:%S")
-#     etiqueta.config(text=hora_actual)
-#     etiqueta.after(1000, iniciar_reloj, etiqueta)
-
-# def actualizar_la_hora(contenedor):
-#     reloj = tk.Label(contenedor, font=("Courier New", 12, "bold"))
-#     reloj.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-#     iniciar_reloj(reloj)
-#     return reloj
 
 def construir_query(nombre_de_la_tabla, filtros):
   consulta_base = ""
@@ -303,3 +280,142 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   except Exception as e:
       mensajeTexto.showerror("ERROR DE CONEXIÓN", f"❌ Error al conectar a la base de datos: {e}")
       return None
+    
+    
+campos_con_claves = {
+  "carrera": ("ID_Carrera","Nombre"),
+  "alumno": ("ID_Alumno","Nombre"),
+  "profesor": ("ID_Profesor", "Nombre"),
+  "materia": ("ID_Materia","Nombre")
+  }
+
+campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
+                   "asistencia": ("IDAlumno", "alumno"),
+                   "materia": ("IDCarrera", "carrera"),
+                   "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
+                   "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno")]
+                   }
+
+#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
+def cargar_datos_en_Combobox(tablas_de_datos, combos):
+  try:
+    with conectar_base_de_datos() as conexión:
+      if not conexión:
+        return
+      cursor = conexión.cursor()
+      relación = campos_foráneos.get(tablas_de_datos)
+      if not relación:
+        return
+        
+      if not isinstance(combos, (list, tuple)):
+        combos = [combos]
+      
+      if isinstance(relación, tuple):
+        relación = [relación]
+      
+      for comboWid in combos:
+        nombre_combo = getattr(comboWid, "widget_interno", "").lower()
+        if not nombre_combo.startswith("cbbox"):
+          continue
+        nombre_combo = nombre_combo.replace("cbbox_", "")
+        for campo_foráneo, tabla_ajena in relación:
+          if nombre_combo == tabla_ajena:
+            id_campo, campoVisible = campos_con_claves[tabla_ajena]
+            consulta = f"SELECT {id_campo}, {campoVisible} FROM {tabla_ajena}"
+            cursor.execute(consulta)
+            registros = cursor.fetchall()
+            valores = [fila[1] for fila in registros]
+            comboWid["values"] = valores
+            comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
+  except error_sql as sql_error:
+    mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
+    return
+
+def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+
+  selección = tablas_de_datos.selection()
+  if not selección:
+    return
+  
+  iid = selección[0]
+  try:
+    idSeleccionado = int(iid)
+  except ValueError:
+    idSeleccionado = iid
+  
+  cursor = None
+  conexión = conectar_base_de_datos()
+  if conexión:
+    try:
+      cursor = conexión.cursor()
+      # Diccionario de claves primarias según la tabla
+      PKs = {
+        "alumno": "ID_Alumno",
+        "asistencia": "ID",
+        "carrera": "ID_Carrera",
+        "materia": "ID_Materia",
+        "profesor": "ID_Profesor",
+        "enseñanza": "ID",
+        "nota": "ID",
+      }
+      
+      clave = PKs.get(nombre_de_la_tabla)
+      if not clave:
+        mensajeTexto.showerror("ERROR", "No se pudo determinar la superclave para esta tabla.")
+        return
+      campos_visibles = {
+      "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"], #Los que empiezan con ID sin guión bajo son claves ajenas o FKs.
+      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
+      "carrera": ["Nombre", "Duración"],
+      "materia": ["Nombre", "Horario", "IDCarrera"],
+      "enseñanza": ["IDMateria", "IDProfesor"],
+      "profesor": ["Nombre"],
+      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
+      }
+
+      columnas = ', '.join(campos_visibles[nombre_de_la_tabla.lower()])
+      consulta = f"SELECT {columnas} FROM {nombre_de_la_tabla.lower()} WHERE {clave} = %s"
+      cursor.execute(consulta, (idSeleccionado,))
+      fila_seleccionada = cursor.fetchone()
+      
+      if not fila_seleccionada:
+        return
+      
+      datos_convertidos = []
+
+      for campo, valor in zip(campos_visibles[nombre_de_la_tabla.lower()], fila_seleccionada):
+        if campo == "IDProfesor":
+            cursor.execute("SELECT Nombre FROM profesor WHERE ID_Profesor = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDMateria":
+            cursor.execute("SELECT Nombre FROM materia WHERE ID_Materia = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDAlumno":
+            cursor.execute("SELECT Nombre FROM alumno WHERE ID_Alumno = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
+        elif campo == "IDCarrera":
+            cursor.execute("SELECT Nombre FROM carrera WHERE ID_Carrera = %s", (valor,))
+            res = cursor.fetchone()
+            datos_convertidos.append(res[0] if res else "Desconocido")
+        else:
+            datos_convertidos.append(valor)
+            continue
+          
+      cajas = cajasDeTexto[nombre_de_la_tabla]
+      for campo, valor, caja in zip(campos_visibles[nombre_de_la_tabla], datos_convertidos, cajas):
+        caja.config(state="normal")
+        caja.set(str(valor))
+        caja.config(state="readonly" if getattr(caja, "widget_interno", "").startswith("cbBox_") else "normal")
+          
+      convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
+      
+    except error_sql as error:
+      mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL SELECCIONAR: {str(error)}")
+    finally:
+      cursor.close()
+      desconectar_base_de_datos(conexión)

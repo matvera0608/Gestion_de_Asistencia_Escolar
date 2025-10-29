@@ -1,12 +1,11 @@
-from Fun_ABM_SGAE import cargar_datos_en_Combobox, insertar_datos, modificar_datos, eliminar_datos, guardar_datos, buscar_datos, ordenar_datos, exportar_en_PDF, mostrar_registro
-from Fun_adicionales import consultar_tabla,ocultar_encabezado, mostrar_encabezado, consultas
-from Fun_Validación_SGAE import aplicar_validación_fecha, aplicar_validación_hora
-from Eventos import mover_con_flechas
-from Elementos import colores, ícono, ruta_base, cargar_imagen
+from funciones_necesarias import *
+from Eventos import *
+from Elementos import *
 import os
 import tkinter as tk
 from tkinter import ttk
 from functools import partial
+
 
 # --- ELEMENTOS ---
 nombreActual = None
@@ -514,10 +513,10 @@ def abrir_tablas(nombre_de_la_tabla):
   btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, tabla_treeview, cajasDeTexto, campos_en_db), "disabled")
+  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, campos_en_db), "disabled")
   btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  btnImportar = crear_botón(marco_izquierdo,"Importar Registros", imágenes_por_botón["importar"], lambda: None, "disabled")
+  btnImportar = crear_botón(marco_izquierdo,"Importar Registros", imágenes_por_botón["importar"], lambda: importar_datos(nombre_de_la_tabla, tabla_treeview), "disabled")
   btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
   btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), "disabled")

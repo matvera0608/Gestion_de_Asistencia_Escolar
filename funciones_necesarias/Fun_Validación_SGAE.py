@@ -1,5 +1,5 @@
 from Conexión import conectar_base_de_datos, desconectar_base_de_datos
-from datetime import datetime, date as fecha, time as hora
+from datetime import datetime
 from tkinter import messagebox as mensajeTexto
 import re
 
