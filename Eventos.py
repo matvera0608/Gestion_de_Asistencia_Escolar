@@ -103,6 +103,3 @@ def mover_con_flechas(treeview, cajas, botones, acciones, event):
             return "break"
     
     return None
-
-def interactuar_con_teclas(botones):
-    return

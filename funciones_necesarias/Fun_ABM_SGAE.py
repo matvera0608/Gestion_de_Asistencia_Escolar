@@ -210,12 +210,11 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
         title="Seleccionar archivo a importar",
         filetypes=tipos_de_archivos
       )
-    
-    if not ruta_archivo:
-      print("NO SE SELECCIONÓ NINGÚN ARCHIVO")
-      return
-    
+  
     extensión = ruta_archivo.split(".")[-1].lower() #<= Obtiene la extensión del archivo, el -1 es para tomar la última parte después del punto, si pusiera 0 tomaría todo el nombre del archivo.
+    
+    if not ruta_archivo or extensión:
+      return
     
     match extensión:
       case "xlsx":

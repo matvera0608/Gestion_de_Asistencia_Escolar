@@ -538,13 +538,16 @@ def abrir_tablas(nombre_de_la_tabla):
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
       "Guardar": partial(guardar_datos, nombreActual, tabla_treeview),
+      "Importar": partial(importar_datos, nombreActual, tabla_treeview),
       "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
       "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
   }
   # --- BINDEOS DE EVENTOS ---
   
   ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(tabla_treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
-  
+  ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
+  ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
+  ventanaSecundaria.bind("<Control-s>", lambda e: (acciones["Guardar"]()))
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
