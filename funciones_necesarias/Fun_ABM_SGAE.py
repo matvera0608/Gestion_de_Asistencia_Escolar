@@ -194,11 +194,22 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, tablas_de_datos):
+def importar_datos(nombre_de_la_tabla, tablas_de_datos, persistencia=False):
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
+    
+    alias = {
+      "IDCarrera": "Carrera",
+      "IDMateria": "Materia",
+      "IDProfesor": "Profesor",
+      "IDAlumno": "Alumno",
+      "FechaDeNacimiento": "Fecha de nacimiento",
+      "valorNota": "Nota",
+      "tipoNota": "Evaluación",
+      "Fecha_Asistencia": "Fecha",
+    }
     
     tipos_de_archivos = (
       ("bloc de notas","*.txt"),
@@ -213,20 +224,25 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   
     extensión = ruta_archivo.split(".")[-1].lower() #<= Obtiene la extensión del archivo, el -1 es para tomar la última parte después del punto, si pusiera 0 tomaría todo el nombre del archivo.
     
-    if not ruta_archivo or extensión:
+    if not ruta_archivo:
       return
     
     match extensión:
       case "xlsx":
         datos = pd.read_excel(ruta_archivo, encoding="utf-8")
       case "csv":
-        datos = pd.read_csv(ruta_archivo, encoding="utf-8")
+        datos = pd.read_csv(ruta_archivo,sep="\t",engine="python" ,encoding="utf-8")
+        datos = datos.rename(columns=alias)
       case "txt":
         with open(ruta_archivo, "r", encoding="utf-8") as archivo:
           lector = csv.reader(archivo, delimiter="\t")
           datos = list(lector)
           
-          datos = pd.DataFrame(datos[1:],columns=datos[0])
+          encabezado = [col for col in datos[0] if col.strip() != ""]
+          filas = [[celda for celda in fila if celda.strip() != ""] for fila in datos[1:]]
+          
+          datos = pd.DataFrame(filas, columns=encabezado)
+          datos = datos.rename(columns=alias)
       case _:
         print("No compatible el formato de archivo")
         return
@@ -236,6 +252,9 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
         
     for índice, fila in datos.iterrows():
       tablas_de_datos.insert("", "end", values=tuple(fila))
+    
+    alias_invertido = {v: k for k, v in alias.items()}
+    datos = datos.rename(columns=alias_invertido)
     
     print(f"{len(datos)} registros importados correctamente en {nombre_de_la_tabla}")
     
