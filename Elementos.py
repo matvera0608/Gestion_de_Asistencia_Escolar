@@ -71,14 +71,14 @@ consultas = {
     }
 
 # --- FUNCIÓN PARA CARGAR IMAGENES ---
-def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen):
+def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     ruta = os.path.join(ruta_imagen, ruta_subcarpeta_imagen, nombre_imagen)
     if(not os.path.exists(ruta)):
         print(f"Imagen no encontrada: {ruta}")
         return None
     try:
         imagen = Image.open(ruta)
-        imagen = imagen.resize((25, 25), Image.Resampling.LANCZOS)
+        imagen = imagen.resize(tamaño, Image.Resampling.LANCZOS)
         return ImageTk.PhotoImage(imagen)
     except Exception as e:
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")

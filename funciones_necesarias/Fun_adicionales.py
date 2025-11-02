@@ -54,24 +54,6 @@ def restaurar_snapshot(treeview, copia_de_datos):
     
   treeview.selection_set(copia_de_datos["selección"]) #Y Este lo restaura todo
 
-def ocultar_encabezado(treeview, selección, var_rb):
-  
-  columna = list(treeview["columns"])
-  if selección in columna:
-    treeview.column(selección, width=0, stretch=False)
-    treeview.heading(selección, text="")
-    
-  var_rb.set("")
-  
-def mostrar_encabezado(treeview, alias, var_rb):
-  
-  for campo in treeview["columns"]:
-    texto = alias.get(campo, campo)
-    treeview.column(campo, width=100, stretch=True)
-    treeview.heading(campo, text=texto)
-  
-  var_rb.set("")
-
 def filtrar(tablas_de_datos, nombre_tabla, selecciónEncabezado):
   #En esta función voy a filtrar todos los datos de la treeview.
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -108,7 +90,7 @@ def obtener_selección(treeview):
       mensajeTexto.showerror("ERROR", "La tabla ya no está disponible.")
       return None
 
-def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos, validarDatos):
+def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos):
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
   lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
   
@@ -131,9 +113,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
       return None
     datos[campo] = texto
   
-  if validarDatos:
-    if not validar_datos(nombre_de_la_tabla, datos):
-      return None
   return datos
 
 def conseguir_campo_ID(nombre_de_la_tabla):
@@ -195,16 +174,17 @@ def construir_query(nombre_de_la_tabla, filtros):
                               ORDER BY a.Nombre;
                           """
       case "asistencia":
-          consulta_base = """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
+          consulta_base = """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno, p.Nombre AS Profesor
                               FROM asistencia AS asis
                               JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                              JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor
                               ORDER BY asis.Fecha_Asistencia"""
       case "carrera":
           consulta_base = """SELECT c.ID_Carrera, c.Nombre, c.Duración
                               FROM carrera AS c
                               ORDER BY c.Nombre"""
       case "materia":
-          consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i') AS Horario, c.Nombre AS Carrera
+          consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.HorarioEntrada,'%H:%i') AS HorarioEntrada, TIME_FORMAT(m.HorarioSalida,'%H:%i') AS HorarioSalida, c.Nombre AS Carrera
                               FROM materia AS m
                               JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
                               ORDER BY m.Nombre"""
@@ -219,12 +199,13 @@ def construir_query(nombre_de_la_tabla, filtros):
                               FROM profesor AS pro
                               ORDER BY pro.Nombre"""
       case "nota":
-          consulta_base = """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
+          consulta_base = """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, p.Nombre AS Profesor,
                               REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
                               n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
                               FROM nota AS n
                               JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
                               JOIN materia AS m ON n.IDMateria = m.ID_Materia
+                              JOIN profesor AS p ON n.IDProfesor = p.ID_Profesor
                               ORDER BY al.Nombre, m.Nombre"""
       case _:
           consulta_base = f"SELECT * FROM {nombre_de_la_tabla}"
@@ -249,9 +230,9 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
       "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
       "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre")},
+      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDProfesor": ("ID_Profesor","profesor", "Nombre")},
       "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"), "IDMateria": ("ID_Materia", "materia", "Nombre")},
-      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDMateria": ("ID_Materia","materia", "Nombre")}
+      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDMateria": ("ID_Materia","materia", "Nombre"), "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
   if not datos:
     return None
@@ -290,10 +271,10 @@ campos_con_claves = {
   }
 
 campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
-                   "asistencia": ("IDAlumno", "alumno"),
+                   "asistencia": [("IDAlumno", "alumno"), ("IDProfesor","profesor")],
                    "materia": ("IDCarrera", "carrera"),
                    "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
-                   "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno")]
+                   "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno"), ("IDProfesor","profesor")]
                    }
 
 #--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
@@ -367,12 +348,12 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
         return
       campos_visibles = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"], #Los que empiezan con ID sin guión bajo son claves ajenas o FKs.
-      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno"],
+      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor"],
       "carrera": ["Nombre", "Duración"],
-      "materia": ["Nombre", "Horario", "IDCarrera"],
+      "materia": ["Nombre", "HorarioEntrada", "HorarioSalida", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
       "profesor": ["Nombre"],
-      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
+      "nota": ["IDAlumno", "IDMateria", "IDProfesor", "valorNota", "tipoNota", "fecha"]
       }
 
       columnas = ', '.join(campos_visibles[nombre_de_la_tabla.lower()])

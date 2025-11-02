@@ -21,9 +21,9 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
     return
 
   conexión = conectar_base_de_datos()
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
 
-  if not datos or not validar_datos(nombre_de_la_tabla, datos):
+  if not datos:
     return
 
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
@@ -76,12 +76,10 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   except ValueError:
     idSeleccionado = iid
 
-  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db, validarDatos=True)
+  datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
     return
-  
-  if not validar_datos(nombre_de_la_tabla, datos):
-    return
+
   
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
   
@@ -194,7 +192,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, tablas_de_datos, persistencia=False):
+def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")

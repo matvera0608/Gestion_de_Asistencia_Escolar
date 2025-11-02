@@ -129,7 +129,7 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
       widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno), None)
       if widget and widget_interno.startswith("txBox_Fecha"):
         aplicar_validación_fecha(widget, mi_ventana)
-      elif widget and widget_interno.startswith("txBox_Hora"):
+      elif widget and widget_interno.startswith("txBox_Horario"):
         aplicar_validación_hora(widget, mi_ventana)
 
 
@@ -156,24 +156,6 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
       except Exception as e:
         print(f"Error configurando {widget}: {e}")
 
-
-def seleccionar_encabezado(event, treeview, var_rb):
-  región = treeview.identify_region(event.x, event.y)
-  if región == "heading":
-    columna = treeview.identify_column(event.x)
-    if columna == "#0":
-      print("Clic en la columna de ítems (no en las definidas)")
-      return
-    
-    idx = int(columna.replace("#", "")) - 1
-    columnas = treeview["columns"]
-    if 0 <= idx < len(columnas):
-        selección = treeview["columns"][idx]
-        texto = alias.get(selección, selección)
-        ocultar_encabezado(treeview, selección, var_rb)
-        print(f"OCULTANDO {texto}")
-
-
 def habilitar(treeview):
   tabla_treeview.delete(*tabla_treeview.get_children())
   
@@ -188,9 +170,6 @@ def habilitar(treeview):
 
   for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
     botón.config(state="normal")
-  
-  for radiobutton in [rbMostrar, rbOcultar]:
-    radiobutton.config(state="normal")
   
   entryBuscar.config(state="normal")
   treeview.config(selectmode="browse")
@@ -208,10 +187,6 @@ def deshabilitar(treeview):
   for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
     botón.config(state="disabled")
   
-  for radiobutton in [rbMostrar, rbOcultar]:
-    radiobutton.config(state="disabled")
-  var_rb.set("")
-
   treeview.bind("<Button-1>", lambda e: "break")
   treeview.bind("<Key>", lambda e: "break")
   treeview.selection_remove(treeview.selection())
@@ -232,10 +207,6 @@ def insertar(tabla_treeview):
   if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
     return
   insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview)
-
-
-  # --- ESTOS SON PARA LOS EVENTOS.
-
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
@@ -370,16 +341,14 @@ def mostrar_pestañas(ventana, permiso):
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios", bg=ventana.cget("bg"), font=("Arial", 8))
   lb_obligatoriedad.pack(side="bottom", pady=5)
   
-  # notebook.select(tablaAlumno)
-  
   notebook.bind("<<NotebookTabChanged>>", on_tab_change)
   
-  ventana.after(100, setattr(notebook, "carga_inicial", False))
+  ventana.after(1000, setattr(notebook, "carga_inicial", False))
 
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
-  global tabla_treeview, rbMostrar, rbOcultar, campos_por_tabla, entryBuscar, botones, acciones, var_rb
+  global tabla_treeview, campos_por_tabla, entryBuscar, botones, acciones
   nombreActual = nombre_de_la_tabla
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
@@ -427,13 +396,15 @@ def abrir_tablas(nombre_de_la_tabla):
     "asistencia": [
       ("Estado de asistencia*", "txBox_EstadoAsistencia"),
       ("Fecha*", "txBox_FechaAsistencia"),
-      ("Alumno*", "cbBox_Alumno")
+      ("Alumno*", "cbBox_Alumno"),
+      ("Profesor*", "cbBox_Profesor"),
     ],
     "carrera": campos_comunes + [
         ("Duración*", "txBox_Duración")
     ],
     "materia": campos_comunes + [
-      ("Horario*", "txBox_Horario"),
+      ("Horario de entrada*", "txBox_HorarioEntrada"),
+      ("Horario de salida*", "txBox_HorarioSalida"),
       ("Carrera*", "cbBox_Carrera")
     ],
     "enseñanza": [
@@ -447,6 +418,7 @@ def abrir_tablas(nombre_de_la_tabla):
         ("Nota*", "txBox_Valor"),
         ("Evaluación*", "txBox_TipoEvaluación"),
         ("Fecha*", "txBox_FechaHora"),
+        ("Profesor*", "cbBox_Profesor"),
     ]
   }
   cajasDeTexto = {}
@@ -476,17 +448,6 @@ def abrir_tablas(nombre_de_la_tabla):
 
   tabla_treeview.delete(*tabla_treeview.get_children())
   
-  var_rb = tk.StringVar(value="")
-
-  rbOcultar = crear_botonesExcluyentes(marco_izquierdo, "Ocultar",var_rb, "Ocultar")
-  rbOcultar.grid(row=0, column=1, sticky="n")
-  rbOcultar.bind("<ButtonPress-1>", lambda e: seleccionar_encabezado(e, tabla_treeview, var_rb))
-           
-  rbMostrar = crear_botonesExcluyentes(marco_izquierdo, "Mostrar",var_rb, "Mostrar")
-  rbMostrar.grid(row=0, column=2, sticky="n")
-  rbMostrar.bind("<ButtonPress-1>", lambda e: mostrar_encabezado(tabla_treeview, alias, var_rb))
-  
-
   crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=1, column=1, sticky="n")
   opciones = ["ASCENDENTE", "DESCENDENTE"]
   opciónSeleccionado = tk.StringVar(value=opciones[0])
@@ -537,7 +498,7 @@ def abrir_tablas(nombre_de_la_tabla):
       "Agregar": partial(insertar, tabla_treeview),
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
-      "Guardar": partial(guardar_datos, nombreActual, tabla_treeview),
+      "Guardar": partial(guardar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),
       "Importar": partial(importar_datos, nombreActual, tabla_treeview),
       "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
       "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
@@ -548,6 +509,8 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
   ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
   ventanaSecundaria.bind("<Control-s>", lambda e: (acciones["Guardar"]()))
+
+
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
