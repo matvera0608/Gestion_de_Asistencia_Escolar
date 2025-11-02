@@ -30,7 +30,7 @@ consultas = {
       },
       "materia": {
           "select": """SELECT m.ID_Materia, m.Nombre, 
-                              TIME_FORMAT(m.Horario,'%H:%i') AS Horario, 
+                              TIME_FORMAT(m.HorarioEntrada,'%H:%i') AS HorarioEntrada, TIME_FORMAT(m.HorarioSalida,'%H:%i') AS HorarioSalida,
                               c.Nombre AS Carrera
                       FROM materia m
                       JOIN carrera c ON m.IDCarrera = c.ID_Carrera""",
@@ -60,17 +60,18 @@ consultas = {
           "buscables": ["pro.Nombre"]
           },
       "nota":{
-          "select": """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
+          "select": """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, p.Nombre AS Profesor,
                               REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
-                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
+                              n.tipoNota, DATE_FORMAT(n.fechaEvaluación, '%d/%m/%Y') AS FechaEv
                               FROM nota AS n
                               JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia""",
+                              JOIN materia AS m ON n.IDMateria = m.ID_Materia
+                              JOIN profesor AS p ON n.IDProfesor = p.ID_Profesor""",
           "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"]
           }
     }
 
-# --- FUNCIÓN PARA CARGAR IMAGENES ---
+# --- FUNCIONES ---
 def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     ruta = os.path.join(ruta_imagen, ruta_subcarpeta_imagen, nombre_imagen)
     if(not os.path.exists(ruta)):
@@ -83,3 +84,35 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     except Exception as e:
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")
         return None
+    
+
+def consulta_semántica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like="%{}%"):
+    meta = consultas_meta.get(nombre_de_la_tabla.lower())
+    if not meta:
+        raise ValueError(f"No existe metadata para la tabla '{nombre_de_la_tabla}'")
+
+    select_sql = meta["select"].strip()
+    buscables = meta.get("buscables", [])
+    orden = meta.get("orden")
+    
+    if not valorBúsqueda:
+        sql = select_sql
+        if orden:
+            sql = f"{sql} ORDER BY {orden}"
+        params = ()
+        return sql, params
+    
+    if not buscables:
+        sql = select_sql
+        if orden:
+            sql = f"{sql} ORDER BY {orden}"
+        params = ()
+        return sql, params
+    
+    condiciones = " OR ".join(f"{campo} LIKE %s" for campo in buscables)
+    sql = f"{select_sql} WHERE {condiciones}"
+    if orden:
+        sql = f"{sql} ORDER BY {orden}"
+    params = tuple(operador_like.format(valorBúsqueda) for _ in buscables)
+        
+    return sql, params

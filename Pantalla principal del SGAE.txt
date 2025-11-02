@@ -20,6 +20,13 @@ def pantalla_principal(ventana):
 interfaz = pantalla_principal(mi_ventana)
 interfaz.mainloop()
 
+#Lista de comodines para la búsqueda:
+# "%{}" -> empieza con
+# "{}%" -> termina con
+# "%" -> contiene
+# "{}" -> exacto
+# "%{}%" -> contiene (por defecto)
+
 
 # 📜 Lista de valores de sticky:
 # Valor   Significado

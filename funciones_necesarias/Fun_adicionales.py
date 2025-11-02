@@ -1,33 +1,9 @@
 from Conexión import *
 from .Fun_Validación_SGAE import *
-from Elementos import consultas
+from Elementos import *
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
-
-def consultar_tabla_dinámica(consultas_meta, nombre_de_la_tabla, valorBúsqueda, operador_like):
-    meta = consultas_meta.get(nombre_de_la_tabla.lower())
-    if not meta:
-        raise ValueError(f"No existe metadata para la tabla '{nombre_de_la_tabla}'")
-
-    select_sql = meta["select"].strip()
-    buscables = meta.get("buscables", [])
-    orden = meta.get("orden")
-
-    if buscables:
-        condiciones = " OR ".join(f"{campo} LIKE %s" for campo in buscables)
-        sql = f"{select_sql} WHERE {condiciones}"
-        if orden:
-            sql = f"{sql} ORDER BY {orden}"
-        params = tuple(operador_like.format(valorBúsqueda) for _ in buscables)
-    else:
-       
-        sql = select_sql
-        if orden:
-            sql = f"{sql} ORDER BY {orden}"
-        params = ()
-
-    return sql, params
 
 def guardar_snapshot(treeview):
   #Guardamos el contenido de los datos como la selección y la copia de datos de manera temporal#
@@ -64,7 +40,7 @@ def filtrar(tablas_de_datos, nombre_tabla, selecciónEncabezado):
   for item in tablas_de_datos.get_children():
     tablas_de_datos.delete(item)
   
-  sql, parametros = consultar_tabla_dinámica(consultas, nombre_tabla, selecciónEncabezado, "%{}%")
+  sql, parametros = consulta_semántica(consultas, nombre_tabla, selecciónEncabezado, "%{}%")
   cursor.execute(sql, parametros)
   registros_ocultos = cursor.fetchall()
   cursor.close()
@@ -158,73 +134,24 @@ def convertir_datos(campos_db, lista_de_cajas):
 # #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
 # #   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
 
-def construir_query(nombre_de_la_tabla, filtros):
-  consulta_base = ""
-  filtro = ""
-
-  if filtros:
-      condiciones = [f'{campo} = %s' for campo in filtros.keys()]
-      filtro = " WHERE " + " AND ".join(condiciones)
-
-  match nombre_de_la_tabla.lower():
-      case "alumno":
-          consulta_base = """SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS FechaNacimiento, c.Nombre AS Carrera
-                              FROM alumno AS a
-                              JOIN carrera AS c ON a.IDCarrera = c.ID_Carrera
-                              ORDER BY a.Nombre;
-                          """
-      case "asistencia":
-          consulta_base = """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno, p.Nombre AS Profesor
-                              FROM asistencia AS asis
-                              JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
-                              JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor
-                              ORDER BY asis.Fecha_Asistencia"""
-      case "carrera":
-          consulta_base = """SELECT c.ID_Carrera, c.Nombre, c.Duración
-                              FROM carrera AS c
-                              ORDER BY c.Nombre"""
-      case "materia":
-          consulta_base = """SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.HorarioEntrada,'%H:%i') AS HorarioEntrada, TIME_FORMAT(m.HorarioSalida,'%H:%i') AS HorarioSalida, c.Nombre AS Carrera
-                              FROM materia AS m
-                              JOIN carrera AS c ON m.IDCarrera = c.ID_Carrera
-                              ORDER BY m.Nombre"""
-      case "enseñanza":
-          consulta_base = """SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
-                              FROM enseñanza AS e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia
-                              ORDER BY m.Nombre, p.Nombre"""
-      case "profesor":
-          consulta_base = """SELECT pro.ID_Profesor, pro.Nombre
-                              FROM profesor AS pro
-                              ORDER BY pro.Nombre"""
-      case "nota":
-          consulta_base = """SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, p.Nombre AS Profesor,
-                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
-                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS FechaEv
-                              FROM nota AS n
-                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia
-                              JOIN profesor AS p ON n.IDProfesor = p.ID_Profesor
-                              ORDER BY al.Nombre, m.Nombre"""
-      case _:
-          consulta_base = f"SELECT * FROM {nombre_de_la_tabla}"
-
-  return consulta_base + filtro
-
 def consultar_tabla(nombre_de_la_tabla):
   try:
+    búsqueda = None
+    like = "%{}%"
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, búsqueda, like)
     conexión = conectar_base_de_datos()
     if conexión:
       cursor = conexión.cursor()
-      query = construir_query(nombre_de_la_tabla, {})
-      cursor.execute(query)
-      res = cursor.fetchall()
+      cursor.execute(sql, params)
+      filas = cursor.fetchall()
       cursor.close()
       desconectar_base_de_datos(conexión)
-      return res
+      return filas  or []
+    else:
+      return []
   except Exception as Exc:
     mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+    return []
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {

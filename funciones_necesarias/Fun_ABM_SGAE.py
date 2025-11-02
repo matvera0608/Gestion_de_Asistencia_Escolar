@@ -346,7 +346,7 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, entry_busqueda, consultas)
     conexión = conectar_base_de_datos()
     cursor = conexión.cursor()
     valor_busqueda = entry_busqueda.get().strip()
-    sql, params = consultar_tabla_dinámica(consultas, nombre_de_la_tabla, valor_busqueda or "", operador_like="{}%")
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, valor_busqueda or "", operador_like="{}%")
     cursor.execute(sql, params)
     resultado = cursor.fetchall()
     

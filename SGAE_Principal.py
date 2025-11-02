@@ -6,18 +6,17 @@ import tkinter as tk
 from tkinter import ttk
 from functools import partial
 
-
 # --- ELEMENTOS ---
 nombreActual = None
 ventanaAbierta = {}
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
-      "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno"],
+      "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor"],
       "carrera": ["Nombre", "Duración"],
-      "materia": ["Nombre", "Horario", "IDCarrera"],
+      "materia": ["Nombre", "HorarioEntrada", "HorarioSalida", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
       "profesor": ["Nombre"],
-      "nota": ["IDAlumno", "IDMateria", "valorNota", "tipoNota", "fecha"]
+      "nota": ["IDAlumno", "IDMateria","IDProfesor", "valorNota", "tipoNota", "fecha"]
   }
 alias = {
 "IDCarrera": "Carrera",
@@ -28,6 +27,8 @@ alias = {
 "valorNota": "Nota",
 "tipoNota": "Evaluación",
 "Fecha_Asistencia": "Fecha",
+"HorarioEntrada": "Horario de entrada",
+"HorarioSalida": "Horario de salida"
 }
 
 
