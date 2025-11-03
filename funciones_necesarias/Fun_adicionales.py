@@ -235,6 +235,7 @@ def cargar_datos_en_Combobox(tablas_de_datos, combos):
             valores = [fila[1] for fila in registros]
             comboWid["values"] = valores
             comboWid.id_Nombre = {fila[1]: fila[0] for fila in registros}
+      cursor.close()
   except error_sql as sql_error:
     mensajeTexto.showerror("ERROR", f"HA OCURRIDO UN ERROR AL CARGAR DATOS EN COMBOBOX: {str(sql_error)}")
     return

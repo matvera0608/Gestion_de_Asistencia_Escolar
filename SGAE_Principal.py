@@ -117,17 +117,17 @@ def iterar_entry_y_combobox(marco_izquierdo, nombre_de_la_tabla, campos):
   listaDesplegable.setdefault(nombre_de_la_tabla, [])
   
   for i, (texto_etiqueta, nombre_Interno) in enumerate(campos):
-    crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", padx=1, pady=5)
+    crear_etiqueta(marco_izquierdo, texto_etiqueta).grid(row=i + 2, column=1, sticky="w", pady=5)
     combo = crear_listaDesp(marco_izquierdo, 30)
     combo.widget_interno = nombre_Interno
-    combo.grid(row=i + 2, column=2, sticky="ew", padx=1, pady=5)
+    combo.grid(row=i + 2, column=2, sticky="ew", pady=5)
     listaDesplegable[nombre_de_la_tabla].append(combo)
     cajasDeTexto[nombre_de_la_tabla].append(combo)
     
   cargar_datos_en_Combobox(nombre_de_la_tabla, listaDesplegable[nombre_de_la_tabla])  
   for tabla, campos in campos_por_tabla.items():
     for etiqueta, widget_interno in campos:
-      widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno), None)
+      widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno), None) #next() sirve para obtener el primer elemento
       if widget and widget_interno.startswith("txBox_Fecha"):
         aplicar_validación_fecha(widget, mi_ventana)
       elif widget and widget_interno.startswith("txBox_Horario"):
@@ -145,17 +145,17 @@ def cerrar_abm(ventana):
 
 def configurar_ciertos_comboboxes(cbBox_tabla):
   for etiqueta, widget_interno in campos_por_tabla.get(cbBox_tabla, []):
-      try:
-        if widget_interno.startswith("cbBox_"):
-          for widget in cajasDeTexto.get(cbBox_tabla, []):
-            if getattr(widget, "widget_interno", "") == widget_interno:
-              widget.config(state="readonly")
-        elif widget_interno.startswith("txBox_"):
-          for widget in cajasDeTexto.get(cbBox_tabla, []):
-            if getattr(widget, "widget_interno", "") == widget_interno:
-              widget.config(state="normal")
-      except Exception as e:
-        print(f"Error configurando {widget}: {e}")
+    try:
+      for widget in cajasDeTexto.get(cbBox_tabla, []):
+        if getattr(widget, "widget_interno", "") == widget_interno:
+          if widget_interno.startswith("cbBox_"):
+            if cbBox_tabla == "asistencia" and widget_interno == "cbBox_Estado":
+              widget["values"] = ["presente", "ausente"]
+            widget.config(state="readonly")
+          elif widget_interno.startswith("txBox_"):
+            widget.config(state="normal")
+    except Exception as e:
+      print(f"Error configurando {widget}: {e}")
 
 def habilitar(treeview):
   tabla_treeview.delete(*tabla_treeview.get_children())
@@ -356,7 +356,6 @@ def abrir_tablas(nombre_de_la_tabla):
     
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
-  ventanaSecundaria.resizable(width=False, height=False)
   ventanaSecundaria.configure(bg=colores["azul_claro"])
   
   ventanaAbierta[nombre_de_la_tabla] = ventanaSecundaria
@@ -384,7 +383,7 @@ def abrir_tablas(nombre_de_la_tabla):
   marco_izquierdo.grid_columnconfigure(0, weight=0)
   marco_izquierdo.grid_columnconfigure(1, weight=1)
   
-  marco_derecho.grid_columnconfigure(0, weight=1)
+  marco_derecho.grid_columnconfigure(0, weight=0)
   marco_derecho.grid_rowconfigure(0, weight=1)
 
   campos_comunes = [("Nombre*", "txBox_Nombre")]
@@ -395,7 +394,7 @@ def abrir_tablas(nombre_de_la_tabla):
       ("Carrera*", "cbBox_Carrera")
     ],
     "asistencia": [
-      ("Estado de asistencia*", "txBox_EstadoAsistencia"),
+      ("Estado de asistencia*", "cbBox_EstadoAsistencia"),
       ("Fecha*", "txBox_FechaAsistencia"),
       ("Alumno*", "cbBox_Alumno"),
       ("Profesor*", "cbBox_Profesor"),
@@ -414,12 +413,12 @@ def abrir_tablas(nombre_de_la_tabla):
     ],
     "profesor": campos_comunes,
     "nota": [
-        ("Alumno*", "cbBox_Alumno"),
-        ("Materia*", "cbBox_Materia"),
         ("Nota*", "txBox_Valor"),
         ("Evaluación*", "txBox_TipoEvaluación"),
         ("Fecha*", "txBox_FechaHora"),
-        ("Profesor*", "cbBox_Profesor"),
+        ("Alumno*", "cbBox_Alumno"),
+        ("Materia*", "cbBox_Materia"),
+        ("Profesor*", "cbBox_Profesor")
     ]
   }
   cajasDeTexto = {}
@@ -449,13 +448,13 @@ def abrir_tablas(nombre_de_la_tabla):
 
   tabla_treeview.delete(*tabla_treeview.get_children())
   
-  crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=1, column=1, sticky="n")
+  crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=0, column=1, sticky="n")
   opciones = ["ASCENDENTE", "DESCENDENTE"]
   opciónSeleccionado = tk.StringVar(value=opciones[0])
     
   orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado,state="readonly", values=opciones)
   opciónSeleccionado.get()
-  orden.grid(row=1, column=2, sticky="n", pady=5)
+  orden.grid(row=0, column=2, sticky="n", pady=5)
 
   for col in tabla_treeview["columns"]:
     nombre_legible = alias.get(col, col)
