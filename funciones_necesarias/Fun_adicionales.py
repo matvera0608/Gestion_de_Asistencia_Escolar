@@ -281,7 +281,7 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
       "materia": ["Nombre", "HorarioEntrada", "HorarioSalida", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
       "profesor": ["Nombre"],
-      "nota": ["IDAlumno", "IDMateria", "IDProfesor", "valorNota", "tipoNota", "fecha"]
+      "nota": ["IDAlumno", "IDMateria", "IDProfesor", "valorNota", "tipoNota", "fechaEvaluación"]
       }
 
       columnas = ', '.join(campos_visibles[nombre_de_la_tabla.lower()])
