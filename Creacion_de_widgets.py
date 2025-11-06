@@ -80,9 +80,26 @@ def crear_tabla_Treeview(contenedor, tabla):
     
   return tabla_Treeview
 
+
 def cerrar_abm(ventana):
-  ventana.destroy()
-  ventana = None
+  try:
+    for widget in list(ventana.winfo_children()):
+      try:
+        widget.unbind("<Button-1>")
+        widget.unbind("<Key>")
+      except Exception:
+        pass
+  except Exception:
+    pass
+
+  global permitir_insercion
+  permitir_insercion = False
+
+  try:
+    ventana.destroy()
+  except Exception:
+    pass
+
 
 def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
   listaDesplegable = {}
@@ -114,17 +131,21 @@ def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
         if tipo:
           aplicar_validación(widget, ventana, tipo)
 
+
 def configurar_ciertos_comboboxes(cbBox_tabla):
   for etiqueta, widget_interno in campos_por_tabla.get(cbBox_tabla, []):
     try:
       for widget in cajasDeTexto.get(cbBox_tabla, []):
+        if not widget.winfo_exists():
+            continue
+        
         if getattr(widget, "widget_interno", "") == widget_interno:
           if widget_interno.startswith("cbBox_"):
             if cbBox_tabla == "asistencia" and widget_interno == "cbBox_Estado":
               widget["values"] = ["presente", "ausente"]
+              widget.set("presente")
             widget.config(state="readonly")
           elif widget_interno.startswith("txBox_"):
             widget.config(state="normal")
     except Exception as e:
       print(f"Error configurando {widget}: {e}")
-  

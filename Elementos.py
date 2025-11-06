@@ -7,6 +7,7 @@ dirección_del_ícono = os.path.dirname(__file__)
 ruta_base = os.path.dirname(os.path.abspath(__file__))
 ruta_imagen = os.path.join(ruta_base, "imágenes")
 nombreActual = None
+permitir_inserción = False
 ventanaAbierta = {}
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],

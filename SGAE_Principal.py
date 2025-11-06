@@ -8,6 +8,9 @@ from tkinter import ttk
 from functools import partial
 
 def habilitar(treeview):
+  global permitir_inserción
+  if not permitir_inserción:
+    return
   tabla_treeview.delete(*tabla_treeview.get_children())
   
   #LO DE ARRIBA COMENTÉ PORQUE NO HAY DATOS EN MEMORIA CACHÉ, TRAJE LA MISMA LÓGICA ZEBRA ROWS PARA QUE A LA HORA DE ITERAR
@@ -31,7 +34,9 @@ def habilitar(treeview):
   configurar_ciertos_comboboxes(nombreActual)
 
 def deshabilitar(treeview):
-  
+  global permitir_inserción
+  if not permitir_inserción:
+    return
   tabla_treeview.delete(*tabla_treeview.get_children())
   
   for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
@@ -41,18 +46,30 @@ def deshabilitar(treeview):
   treeview.bind("<Key>", lambda e: "break")
   treeview.selection_remove(treeview.selection())
   entryBuscar.config(state="readonly")
-  for entry in cajasDeTexto[nombreActual]:
-    entry.delete(0, tk.END)
+  for entry in cajasDeTexto.get(nombreActual, []):
+    if not entry.winfo_exists():
+        continue
     try:
-      entry.config(state="readonly")
-    except:
-      pass
+        entry.delete(0, tk.END)
+    except Exception:
+        pass
+    try:
+        entry.config(state="readonly")
+    except Exception:
+        pass
 
-def insertar(tabla_treeview):
+
+def insertar_al_habilitar(tabla_treeview):
+  global permitir_inserción
+  if not permitir_inserción:
+    return
+  
   if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
     return
+  
   habilitar(tabla_treeview)
-  if any(widget.get().strip() == "" for widget in cajasDeTexto[nombreActual]):
+  
+  if any(widget.winfo_exists() and widget.get().strip() == "" for widget in cajasDeTexto.get(nombreActual, [])):
     return
   insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview)
 
@@ -191,8 +208,10 @@ def mostrar_pestañas(ventana, permiso):
 #En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
-  global tabla_treeview, campos_por_tabla, entryBuscar, botones, acciones
+  global tabla_treeview, campos_por_tabla, entryBuscar, botones, acciones, opciones
+  global permitir_inserción
   nombreActual = nombre_de_la_tabla
+  permitir_inserción = True
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
     
@@ -257,7 +276,7 @@ def abrir_tablas(nombre_de_la_tabla):
   opciones = ["ASCENDENTE", "DESCENDENTE"]
   opciónSeleccionado = tk.StringVar(value=opciones[0])
     
-  orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado,state="readonly", values=opciones)
+  orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado, state="readonly", values=opciones)
   opciónSeleccionado.get()
   orden.grid(row=0, column=2, sticky="n", pady=5)
 
@@ -266,11 +285,11 @@ def abrir_tablas(nombre_de_la_tabla):
     tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: ordenar_datos(nombre_de_la_tabla, tabla_treeview, campo, opciónSeleccionado.get()))
     tabla_treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, tabla_treeview, cajasDeTexto))
   
- 
+  
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: deshabilitar(tabla_treeview), "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
-  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: insertar(tabla_treeview), "normal")
+  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda t=tabla_treeview: insertar_al_habilitar(t), "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
   btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), "disabled")
@@ -300,7 +319,7 @@ def abrir_tablas(nombre_de_la_tabla):
 
   acciones = {
       "Cancelar": partial(deshabilitar, tabla_treeview),
-      "Agregar": partial(insertar, tabla_treeview),
+      "Agregar": partial(insertar_al_habilitar, tabla_treeview),
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
       "Guardar": partial(guardar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),

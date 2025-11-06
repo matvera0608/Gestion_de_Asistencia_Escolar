@@ -105,6 +105,10 @@ def conseguir_campo_ID(nombre_de_la_tabla):
 
 def convertir_datos(campos_db, lista_de_cajas):
   for campo, caja in zip(campos_db, lista_de_cajas):
+   
+    if not caja.winfo_exists():
+        continue
+    
     valor = caja.get()
     
     if isinstance(valor, str) and "fecha" in campo.lower():
@@ -204,7 +208,7 @@ campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
                    "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno"), ("IDProfesor","profesor")]
                    }
 
-#--- FUNCIONES DEL ABM (ALTA, BAJA Y MODIFICACIÓN) ---
+
 def cargar_datos_en_Combobox(tablas_de_datos, combos):
   try:
     with conectar_base_de_datos() as conexión:
@@ -317,9 +321,10 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
           
       cajas = cajasDeTexto[nombre_de_la_tabla]
       for campo, valor, caja in zip(campos_visibles[nombre_de_la_tabla], datos_convertidos, cajas):
-        caja.config(state="normal")
-        caja.set(str(valor))
-        caja.config(state="readonly" if getattr(caja, "widget_interno", "").startswith("cbBox_") else "normal")
+        if caja.winfo_exists():
+          caja.config(state="normal")
+          caja.set(str(valor))
+          caja.config(state="readonly" if getattr(caja, "widget_interno", "").startswith("cbBox_") else "normal")
           
       convertir_datos(campos_visibles[nombre_de_la_tabla], cajas)
       
