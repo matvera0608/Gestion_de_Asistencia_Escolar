@@ -92,8 +92,8 @@ def cerrar_abm(ventana):
   except Exception:
     pass
 
-  global permitir_insercion
-  permitir_insercion = False
+  global permitir_inserción
+  permitir_inserción = False
 
   try:
     ventana.destroy()
@@ -141,7 +141,7 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
         
         if getattr(widget, "widget_interno", "") == widget_interno:
           if widget_interno.startswith("cbBox_"):
-            if cbBox_tabla == "asistencia" and widget_interno == "cbBox_Estado":
+            if cbBox_tabla.lower() == "asistencia" and widget_interno.startswith("cbBox_Estado"):
               widget["values"] = ["presente", "ausente"]
               widget.set("presente")
             widget.config(state="readonly")

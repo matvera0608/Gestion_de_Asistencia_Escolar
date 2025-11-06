@@ -8,9 +8,6 @@ from tkinter import ttk
 from functools import partial
 
 def habilitar(treeview):
-  global permitir_inserción
-  if not permitir_inserción:
-    return
   tabla_treeview.delete(*tabla_treeview.get_children())
   
   #LO DE ARRIBA COMENTÉ PORQUE NO HAY DATOS EN MEMORIA CACHÉ, TRAJE LA MISMA LÓGICA ZEBRA ROWS PARA QUE A LA HORA DE ITERAR
