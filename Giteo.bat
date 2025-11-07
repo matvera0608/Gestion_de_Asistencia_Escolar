@@ -101,14 +101,14 @@ echo .........................................................................
 
     IF %INTERNET_STATUS% EQU 0 (
     GOTO :EOF
-    ) ELSE (
+    ) ELSE IF %INTERNET_STATUS% EQU 1 (
         IF !INTENTO! LSS !MAX_INTENTOS! (
             color 0E
             SET /A INTENTO+=1
             echo ERROR: No se detectó la conexión a Internet. Reintentando en 5 segundos... (Intento !INTENTO! de !MAX_INTENTOS!)
             timeout /t 5 /nobreak > NUL
             GOTO CHECK_INTERNET
-        ) 
+        )
         ELSE (
             color 0C
             echo.
@@ -118,7 +118,6 @@ echo .........................................................................
         ) 
     )
     GOTO :EOF
-
 
 echo .........................................................................
 
