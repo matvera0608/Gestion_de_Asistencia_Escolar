@@ -263,65 +263,13 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
+    
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      #Controla que se obtenga nombre reales de las columnas
-      cursor.execute(f"SHOW COLUMNS FROM {nombre_de_la_tabla}")
-      columna = [col[0] for col in cursor.fetchall()]
-      campo = campo.strip()
-        
-      coincidencia = [col for col in columna if col.lower() == campo.lower()]
-      
-      if not coincidencia:
-        mensajeTexto.showerror("ERROR", f"No existe el campo {campo} en la tabla {nombre_de_la_tabla}")
-        return
-        
-      campo_real = coincidencia[0]
-      orden_sql = "ASC" if orden.upper().startswith("ASC") else "DESC"
-      consultas = {
-      "alumno": {
-          "select": f"""SELECT a.ID_Alumno, a.Nombre, DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha, c.Nombre AS Carrera 
-                        FROM alumno a
-                        JOIN carrera c ON a.IDCarrera = c.ID_Carrera""",
-          "buscables": ["a.Nombre", "c.Nombre"]},
-      "materia": {
-          "select": f"""SELECT m.ID_Materia, m.Nombre, TIME_FORMAT(m.Horario,'%H:%i') AS Horario, c.Nombre AS Carrera
-                        FROM materia m
-                        JOIN carrera c ON m.IDCarrera = c.ID_Carrera""",
-          "buscables": ["m.Nombre", "c.Nombre"]},
-      "carrera":{
-          "select": f"""SELECT c.ID_Carrera, c.Nombre, c.Duración 
-                        FROM carrera AS c""",
-          "buscables": ["c.Nombre", "c.Duración"]},
-      "asistencia":{
-          "select": f"""SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha, al.Nombre AS Alumno
-                        FROM asistencia AS asis
-                        JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno""",
-          "buscables": ["asis.Estado", "al.Nombre"]},
-       "enseñanza":{
-          "select": f"""SELECT e.ID, m.Nombre AS Materia, p.Nombre AS Profesor
-                        FROM enseñanza AS e
-                        JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                        JOIN materia AS m ON e.IDMateria = m.ID_Materia""",
-          "buscables": ["m.Nombre", "p.Nombre"]},
-      "profesor":{
-          "select": f"""SELECT pro.ID_Profesor, pro.Nombre
-                        FROM profesor AS pro""",
-          "buscables": ["pro.Nombre"]},
-      "nota": {
-          "select": f"""SELECT n.ID, al.Nombre AS Alumno, m.Nombre AS Materia, 
-                              REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
-                              n.tipoNota, DATE_FORMAT(n.fecha, '%d/%m/%Y') AS Fecha
-                              FROM nota n
-                              JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
-                              JOIN materia AS m ON n.IDMateria = m.ID_Materia""",
-          "buscables": ["al.Nombre", "m.Nombre", "n.tipoNota"]}
-                }
-      
-      consultaSQL = consultas[nombre_de_la_tabla]["select"] + f" ORDER BY {campo_real} {orden_sql}"
-      cursor.execute(consultaSQL)
+      cursor.execute(sql, params)
       resultado = cursor.fetchall()
-      
+        
       if tablas_de_datos.winfo_exists():
         for item in tablas_de_datos.get_children():
           tablas_de_datos.delete(item)
@@ -337,16 +285,17 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
   
   except error_sql as e:
     print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+    desconectar_base_de_datos(conexión)
 
-def buscar_datos(nombre_de_la_tabla, tablas_de_datos, entry_busqueda, consultas):
+def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   
   try:
     conexión = conectar_base_de_datos()
     cursor = conexión.cursor()
-    valor_busqueda = entry_busqueda.get().strip()
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, valor_busqueda or "", operador_like="{}%")
+    valor_busqueda = busqueda.get().strip()
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
     cursor.execute(sql, params)
     resultado = cursor.fetchall()
     
@@ -363,10 +312,8 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, entry_busqueda, consultas)
   except error_sql as e:
     print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
   finally:
-    if cursor:
-      cursor.close()
-    if conexión:
-      conexión.close()
+    cursor.close()
+    conexión.close()
     
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   try:

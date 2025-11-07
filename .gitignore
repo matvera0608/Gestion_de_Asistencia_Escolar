@@ -1,4 +1,7 @@
 # Archivos y carpetas de Python
 __pycache__/
 *.pyc
-*.pyo
+*.pyo# Python 
+__pycache__/ 
+*.pyc 
+.venv/ 

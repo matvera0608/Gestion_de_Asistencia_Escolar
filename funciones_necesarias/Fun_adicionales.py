@@ -140,9 +140,8 @@ def convertir_datos(campos_db, lista_de_cajas):
 
 def consultar_tabla(nombre_de_la_tabla):
   try:
-    búsqueda = None
     like = "%{}%"
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, búsqueda, like)
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, "ASC", None, None, like)
     conexión = conectar_base_de_datos()
     if conexión:
       cursor = conexión.cursor()
@@ -150,7 +149,7 @@ def consultar_tabla(nombre_de_la_tabla):
       filas = cursor.fetchall()
       cursor.close()
       desconectar_base_de_datos(conexión)
-      return filas  or []
+      return filas or []
     else:
       return []
   except Exception as Exc:
