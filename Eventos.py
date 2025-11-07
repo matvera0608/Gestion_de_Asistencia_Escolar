@@ -1,11 +1,4 @@
-from Elementos import colores
-from tkinter import ttk
-
 def mover_con_flechas(treeview, cajas, botones, acciones, event):
-    
-    # estilo = ttk.Style()
-    # estilo.configure("Foco.TButton", background=colores["celeste"])
-    # estilo.configure("Normal.TButton", background=colores["celeste_azulado"])
 
     widget = event.widget
     tecla = event.keysym
@@ -84,13 +77,7 @@ def mover_con_flechas(treeview, cajas, botones, acciones, event):
             return "break"
     
     if interacción_con_Botones:
-        
-        # for b in botones:
-        #     b.configure(style="Normal.TButton")
 
-        # if isinstance(widget, ttk.Button):
-        #     widget.configure(style="Foco.TButton")
-        
         if arriba:
             nuevo_idx = (índice_actual - 1) % len(ordenes_widget)
             ordenes_widget[nuevo_idx].focus_set()

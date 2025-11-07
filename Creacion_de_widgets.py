@@ -81,26 +81,6 @@ def crear_tabla_Treeview(contenedor, tabla):
   return tabla_Treeview
 
 
-def cerrar_abm(ventana):
-  try:
-    for widget in list(ventana.winfo_children()):
-      try:
-        widget.unbind("<Button-1>")
-        widget.unbind("<Key>")
-      except Exception:
-        pass
-  except Exception:
-    pass
-
-  global permitir_inserción
-  permitir_inserción = False
-
-  try:
-    ventana.destroy()
-  except Exception:
-    pass
-
-
 def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
   listaDesplegable = {}
   cajasDeTexto.setdefault(nombre_de_la_tabla, [])
@@ -149,3 +129,23 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
             widget.config(state="normal")
     except Exception as e:
       print(f"Error configurando {widget}: {e}")
+      
+
+def cerrar_abm(ventana):
+  try:
+    for widget in list(ventana.winfo_children()):
+      try:
+        widget.unbind("<Button-1>")
+        widget.unbind("<Key>")
+      except Exception:
+        pass
+  except Exception:
+    pass
+
+  global permitir_inserción
+  permitir_inserción = False
+
+  try:
+    ventana.destroy()
+  except Exception:
+    pass

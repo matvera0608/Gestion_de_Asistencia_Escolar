@@ -269,17 +269,20 @@ def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
       cursor = conexión.cursor()
       cursor.execute(sql, params)
       resultado = cursor.fetchall()
-        
+      columnas = [desc[0] for desc in cursor.description]
+      
       if tablas_de_datos.winfo_exists():
         for item in tablas_de_datos.get_children():
           tablas_de_datos.delete(item)
           
       if not resultado:
         return
+    
+    visibles = alias_a_traducir[nombre_de_la_tabla]
 
     for index, fila in enumerate(resultado):
       ID = fila[0]
-      valores_visibles = fila[1:]
+      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
       tag = "par" if index % 2 == 0 else "impar"
       tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
   

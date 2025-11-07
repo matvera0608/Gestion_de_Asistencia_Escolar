@@ -94,7 +94,7 @@ consultas = {
       },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
-                            al.Nombre AS Alumno, p.Nombre AS Profesor
+                            al.Nombre AS Alumno, p.Nombre AS Profesor,
                             FROM asistencia asis
                             JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
                             JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
@@ -126,9 +126,9 @@ consultas = {
           },
       "enseñanza":{
           "select": """SELECT e.ID, m.Nombre AS MatNom, p.Nombre AS ProNom
-                              FROM enseñanza e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia"""
+                        FROM enseñanza e
+                        JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                        JOIN materia AS m ON e.IDMateria = m.ID_Materia"""
           }
     }
 
@@ -136,7 +136,7 @@ alias_a_traducir = {
     "alumno": {
         "Nombre": "AlumnoNombre",
         "FechaDeNacimiento": "Fecha",
-        "c.Nombre": "CarreraNombre"
+        "IDCarrera": "CarreraNombre"
     },
     "materia": {
         "Nombre": "MateriaNombre",
@@ -145,12 +145,12 @@ alias_a_traducir = {
         "Carrera": "Carrera"
     },
     "nota": {
-        "Alumno": "AlumnoNom",
-        "Materia": "MateriaNom",
-        "Profesor": "ProfesorNom",
+        "IDAlumno": "AlumnoNom",
+        "IDMateria": "MateriaNom",
+        "IDProfesor": "ProfesorNom",
         "Nota": "Nota",
         "Tipo": "tipoNota",
-        "Fecha": "FechaEv"
+        "FechaEvaluación": "FechaEv"
     },
     "asistencia": {
         "Estado": "Estado",
@@ -159,15 +159,22 @@ alias_a_traducir = {
         "Profesor": "Profesor"
     },
     "profesor": {
-        "Nombre": ""
+        "Nombre": "Nombre"
     },
     "carrera": {
         "Nombre": "CarreraNombre",
         "Duración": "Duración"
     },
     "enseñanza": {
-        "Materia": "MatNom",
-        "Profesor": "ProNom"
+        "IDMateria": "MatNom", 
+        "IDProfesor": "ProNom"
+    }
+}
+
+alias_a_orden_raw = {
+    "enseñanza":  {
+        "Materia":  "m.Nombre",
+        "Profesor": "p.Nombre"
     }
 }
 
@@ -191,15 +198,18 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             
         if ordenDatos:
             tabla = nombre_de_la_tabla.lower()
-            orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
+            orden = alias_a_orden_raw.get(tabla, {}).get(ordenDatos)
+            if not orden:
+                orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
+
+
 
             if orden in columnas:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
         
-        print("Columnas:", columnas)
-        print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
-
+            print("Columnas:", columnas)
+            print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
 
     return sql, params
 

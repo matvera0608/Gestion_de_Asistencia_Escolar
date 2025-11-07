@@ -101,8 +101,7 @@ echo .........................................................................
 
     IF %INTERNET_STATUS% EQU 0 (
     GOTO :EOF
-    )
-    ELSE (
+    ) ELSE (
         IF !INTENTO! LSS !MAX_INTENTOS! (
             color 0E
             SET /A INTENTO+=1
