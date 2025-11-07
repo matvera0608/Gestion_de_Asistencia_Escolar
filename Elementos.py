@@ -100,12 +100,6 @@ consultas = {
                             JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
           
           },
-       "enseñanza":{
-          "select": """SELECT e.ID, m.Nombre AS MatNom, p.Nombre AS ProNom
-                              FROM enseñanza e
-                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
-                              JOIN materia AS m ON e.IDMateria = m.ID_Materia"""
-          },
       "carrera":{
           "select": """SELECT c.ID_Carrera, c.Nombre AS CarreraNombre, c.Duración
                               FROM carrera AS c"""
@@ -129,6 +123,12 @@ consultas = {
                         JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
                         JOIN materia AS m ON n.IDMateria = m.ID_Materia
                         JOIN profesor AS p ON n.IDProfesor = p.ID_Profesor"""
+          },
+      "enseñanza":{
+          "select": """SELECT e.ID, m.Nombre AS MatNom, p.Nombre AS ProNom
+                              FROM enseñanza e
+                              JOIN profesor AS p ON e.IDProfesor = p.ID_Profesor
+                              JOIN materia AS m ON e.IDMateria = m.ID_Materia"""
           }
     }
 
@@ -136,7 +136,7 @@ alias_a_traducir = {
     "alumno": {
         "Nombre": "AlumnoNombre",
         "FechaDeNacimiento": "Fecha",
-        "Carrera": "CarreraNombre"
+        "c.Nombre": "CarreraNombre"
     },
     "materia": {
         "Nombre": "MateriaNombre",
@@ -159,7 +159,7 @@ alias_a_traducir = {
         "Profesor": "Profesor"
     },
     "profesor": {
-        "Nombre": "ProfesorNombre"
+        "Nombre": ""
     },
     "carrera": {
         "Nombre": "CarreraNombre",
@@ -191,17 +191,16 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             
         if ordenDatos:
             tabla = nombre_de_la_tabla.lower()
-            
-            orden = alias_a_traducir.get(tabla, {}).get(ordenDatos)
-            if not orden:
-                # Si no hay raw, intentar ordenar por el alias visible directamente
-                orden = ordenDatos
-
+            orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
 
             if orden in columnas:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
         
+        print("Columnas:", columnas)
+        print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
+
+
     return sql, params
 
 def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
