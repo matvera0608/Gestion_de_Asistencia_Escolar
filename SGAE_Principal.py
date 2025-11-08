@@ -46,10 +46,21 @@ def deshabilitar(treeview):
   for entry in cajasDeTexto.get(nombreActual, []):
     if not entry.winfo_exists():
         continue
+      
+    tipo_de_widget = getattr(entry, "widget_interno", "")
     try:
+      if tipo_de_widget.startswith("cbBox_"):
+        entry.set("") 
+      elif tipo_de_widget.startswith("txBox_"):
         entry.delete(0, tk.END)
+      else:
+        entry.delete(0, tk.END)
+        
     except Exception:
-        pass
+        try:
+          entry.set("") 
+        except Exception:
+            pass
     try:
         entry.config(state="readonly")
     except Exception:
