@@ -108,13 +108,6 @@ def pantallaLogin():
   label_usuario_rol = tk.Label(ventana, text="ROL", bg=colores["blanco"], fg=colores["negro"], font=("Arial", 15, "bold"))
   label_usuario_rol.grid(row=0, column=0, pady=(20, 5), sticky="n")
   
-  #Entry para el usuario
-  rol = ["docente", "coordinador", "secretario", "personal administrativo"]
-  cbBox_usuario = ttk.Combobox(ventana, values=rol, state="readonly", width=20, font=("Arial", 15))
-  cbBox_usuario.set("Seleccione su rol")
-  cbBox_usuario.grid(row=1, column=0, sticky="n")
-  
-  
   rolesVálidos = {
     "docente": ("alumno", "asistencia", "materia", "nota"),
 
@@ -124,6 +117,23 @@ def pantallaLogin():
     "secretario": ("carrera", "profesor", "materia", "enseñanza"),
     "secretaria": ("carrera", "profesor", "materia", "enseñanza")
     }
+  
+  rol_orden_logico = [
+    "docente",
+    "coordinador",
+    "coordinadora",
+    "secretario",
+    "secretaria",
+    "personal administrativo" 
+  ]
+  
+  #Entry para el usuario
+  rol = rol_orden_logico
+  
+  cbBox_usuario = ttk.Combobox(ventana, values=rol, state="readonly", width=20, font=("Arial", 15))
+  cbBox_usuario.set("Seleccione su rol")
+  cbBox_usuario.grid(row=1, column=0, sticky="n")
+  
   
   def iniciar_sesion():
     selección_de_rol = cbBox_usuario.get()

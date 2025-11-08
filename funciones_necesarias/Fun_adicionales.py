@@ -159,10 +159,19 @@ def consultar_tabla(nombre_de_la_tabla):
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
       "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
+      
       "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDProfesor": ("ID_Profesor","profesor", "Nombre")},
-      "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"), "IDMateria": ("ID_Materia", "materia", "Nombre")},
-      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"), "IDMateria": ("ID_Materia","materia", "Nombre"), "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
+      
+      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
+                     "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
+                     "IDMateria": ("ID_Materia", "materia", "Nombre")},
+      
+      "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"),
+                    "IDMateria": ("ID_Materia", "materia", "Nombre")},
+      
+      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
+               "IDMateria": ("ID_Materia","materia", "Nombre"),
+               "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
   if not datos:
     return None
@@ -201,7 +210,7 @@ campos_con_claves = {
   }
 
 campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
-                   "asistencia": [("IDAlumno", "alumno"), ("IDProfesor","profesor")],
+                   "asistencia": [("IDAlumno", "alumno"), ("IDProfesor","profesor"), ("IDMateria", "materia")],
                    "materia": ("IDCarrera", "carrera"),
                    "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
                    "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno"), ("IDProfesor","profesor")]

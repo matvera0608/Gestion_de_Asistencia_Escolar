@@ -95,7 +95,7 @@ consultas = {
       },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
-                        al.Nombre AS Alumno, p.Nombre AS Profesor,
+                        al.Nombre AS Alumno, p.Nombre AS Profesor
                         FROM asistencia asis
                         JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
                         JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
