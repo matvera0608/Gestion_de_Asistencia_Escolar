@@ -12,7 +12,7 @@ permitir_inserción = False
 ventanaAbierta = {}
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
-      "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor"],
+      "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor", "IDMateria"],
       "carrera": ["Nombre", "Duración"],
       "materia": ["Nombre", "HorarioEntrada", "HorarioSalida", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],
@@ -44,6 +44,7 @@ campos_por_tabla = {
     ("Fecha*", "txBox_FechaAsistencia"),
     ("Alumno*", "cbBox_Alumno"),
     ("Profesor*", "cbBox_Profesor"),
+    ("Materia*", "cbBox_Materia"),
 ],
 "carrera": campos_comunes + [
     ("Duración*", "txBox_Duración")
@@ -94,15 +95,15 @@ consultas = {
       },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
-                            al.Nombre AS Alumno, p.Nombre AS Profesor,
-                            FROM asistencia asis
-                            JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
-                            JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
+                        al.Nombre AS Alumno, p.Nombre AS Profesor,
+                        FROM asistencia asis
+                        JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                        JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
           
           },
       "carrera":{
           "select": """SELECT c.ID_Carrera, c.Nombre AS CarreraNombre, c.Duración
-                              FROM carrera AS c"""
+                        FROM carrera AS c"""
           },
       "materia": {
           "select": """SELECT m.ID_Materia, m.Nombre as MateriaNombre, 
@@ -113,7 +114,7 @@ consultas = {
       },
       "profesor":{
           "select":"""SELECT pro.ID_Profesor, pro.Nombre
-                              FROM profesor AS pro"""
+                      FROM profesor AS pro"""
           },
       "nota":{
           "select": """SELECT n.ID, al.Nombre AS AlumnoNom, m.Nombre AS MateriaNom, p.Nombre AS ProfesorNom,
@@ -201,8 +202,6 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             orden = alias_a_orden_raw.get(tabla, {}).get(ordenDatos)
             if not orden:
                 orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
-
-
 
             if orden in columnas:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
