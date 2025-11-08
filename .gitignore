@@ -8,28 +8,7 @@ __pycache__/
 # Python 
 __pycache__/ 
 *.pyc 
-.venv/ 
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-# Python 
-__pycache__/ 
-*.pyc 
-.venv/ 
-# Python 
+.venv/# Python 
 __pycache__/ 
 *.pyc 
 .venv/ 
