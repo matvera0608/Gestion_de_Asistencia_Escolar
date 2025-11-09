@@ -153,7 +153,7 @@ def consultar_tabla(nombre_de_la_tabla):
     else:
       return []
   except Exception as Exc:
-    mensajeTexto.showerror("ERROR", f"Algo no está correcto o no tiene nada de datos: {Exc}")
+    mensajeTexto.showerror("ERROR", f"Algo no está correcto: {Exc}")
     return []
 
 def traducir_IDs(nombre_de_la_tabla, datos):
@@ -288,7 +288,7 @@ def mostrar_registro(nombre_de_la_tabla, tablas_de_datos, cajasDeTexto):
         return
       campos_visibles = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"], #Los que empiezan con ID sin guión bajo son claves ajenas o FKs.
-      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor"],
+      "asistencia":["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor", "IDMateria"],
       "carrera": ["Nombre", "Duración"],
       "materia": ["Nombre", "HorarioEntrada", "HorarioSalida", "IDCarrera"],
       "enseñanza": ["IDMateria", "IDProfesor"],

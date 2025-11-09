@@ -95,14 +95,19 @@ consultas = {
       },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
-                        al.Nombre AS Alumno, p.Nombre AS Profesor
-                        FROM asistencia asis
-                        JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
-                        JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor"""
+                    al.Nombre AS Alumno,
+                    p.Nombre AS Profesor,
+                    m.Nombre AS Materia
+                    FROM asistencia asis
+                    JOIN alumno AS al ON asis.IDAlumno = al.ID_Alumno
+                    JOIN profesor AS p ON asis.IDProfesor = p.ID_Profesor
+                    JOIN materia AS m ON asis.IDMateria = m.ID_Materia"""
           
           },
       "carrera":{
-          "select": """SELECT c.ID_Carrera, c.Nombre AS CarreraNombre, c.Duración
+          "select": """SELECT c.ID_Carrera,
+                        c.Nombre AS CarreraNombre,
+                        c.Duración
                         FROM carrera AS c"""
           },
       "materia": {
@@ -157,7 +162,8 @@ alias_a_traducir = {
         "Estado": "Estado",
         "Fecha_Asistencia": "Fecha",
         "Alumno": "Alumno",
-        "Profesor": "Profesor"
+        "Profesor": "Profesor",
+        "Materia": "Materia"
     },
     "profesor": {
         "Nombre": "Nombre"

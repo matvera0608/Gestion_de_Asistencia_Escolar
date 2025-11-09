@@ -192,6 +192,65 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
+def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  try:
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
+    
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      cursor.execute(sql, params)
+      resultado = cursor.fetchall()
+      columnas = [desc[0] for desc in cursor.description]
+      
+      if tablas_de_datos.winfo_exists():
+        for item in tablas_de_datos.get_children():
+          tablas_de_datos.delete(item)
+          
+      if not resultado:
+        return
+    
+    visibles = alias_a_traducir[nombre_de_la_tabla]
+
+    for index, fila in enumerate(resultado):
+      ID = fila[0]
+      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
+      tag = "par" if index % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
+  
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+    desconectar_base_de_datos(conexión)
+
+def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  
+  try:
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    valor_busqueda = busqueda.get().strip()
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
+    cursor.execute(sql, params)
+    resultado = cursor.fetchall()
+    
+    for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
+    
+    for i, fila in enumerate(resultado):
+      id_a_ocultar = fila[0]
+      datos_visibles = fila[1:]
+      tag = "par" if i % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
+
+   
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
+  finally:
+    cursor.close()
+    conexión.close()
+
 def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
@@ -258,66 +317,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     
   except Exception as e:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
-
-def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  try:
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
-    
-    with conectar_base_de_datos() as conexión:
-      cursor = conexión.cursor()
-      cursor.execute(sql, params)
-      resultado = cursor.fetchall()
-      columnas = [desc[0] for desc in cursor.description]
-      
-      if tablas_de_datos.winfo_exists():
-        for item in tablas_de_datos.get_children():
-          tablas_de_datos.delete(item)
-          
-      if not resultado:
-        return
-    
-    visibles = alias_a_traducir[nombre_de_la_tabla]
-
-    for index, fila in enumerate(resultado):
-      ID = fila[0]
-      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
-      tag = "par" if index % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
   
-  except error_sql as e:
-    print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
-    desconectar_base_de_datos(conexión)
-
-def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  
-  try:
-    conexión = conectar_base_de_datos()
-    cursor = conexión.cursor()
-    valor_busqueda = busqueda.get().strip()
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
-    cursor.execute(sql, params)
-    resultado = cursor.fetchall()
-    
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
-    
-    for i, fila in enumerate(resultado):
-      id_a_ocultar = fila[0]
-      datos_visibles = fila[1:]
-      tag = "par" if i % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
-
-   
-  except error_sql as e:
-    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
-  finally:
-    cursor.close()
-    conexión.close()
-    
 def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
