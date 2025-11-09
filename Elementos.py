@@ -161,9 +161,9 @@ alias_a_traducir = {
     "asistencia": {
         "Estado": "Estado",
         "Fecha_Asistencia": "Fecha",
-        "Alumno": "Alumno",
-        "Profesor": "Profesor",
-        "Materia": "Materia"
+        "IDAlumno": "Alumno",
+        "IDProfesor": "Profesor",
+        "IDMateria": "Materia"
     },
     "profesor": {
         "Nombre": "Nombre"
@@ -179,6 +179,11 @@ alias_a_traducir = {
 }
 
 alias_a_orden_raw = {
+    "asistencia": {
+        "IDAlumno": "Alumno",
+        "IDProfesor": "Profesor",
+        "IDMateria": "Materia"
+    },
     "enseñanza":  {
         "Materia":  "m.Nombre",
         "Profesor": "p.Nombre"

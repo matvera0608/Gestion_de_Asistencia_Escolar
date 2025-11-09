@@ -60,6 +60,7 @@ echo .........................................................................
     SET "LANG_TYPE=%~1"
     IF EXIST .gitignore (
         echo El archivo .gitignore ya existe. No se sobrescribira.
+        GOTO :EOF
     )
     
     IF "%LANG_TYPE%"=="python" (
