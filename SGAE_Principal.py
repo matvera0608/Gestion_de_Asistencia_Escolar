@@ -66,7 +66,6 @@ def deshabilitar(treeview):
     except Exception:
         pass
 
-
 def insertar_al_habilitar(tabla_treeview):
   global permitir_inserción
   if not permitir_inserción:
@@ -107,7 +106,7 @@ imágenes_por_botón = {
 
 def pantallaLogin():
   ventana = mi_ventana
-  ventana.title("Sistema Gestor de Asistencias")
+  ventana.title("Sistema Gestor de Asistencias Escolares")
   ventana.geometry("400x200")
   ventana.configure(bg=colores["blanco"])
   ventana.iconbitmap(ícono)
@@ -131,18 +130,18 @@ def pantallaLogin():
   
   rol_orden_logico = [
     "docente",
+    "personal administrativo",
     "coordinador",
     "coordinadora",
     "secretario",
-    "secretaria",
-    "personal administrativo" 
+    "secretaria"
   ]
   
   #Entry para el usuario
   rol = rol_orden_logico
   
   cbBox_usuario = ttk.Combobox(ventana, values=rol, state="readonly", width=20, font=("Arial", 15))
-  cbBox_usuario.set("Seleccione su rol")
+  cbBox_usuario.set("Seleecione el rol")
   cbBox_usuario.grid(row=1, column=0, sticky="n")
   
   
@@ -223,7 +222,7 @@ def mostrar_pestañas(ventana, permiso):
   
   ventana.after(1000, setattr(notebook, "carga_inicial", False))
 
-#En esta función deseo meter la lógica de cada ABM, entries, labels, botones del CRUD y una listBox
+
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
   global tabla_treeview, campos_por_tabla, entryBuscar, botones, acciones, opciones
@@ -234,6 +233,7 @@ def abrir_tablas(nombre_de_la_tabla):
     return
     
   ventanaSecundaria = tk.Toplevel()
+  ventanaSecundaria.geometry("900x600")
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")
   ventanaSecundaria.configure(bg=colores["azul_claro"])
   
@@ -262,7 +262,7 @@ def abrir_tablas(nombre_de_la_tabla):
   marco_izquierdo.grid_columnconfigure(0, weight=0)
   marco_izquierdo.grid_columnconfigure(1, weight=1)
   
-  marco_derecho.grid_columnconfigure(0, weight=0)
+  marco_derecho.grid_columnconfigure(0, weight=1)
   marco_derecho.grid_rowconfigure(0, weight=1)
 
   

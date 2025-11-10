@@ -3,6 +3,7 @@ from tkinter import ttk
 from Elementos import *
 from funciones_necesarias import *
 
+
 def crear_etiqueta(contenedor, texto, fuenteLetra=("Arial", 10, "bold")):
   color_padre = contenedor.cget("bg")
   return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=fuenteLetra)
@@ -35,21 +36,25 @@ def crear_tabla_Treeview(contenedor, tabla):
   frame_tabla.grid(row=0, column=0, sticky="nsew")
   
   tabla_Treeview = ttk.Treeview(frame_tabla, columns=columnas, show="headings", style=estilo_treeview)
-  ancho = 175
+  ancho_mín = 150
   
-  def fijar_ancho(event):
-    region = event.widget.identify_region(event.x, event.y)
-    if region == "separator":
-      event.widget.after(1, lambda: [
-      event.widget.column(col, width=ancho, minwidth=ancho, stretch=False)
-      for col in columnas 
-      ])
   for columna in columnas:
     nombre_legible = alias.get(columna, columna)
     tabla_Treeview.heading(columna, anchor="center", text=nombre_legible)
-    tabla_Treeview.column(columna, anchor="center",width=ancho, minwidth=ancho, stretch=False)
-  tabla_Treeview.bind("<ButtonRelease-1>", fijar_ancho)
+    tabla_Treeview.column(columna, anchor="center",width=ancho_mín, minwidth=ancho_mín, stretch=False)
   
+  def reconfigurar_ancho_columnas(event):
+    ancho_disponible = event.width
+    num_columnas = len(columnas)
+    
+    if ancho_disponible > (num_columnas * ancho_mín):
+        nuevo_ancho = ancho_disponible // num_columnas
+        for col in columnas:
+          tabla_Treeview.column(col, width=nuevo_ancho)
+    else:
+      pass
+            
+            
   barraVertical = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_Treeview.yview)
   barraHorizontal = tk.Scrollbar(frame_tabla, orient="horizontal", command=tabla_Treeview.xview)
 
@@ -59,10 +64,10 @@ def crear_tabla_Treeview(contenedor, tabla):
   barraVertical.grid(row=0, column=1, sticky="ns")
   barraHorizontal.grid(row=1, column=0, sticky="ew")
   
-  
   frame_tabla.grid_rowconfigure(0, weight=1)
   frame_tabla.grid_columnconfigure(0, weight=1)
-
+  frame_tabla.bind("<Configure>", reconfigurar_ancho_columnas)
+  
   for item in tabla_Treeview.get_children():
     tabla_Treeview.delete(item)
   

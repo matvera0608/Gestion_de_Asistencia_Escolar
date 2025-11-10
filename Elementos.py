@@ -7,6 +7,7 @@ dirección_del_ícono = os.path.dirname(__file__)
 ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
 ruta_base = os.path.dirname(os.path.abspath(__file__))
 ruta_imagen = os.path.join(ruta_base, "imágenes")
+
 nombreActual = None
 permitir_inserción = False
 ventanaAbierta = {}
@@ -25,6 +26,7 @@ alias = {
 "IDProfesor": "Profesor",
 "IDAlumno": "Alumno",
 "FechaDeNacimiento": "Fecha de nacimiento",
+"fechaEvaluación": "Fecha",
 "valorNota": "Nota",
 "tipoNota": "Evaluación",
 "Fecha_Asistencia": "Fecha",
@@ -70,7 +72,6 @@ campos_por_tabla = {
 }
 
 cajasDeTexto = {}
-    
 
 colores = {
   "blanco": "#FFFFFF",
@@ -148,7 +149,7 @@ alias_a_traducir = {
         "Nombre": "MateriaNombre",
         "HorarioEntrada": "HorarioEntrada",
         "HorarioSalida": "HorarioSalida",
-        "Carrera": "Carrera"
+        "IDCarrera": "Carrera"
     },
     "nota": {
         "IDAlumno": "AlumnoNom",
@@ -217,9 +218,8 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             if orden in columnas:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
-        
-            print("Columnas:", columnas)
-            print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
+            # print("Columnas:", columnas)
+            # print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
 
     return sql, params
 

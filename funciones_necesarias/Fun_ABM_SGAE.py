@@ -14,6 +14,7 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 #IMPORTACIÓN PARA IMPORTAR ARCHIVOS TXT, EXCEL O CSV
 import csv
 import pandas as pd
+import json
 #-------------------------------------#
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
@@ -46,10 +47,10 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
       valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
       tag = "par" if índice % 2 == 0 else "impar"
       tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-    print("SE AGREGÓ LOS DATOS NECESARIOS")
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
+      mensajeTexto.showinfo("ATENCIÓN", "SE AGREGÓ LOS DATOS NECESARIOS")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
@@ -116,7 +117,7 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
           
       for caja in cajasDeTexto[nombre_de_la_tabla]:
         caja.delete(0, tk.END)
-      print("✅ SE MODIFICÓ EXITOSAMENTE")
+      mensajeTexto.showinfo("ATENCIÓN", "✅ SE MODIFICÓ EXITOSAMENTE")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
@@ -159,11 +160,14 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
       
       for entry in cajasDeTexto[nombre_de_la_tabla]:
         entry.delete(0, tk.END)
-      print("✅ ¡Se eliminaron los datos correctamente!")
+      mensajeTexto.showinfo("ATENCIÓN", "✅ ¡Se eliminaron los datos correctamente!")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
+datos_en_cache = {}
+
 def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
+  global datos_en_cache
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -176,7 +180,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     if not all(entry.get().strip() for entry in caja[nombre_de_la_tabla]):
       mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
       return False
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db, True)
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db)
     
     if not datos:
       print("NO HAY DATOS QUE GUARDAR")
@@ -184,95 +188,35 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     
     valores = list(datos.values())
     tablas_de_datos.item(ítem, values=valores)
+    
+    if nombre_de_la_tabla not in datos_en_cache:
+      datos_en_cache[nombre_de_la_tabla] = []
+    datos_en_cache[nombre_de_la_tabla].append(datos)
+    
+    
+      
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
     mensajeTexto.showinfo("ÉXITO", "GUARDADO EXITOSAMENTE")
+
+    with open("datos_cache.json", "w", encoding="utf-8") as f:
+      json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
     return True
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
-def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  try:
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
-    
-    with conectar_base_de_datos() as conexión:
-      cursor = conexión.cursor()
-      cursor.execute(sql, params)
-      resultado = cursor.fetchall()
-      columnas = [desc[0] for desc in cursor.description]
-      
-      if tablas_de_datos.winfo_exists():
-        for item in tablas_de_datos.get_children():
-          tablas_de_datos.delete(item)
-          
-      if not resultado:
-        return
-    
-    visibles = alias_a_traducir[nombre_de_la_tabla]
-
-    for index, fila in enumerate(resultado):
-      ID = fila[0]
-      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
-      tag = "par" if index % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
-  
-  except error_sql as e:
-    print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
-    desconectar_base_de_datos(conexión)
-
-def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  
-  try:
-    conexión = conectar_base_de_datos()
-    cursor = conexión.cursor()
-    valor_busqueda = busqueda.get().strip()
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
-    cursor.execute(sql, params)
-    resultado = cursor.fetchall()
-    
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
-    
-    for i, fila in enumerate(resultado):
-      id_a_ocultar = fila[0]
-      datos_visibles = fila[1:]
-      tag = "par" if i % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
-
-   
-  except error_sql as e:
-    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
-  finally:
-    cursor.close()
-    conexión.close()
-
 def importar_datos(nombre_de_la_tabla, tablas_de_datos):
+  global datos_en_cache
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
-    
-    alias = {
-      "IDCarrera": "Carrera",
-      "IDMateria": "Materia",
-      "IDProfesor": "Profesor",
-      "IDAlumno": "Alumno",
-      "FechaDeNacimiento": "Fecha de nacimiento",
-      "valorNota": "Nota",
-      "tipoNota": "Evaluación",
-      "Fecha_Asistencia": "Fecha",
-    }
-    
+  
     tipos_de_archivos = (
       ("bloc de notas","*.txt"),
       ("hoja con comas separadas","*.csv"),
-      ("hoja de excel","*.xslx"),
-      ("todos","*.*"))
+      ("hoja de excel","*.xslx"))
     
     ruta_archivo = diálogoArchivo.askopenfilename(
         title="Seleccionar archivo a importar",
@@ -313,6 +257,8 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     alias_invertido = {v: k for k, v in alias.items()}
     datos = datos.rename(columns=alias_invertido)
     
+    datos_en_cache[nombre_de_la_tabla] = datos.copy()
+    
     print(f"{len(datos)} registros importados correctamente en {nombre_de_la_tabla}")
     
   except Exception as e:
@@ -324,18 +270,7 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
       return
     datos_a_exportar = tablas_de_datos.get_children()
     datos = []
-    
-    alias = {
-      "IDCarrera": "Carrera",
-      "IDMateria": "Materia",
-      "IDProfesor": "Profesor",
-      "IDAlumno": "Alumno",
-      "FechaDeNacimiento": "Fecha de nacimiento",
-      "valorNota": "Nota",
-      "tipoNota": "Evaluación",
-      "Fecha_Asistencia": "Fecha",
-    }
-
+   
     encabezado = tablas_de_datos["columns"]
     
     enc_legible = [alias.get(col, col) for col in encabezado]
@@ -433,3 +368,63 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
     pass
+
+def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  try:
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
+    
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      cursor.execute(sql, params)
+      resultado = cursor.fetchall()
+      columnas = [desc[0] for desc in cursor.description]
+      
+      if tablas_de_datos.winfo_exists():
+        for item in tablas_de_datos.get_children():
+          tablas_de_datos.delete(item)
+          
+      if not resultado:
+        return
+    
+    visibles = alias_a_traducir[nombre_de_la_tabla]
+
+    for index, fila in enumerate(resultado):
+      ID = fila[0]
+      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
+      tag = "par" if index % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
+  
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+    desconectar_base_de_datos(conexión)
+
+def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  
+  try:
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    valor_busqueda = busqueda.get().strip()
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
+    cursor.execute(sql, params)
+    resultado = cursor.fetchall()
+    
+    for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
+    
+    for i, fila in enumerate(resultado):
+      id_a_ocultar = fila[0]
+      datos_visibles = fila[1:]
+      tag = "par" if i % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
+
+   
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
+  finally:
+    cursor.close()
+    conexión.close()
+

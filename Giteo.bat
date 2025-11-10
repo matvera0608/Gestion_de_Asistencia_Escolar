@@ -55,14 +55,13 @@ EXIT /B
     GOTO :EOF
 
 echo .........................................................................
-
 :CREATE_GITIGNORE
     SET "LANG_TYPE=%~1"
     IF EXIST .gitignore (
         echo El archivo .gitignore ya existe. No se sobrescribira.
         GOTO :EOF
     )
-    
+
     IF "%LANG_TYPE%"=="python" (
         echo # Python >> .gitignore
         echo __pycache__/ >> .gitignore
@@ -88,11 +87,12 @@ echo .........................................................................
     echo Archivo .gitignore creado exitosamente para el lenguaje %LANG_TYPE%.
     GOTO :EOF
 
-
+echo .........................................................................
 :CHECK_INTERNET
     ping -n 1 8.8.8.8 -w 1000 >NUL
     IF %ERRORLEVEL% EQU 0 (
         SET "INTERNET_STATUS=0"
+        color 0A
         echo Conexión a Internet detectada. Continuado con el giteo
     ) ELSE IF %ERRORLEVEL% EQU 1 (
         SET "INTERNET_STATUS=1"
@@ -121,7 +121,6 @@ echo .........................................................................
     GOTO :EOF
 
 echo .........................................................................
-
 :INICIAR_O_ACTUALIZAR
     echo.
     IF NOT EXIST ".git" (
