@@ -22,13 +22,17 @@ def detectar_repeticiones_de_datos(datos):
     return False
     
 def verificar_horarioSalida_mayor_horarioEntrada(datos):
+    
     try:
-        horario_entrada = fecha_hora.strptime(datos.get("horarioEntrada", "").strip(), "%H:%M")
-        horario_salida = fecha_hora.strptime(datos.get("horarioSalida", "").strip(), "%H:%M")
+        horario_entrada = datos.get("HorarioEntrada", "")
+        horario_salida = datos.get("HorarioSalida", "")
+    
+        if not horario_entrada or not horario_salida:
+            return False
     except ValueError:
         return False
     
-    return horario_salida > horario_entrada
+    return horario_salida <= horario_entrada
    
 def normalizar_valor_nota(datos):
   valor = datos.get("valorNota", "").strip().replace(",", ".")

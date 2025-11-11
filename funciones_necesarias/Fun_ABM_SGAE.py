@@ -31,7 +31,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
     return
   
-  if not verificar_horarioSalida_mayor_horarioEntrada(datos):
+  if verificar_horarioSalida_mayor_horarioEntrada(datos):
     mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
     return
 
@@ -59,7 +59,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
-    mensajeTexto.showinfo("ÉXITO", "✅ SE AGREGÓ LOS DATOS NECESARIOS")
+    mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
@@ -94,7 +94,7 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
     mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
     return
   
-  if not verificar_horarioSalida_mayor_horarioEntrada(datos):
+  if verificar_horarioSalida_mayor_horarioEntrada(datos):
     mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
     return
   
@@ -133,11 +133,12 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
           
       for caja in cajasDeTexto[nombre_de_la_tabla]:
         caja.delete(0, tk.END)
-      mensajeTexto.showinfo("ÉXITO", "✅ SE MODIFICÓ EXITOSAMENTE")
+      mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
+      mensajeTexto.showinfo("ÉXITO", )
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   
@@ -176,13 +177,13 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
       
       for entry in cajasDeTexto[nombre_de_la_tabla]:
         entry.delete(0, tk.END)
-      mensajeTexto.showinfo("ÉXITOS", "✅ SE ELIMINÓ UNA COLUMNA")
+      mostrar_aviso(ventana, "✅ SE ELIMINÓ UNA COLUMNA", colores["verde_éxito"], 10)
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
 datos_en_cache = {}
 
-def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
+def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana):
   global datos_en_cache
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
@@ -214,7 +215,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
       
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
-    mensajeTexto.showinfo("ÉXITO", "✅ SE HA GUARDADO EXITOSAMENTE EN UN ARCHIVO")
+    mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE EN UN ARCHIVO", colores["verde_éxito"], 10)
 
     datos_en_cache[nombre_de_la_tabla].append(datos)
     
@@ -285,7 +286,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   except Exception as e:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
   
-def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
+def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       return
@@ -382,9 +383,10 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
     espacio = Spacer(1, 30)
 
     pdf.build([titulo, espacio, tabla])
+
     
-    mensajeTexto.showinfo("ÉXITOS", "✅ SE HA EXPORTADO EXITOSAMENTE")
-      
+    mensajeTexto.showinfo("ÉXITOS", )
+    mostrar_aviso(ventana, "✅ SE HA EXPORTADO COMO PDF EXITOSAMENTE", colores["verde_éxito"], 10)  
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")
   finally:
