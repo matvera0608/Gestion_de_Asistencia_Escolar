@@ -78,7 +78,7 @@ def insertar_al_habilitar(tabla_treeview):
   
   if any(widget.winfo_exists() and widget.get().strip() == "" for widget in cajasDeTexto.get(nombreActual, [])):
     return
-  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview)
+  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
@@ -310,7 +310,7 @@ def abrir_tablas(nombre_de_la_tabla):
   btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda t=tabla_treeview: insertar_al_habilitar(t), "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
-  btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview), "disabled")
+  btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
   btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), "disabled")

@@ -11,6 +11,23 @@ ruta_imagen = os.path.join(ruta_base, "imágenes")
 nombreActual = None
 permitir_inserción = False
 ventanaAbierta = {}
+
+colores = {
+  "blanco": "#FFFFFF",
+  "gris": "#AAAAAA",
+  "negro": "#000000",
+  "negro_resaltado": "#3A3A3A",
+  "celeste_azulado": "#004CFF",
+  "celeste": "#3F92FF",
+  "celeste_resaltado": "#9AB5FF",
+  "azul": "#0000FF",
+  "azul_claro": "#C5C5FF",
+  "azul_oscuro": "#00004D",
+  "rojo_error": "#CC0000",
+  "verde_éxito": "#00D600"
+}
+
+
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
       "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor", "IDMateria"],
@@ -72,19 +89,6 @@ campos_por_tabla = {
 }
 
 cajasDeTexto = {}
-
-colores = {
-  "blanco": "#FFFFFF",
-  "gris": "#AAAAAA",
-  "negro": "#000000",
-  "negro_resaltado": "#3A3A3A",
-  "celeste_azulado": "#004CFF",
-  "celeste": "#90C0FF",
-  "celeste_resaltado": "#3F72FD",
-  "azul": "#0000FF",
-  "azul_claro": "#C5C5FF",
-  "azul_oscuro": "#00004D"
-}
 
 consultas = {
       "alumno": {

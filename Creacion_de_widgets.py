@@ -116,7 +116,6 @@ def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
         if tipo:
           aplicar_validación(widget, ventana, tipo)
 
-
 def configurar_ciertos_comboboxes(cbBox_tabla):
   for etiqueta, widget_interno in campos_por_tabla.get(cbBox_tabla, []):
     try:

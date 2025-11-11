@@ -17,7 +17,7 @@ import pandas as pd
 import json
 #-------------------------------------#
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
 
@@ -25,6 +25,14 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
 
   if not datos:
+    return
+
+  if detectar_repeticiones_de_datos(datos):
+    mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
+    return
+  
+  if not verificar_horarioSalida_mayor_horarioEntrada(datos):
+    mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
     return
 
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
@@ -44,19 +52,20 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos)
 
     for índice, fila in enumerate(datos):
       id_val = fila[0]
-      valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+      valores_visibles = fila[1:]
       tag = "par" if índice % 2 == 0 else "impar"
       tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      
     for i, (campo, valor) in enumerate(datos_traducidos.items()):
       entry = cajasDeTexto[nombre_de_la_tabla][i]
       entry.delete(0, tk.END)
-      mensajeTexto.showinfo("ATENCIÓN", "SE AGREGÓ LOS DATOS NECESARIOS")
+    mensajeTexto.showinfo("ÉXITO", "✅ SE AGREGÓ LOS DATOS NECESARIOS")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
   finally:
     desconectar_base_de_datos(conexión)
 
-def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos):
+def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
   selección = obtener_selección(tablas_de_datos)
   if not selección:
     return
@@ -80,7 +89,14 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
     return
-
+  
+  if detectar_repeticiones_de_datos(datos):
+    mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
+    return
+  
+  if not verificar_horarioSalida_mayor_horarioEntrada(datos):
+    mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
+    return
   
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
   
@@ -110,14 +126,14 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
 
       for índice, fila in enumerate(datos):
         id_val = fila[0]
-        valores_visibles = fila[1:]   # quitamos el ID de la tupla que mostramos
+        valores_visibles = fila[1:]
         tag = "par" if índice % 2 == 0 else "impar"
-        # insertamos con iid = id_val (como string)
+       
         tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
           
       for caja in cajasDeTexto[nombre_de_la_tabla]:
         caja.delete(0, tk.END)
-      mensajeTexto.showinfo("ATENCIÓN", "✅ SE MODIFICÓ EXITOSAMENTE")
+      mensajeTexto.showinfo("ÉXITO", "✅ SE MODIFICÓ EXITOSAMENTE")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
 
@@ -160,7 +176,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos):
       
       for entry in cajasDeTexto[nombre_de_la_tabla]:
         entry.delete(0, tk.END)
-      mensajeTexto.showinfo("ATENCIÓN", "✅ ¡Se eliminaron los datos correctamente!")
+      mensajeTexto.showinfo("ÉXITOS", "✅ SE ELIMINÓ UNA COLUMNA")
   except Exception as e:
     mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
 
@@ -180,28 +196,33 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db):
     if not all(entry.get().strip() for entry in caja[nombre_de_la_tabla]):
       mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
       return False
+    
     datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db)
     
     if not datos:
       print("NO HAY DATOS QUE GUARDAR")
       return False
     
+    datos = convertir_datos(campos_db, caja[nombre_de_la_tabla])
+    
     valores = list(datos.values())
     tablas_de_datos.item(ítem, values=valores)
     
+    
     if nombre_de_la_tabla not in datos_en_cache:
       datos_en_cache[nombre_de_la_tabla] = []
-    datos_en_cache[nombre_de_la_tabla].append(datos)
-    
-    
       
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
-    mensajeTexto.showinfo("ÉXITO", "GUARDADO EXITOSAMENTE")
+    mensajeTexto.showinfo("ÉXITO", "✅ SE HA GUARDADO EXITOSAMENTE EN UN ARCHIVO")
+
+    datos_en_cache[nombre_de_la_tabla].append(datos)
+    
 
     with open("datos_cache.json", "w", encoding="utf-8") as f:
       json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
     return True
+  
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
@@ -362,7 +383,7 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos):
 
     pdf.build([titulo, espacio, tabla])
     
-    print("EXPORTADO")
+    mensajeTexto.showinfo("ÉXITOS", "✅ SE HA EXPORTADO EXITOSAMENTE")
       
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")

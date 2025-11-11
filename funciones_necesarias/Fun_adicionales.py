@@ -104,27 +104,54 @@ def conseguir_campo_ID(nombre_de_la_tabla):
   return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
 
 def convertir_datos(campos_db, lista_de_cajas):
-  for campo, caja in zip(campos_db, lista_de_cajas):
-   
-    if not caja.winfo_exists():
-        continue
-    
-    valor = caja.get()
-    
-    if isinstance(valor, str) and "fecha" in campo.lower():
-        try:
-            fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d").strftime("%d/%m/%Y")
-        except ValueError:
+    datos_convertidos = {}
+
+    for campo, caja in zip(campos_db, lista_de_cajas):
+        if not caja.winfo_exists():
             continue
-        valor = fecha_obj
-    elif isinstance(valor, str) and "hora" in campo.lower():
-        try:
-            hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S").strftime("%H:%M")
-        except ValueError:
-            continue
-        valor = hora_obj
-    caja.delete(0, tk.END)  # Limpia el entry
-    caja.insert(0, str(valor))  # Inserta el valor convertido
+
+        valor = caja.get().strip()
+
+        # Si el campo contiene la palabra 'fecha'
+        if "fecha" in campo.lower():
+            try:
+                # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
+                if "-" in valor:
+                    fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
+                else:
+                    fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
+                valor = fecha_obj.strftime("%d/%m/%Y")
+            except ValueError:
+                pass
+              
+        elif "hora" in campo.lower():
+            try:
+                # Acepta HH:MM o HH:MM:SS
+                if len(valor.split(":")) == 3:
+                    hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
+                else:
+                    hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
+                valor = hora_obj.strftime("%H:%M")
+            except ValueError:
+                pass
+
+        datos_convertidos[campo] = valor
+        caja.delete(0, tk.END)
+        caja.insert(0, str(valor))
+
+    return datos_convertidos
+
+def mostrar_aviso(contenedor, texto, color, tamañoAviso, milisegundos = 5000):
+  
+  for widget in contenedor.winfo_children():
+    if isinstance(widget, tk.Label) and "fg" in widget.config():
+      widget.destroy()
+  
+  aviso = tk.Label(contenedor, text=texto, fg=color, font=("Arial", tamañoAviso, "bold"))
+  aviso.grid()
+
+  contenedor.after(milisegundos, aviso.destroy)
+
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
 #pero si el label ya existe, sólo se actualiza su texto.
@@ -200,7 +227,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   except Exception as e:
       mensajeTexto.showerror("ERROR DE CONEXIÓN", f"❌ Error al conectar a la base de datos: {e}")
       return None
-    
+   
     
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),
