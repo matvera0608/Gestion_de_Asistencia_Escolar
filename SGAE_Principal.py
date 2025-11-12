@@ -313,16 +313,16 @@ def abrir_tablas(nombre_de_la_tabla):
   btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview), "disabled")
+  btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, ventanaSecundaria), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, campos_en_db), "disabled")
+  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, campos_en_db, ventanaSecundaria), "disabled")
   btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnImportar = crear_botón(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: importar_datos(nombre_de_la_tabla, tabla_treeview), "disabled")
   btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
-  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview), "disabled")
+  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview, ventanaSecundaria), "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
   botones = [

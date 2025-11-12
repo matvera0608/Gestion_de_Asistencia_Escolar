@@ -23,8 +23,8 @@ colores = {
   "azul": "#0000FF",
   "azul_claro": "#C5C5FF",
   "azul_oscuro": "#00004D",
-  "rojo_error": "#CC0000",
-  "verde_éxito": "#00D600"
+  "rojo_error": "#B90000",
+  "verde_éxito": "#00AA00"
 }
 
 

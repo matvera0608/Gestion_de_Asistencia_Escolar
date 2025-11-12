@@ -1,6 +1,5 @@
 from Conexión import *
 import re
-from datetime import datetime as fecha_hora
 
 patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_fecha = re.compile(r'^(0?[1-9]|[12][0-9]|3[01])/(0?[1-9]|1[0-2])/\d{4}$')
@@ -9,7 +8,6 @@ patrón_alfanumérico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓ�
 patrón_nota = re.compile(r'^(10([.,]0{1,2})?|[1-9]([.,]\d{1,2})?)$')
 
 def detectar_repeticiones_de_datos(datos, tabla):
-# Esta función se va a encargar de detectar una redundancia como nombre repetido "Ramiro Vera" "Ramiro Vera"
     valorNombre = datos.get("Nombre", "").strip()
     
     if not valorNombre:
@@ -21,26 +19,20 @@ def detectar_repeticiones_de_datos(datos, tabla):
         if palabras[i] == palabras[i + 1]:
             return True
         
-        
-    # 2️⃣ Detección de nombres ya existentes en la tabla o JSON
-    try:
-        # --- Caso 1: Validar desde base de datos ---
-        conexión = conectar_base_de_datos()
-        cursor = conexión.cursor()
-        consulta = f"SELECT Nombre FROM {tabla}"
-        
-        if tabla in ["alumno", "carrera", "materia", "profesor"]:
-            cursor.execute(consulta)
-            registros = cursor.fetchall()
-        else:
-            cursor.close()
-            desconectar_base_de_datos(conexión)
 
-        nombres_existentes = [fila[0].strip().lower() for fila in registros if fila and fila[0]]
-    except Exception:
-        nombres_existentes = []
-        
-    if valorNombre in nombres_existentes:
+    nombres_existentes = []
+    if tabla in ["alumno", "materia", "profesor", "carrera"]:
+        try:
+            with conectar_base_de_datos() as conexión:
+                cursor = conexión.cursor()
+                cursor.execute(f"SELECT Nombre FROM {tabla}")
+                registros = cursor.fetchall()
+                nombres_existentes = [fila[0].strip().lower() for fila in registros if fila and fila[0]]
+        except Exception as e:
+            print(f"Advertencia: No se pudo verificar la unicidad del nombre debido a un error de DB: {e}")
+            return False
+            
+    if valorNombre.lower() in nombres_existentes:
         return True
     
     return False
@@ -53,10 +45,11 @@ def verificar_horarioSalida_mayor_horarioEntrada(datos):
     
         if not horario_entrada or not horario_salida:
             return False
+        
     except ValueError:
         return False
     
-    return horario_salida <= horario_entrada
+    return horario_salida >= horario_entrada
    
 def normalizar_valor_nota(datos):
   valor = datos.get("valorNota", "").strip().replace(",", ".")
