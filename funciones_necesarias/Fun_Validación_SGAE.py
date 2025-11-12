@@ -1,3 +1,4 @@
+from Conexión import *
 import re
 from datetime import datetime as fecha_hora
 
@@ -7,7 +8,7 @@ patrón_hora = re.compile(r'^([01]\d|2[0-3]):([0-5]\d)$')
 patrón_alfanumérico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_nota = re.compile(r'^(10([.,]0{1,2})?|[1-9]([.,]\d{1,2})?)$')
 
-def detectar_repeticiones_de_datos(datos):
+def detectar_repeticiones_de_datos(datos, tabla):
 # Esta función se va a encargar de detectar una redundancia como nombre repetido "Ramiro Vera" "Ramiro Vera"
     valorNombre = datos.get("Nombre", "").strip()
     
@@ -19,6 +20,29 @@ def detectar_repeticiones_de_datos(datos):
     for i in range(len(palabras) - 1):
         if palabras[i] == palabras[i + 1]:
             return True
+        
+        
+    # 2️⃣ Detección de nombres ya existentes en la tabla o JSON
+    try:
+        # --- Caso 1: Validar desde base de datos ---
+        conexión = conectar_base_de_datos()
+        cursor = conexión.cursor()
+        consulta = f"SELECT Nombre FROM {tabla}"
+        
+        if tabla in ["alumno", "carrera", "materia", "profesor"]:
+            cursor.execute(consulta)
+            registros = cursor.fetchall()
+        else:
+            cursor.close()
+            desconectar_base_de_datos(conexión)
+
+        nombres_existentes = [fila[0].strip().lower() for fila in registros if fila and fila[0]]
+    except Exception:
+        nombres_existentes = []
+        
+    if valorNombre in nombres_existentes:
+        return True
+    
     return False
     
 def verificar_horarioSalida_mayor_horarioEntrada(datos):
