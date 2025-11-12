@@ -143,15 +143,24 @@ def convertir_datos(campos_db, lista_de_cajas):
 
 def mostrar_aviso(contenedor, texto, color, tamañoAviso, milisegundos = 5000):
   
-  for widget in contenedor.winfo_children():
-    if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": #ESTO NO ESTÁ FUNCIONANDO, PORQUE LE DÍ CANCELAR Y NO LIMPIA EL AVISO ANTES DE LOS 5 SGEUNDOS
-      widget.destroy()
+  global after_id
+    
+   
+  if after_id is not None:
+      try:
+        contenedor.after_cancel(after_id)
+      except ValueError:
+          pass
+  
+  # for widget in contenedor.winfo_children():
+  #   if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": #ESTO NO ESTÁ FUNCIONANDO, PORQUE LE DÍ CANCELAR Y NO LIMPIA EL AVISO ANTES DE LOS 5 SGEUNDOS
+  #     widget.destroy()
   color_actual = contenedor.cget("bg")
 
   aviso = tk.Label(contenedor, text=texto, fg=color, font=("Arial", tamañoAviso, "bold"), name="aviso_temporal")
   aviso.configure(bg=color_actual)
   aviso.place(relx=0.3, rely=0.2, anchor="n")
-  contenedor.after(milisegundos, aviso.destroy)
+  after_id = contenedor.after(milisegundos, aviso.destroy)
 
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
