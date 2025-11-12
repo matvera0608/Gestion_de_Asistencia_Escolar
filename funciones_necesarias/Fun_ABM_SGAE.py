@@ -31,12 +31,15 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
     return
   
-  if nombre_de_la_tabla in ["materia"]:
-    if not verificar_horarioSalida_mayor_horarioEntrada(datos):
-      mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
+  if nombre_de_la_tabla == "materia":
+    if verificar_horarioSalida_mayor_horarioEntrada(datos):
+      mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR O IGUAL\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
       return
 
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+
+  if datos_traducidos is None:
+    return
 
   campos = ', '.join(datos_traducidos.keys())
   valores = ', '.join(['%s'] * len(datos_traducidos))
@@ -91,13 +94,14 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   if not datos:
     return
   
-  if not verificar_horarioSalida_mayor_horarioEntrada(datos):
-    mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
-    return
+  if nombre_de_la_tabla == "materia":
+    if verificar_horarioSalida_mayor_horarioEntrada(datos):
+      mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
+      return
   
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
   
-  if not datos_traducidos:
+  if datos_traducidos is None or not datos_traducidos:
     return
   
   valores_sql = list(datos_traducidos.values())
@@ -379,9 +383,6 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
     espacio = Spacer(1, 30)
 
     pdf.build([titulo, espacio, tabla])
-
-    
-    mensajeTexto.showinfo("ÉXITOS", )
     mostrar_aviso(ventana, "✅ SE HA EXPORTADO COMO PDF EXITOSAMENTE", colores["verde_éxito"], 10)  
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")

@@ -30,12 +30,17 @@ def habilitar(treeview):
   
   configurar_ciertos_comboboxes(nombreActual)
 
+
 def deshabilitar(treeview):
   global permitir_inserción
+  
+  mostrar_aviso(ventanaSecundaria, "")
+  
   if not permitir_inserción:
     return
   tabla_treeview.delete(*tabla_treeview.get_children())
   
+ 
   for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
     botón.config(state="disabled")
   
@@ -65,6 +70,7 @@ def deshabilitar(treeview):
         entry.config(state="readonly")
     except Exception:
         pass
+
 
 def insertar_al_habilitar(tabla_treeview):
   global permitir_inserción
@@ -357,3 +363,5 @@ def abrir_tablas(nombre_de_la_tabla):
 pantallaLogin()
 mi_ventana.protocol("WM_DELETE_WINDOW", lambda: cerrar_abm(mi_ventana))
 mi_ventana.mainloop()
+
+os.environ["TK_SILENCE_DEPRECATION"] = "1"

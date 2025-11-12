@@ -30,7 +30,7 @@ def detectar_repeticiones_de_datos(datos, tabla):
                 nombres_existentes = [fila[0].strip().lower() for fila in registros if fila and fila[0]]
         except Exception as e:
             print(f"Advertencia: No se pudo verificar la unicidad del nombre debido a un error de DB: {e}")
-            return False
+            pass
             
     if valorNombre.lower() in nombres_existentes:
         return True
@@ -49,7 +49,7 @@ def verificar_horarioSalida_mayor_horarioEntrada(datos):
     except ValueError:
         return False
     
-    return horario_salida >= horario_entrada
+    return horario_salida < horario_entrada
    
 def normalizar_valor_nota(datos):
   valor = datos.get("valorNota", "").strip().replace(",", ".")

@@ -141,26 +141,25 @@ def convertir_datos(campos_db, lista_de_cajas):
 
     return datos_convertidos
 
-def mostrar_aviso(contenedor, texto, color, tamañoAviso, milisegundos = 5000):
+
+def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
   
-  global after_id
+  # Asegúrate de que las indentaciones coincidan EXACTAMENTE con este ejemplo:
+  for widget in contenedor.winfo_children(): #Esto recorre los widgets y si existe el aviso reemplaza por el nuevo, ayuda a limpiar y consumir menos recursos
+    if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": 
+      if widget.winfo_exists():
+        widget.destroy()
+      break
     
-   
-  if after_id is not None:
-      try:
-        contenedor.after_cancel(after_id)
-      except ValueError:
-          pass
+  if not texto:
+    return
   
-  # for widget in contenedor.winfo_children():
-  #   if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": #ESTO NO ESTÁ FUNCIONANDO, PORQUE LE DÍ CANCELAR Y NO LIMPIA EL AVISO ANTES DE LOS 5 SGEUNDOS
-  #     widget.destroy()
   color_actual = contenedor.cget("bg")
 
   aviso = tk.Label(contenedor, text=texto, fg=color, font=("Arial", tamañoAviso, "bold"), name="aviso_temporal")
   aviso.configure(bg=color_actual)
-  aviso.place(relx=0.3, rely=0.2, anchor="n")
-  after_id = contenedor.after(milisegundos, aviso.destroy)
+  aviso.place(relx=0.35, rely=0.2, anchor="n")
+  contenedor.after(milisegundos, aviso.destroy)
 
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
@@ -225,10 +224,10 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             nombre_a_buscar = datos[campo_fkID]
             consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
             cursor.execute(consulta, (nombre_a_buscar,))
-            resultado = cursor.fetchone()
+            resultado = cursor.fetchall()
             
             if resultado:
-                datos_traducidos[campo_fkID] = resultado[0]
+                datos_traducidos[campo_fkID] = resultado[0][0]
             else:
                 mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{nombre_a_buscar}' no existe en la base de datos.")
                 return None

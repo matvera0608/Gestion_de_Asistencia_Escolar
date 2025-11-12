@@ -27,7 +27,6 @@ colores = {
   "verde_éxito": "#00AA00"
 }
 
-
 campos_en_db = {
       "alumno": ["Nombre", "FechaDeNacimiento", "IDCarrera"],
       "asistencia": ["Estado", "Fecha_Asistencia", "IDAlumno", "IDProfesor", "IDMateria"],
@@ -37,6 +36,8 @@ campos_en_db = {
       "profesor": ["Nombre"],
       "nota": ["IDAlumno", "IDMateria","IDProfesor", "valorNota", "tipoNota", "fechaEvaluación"]
   }
+
+
 alias = {
 "IDCarrera": "Carrera",
 "IDMateria": "Materia",
@@ -231,7 +232,7 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     ruta = os.path.join(ruta_imagen, ruta_subcarpeta_imagen, nombre_imagen)
     if(not os.path.exists(ruta)):
         print(f"Imagen no encontrada: {ruta}")
-        return None
+        return ImageTk.PhotoImage(Image.new("RGBA", tamaño, (255, 255, 255, 0)))
     try:
         imagen = Image.open(ruta)
         imagen = imagen.resize(tamaño, Image.Resampling.LANCZOS)
