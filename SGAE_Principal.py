@@ -162,12 +162,12 @@ def pantallaLogin():
     permiso = rolesVálidos.get(selección_de_rol)
     
     if not permiso:
-      crear_etiqueta(ventana, "ROL INVÁLIDO").grid(row=2, column=0, pady=10, sticky="n")
+      crear_etiqueta(ventana, "ROL INVÁLIDO", colores["rojo_error"]).grid(row=2, column=0, pady=10, sticky="n")
       return
     mostrar_pestañas(ventana, permiso)
  
   #Iniciar Sesión
-  botón_login = crear_botón(ventana, "Iniciar Sesión", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
+  botón_login = crear_botón(ventana, "Iniciar", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
   botón_login.grid(row=3, column=0, sticky="s")
   
   return ventana
@@ -251,7 +251,7 @@ def abrir_tablas(nombre_de_la_tabla):
   permitir_inserción = True
   if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
     return
-    
+
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.geometry("900x600")
   ventanaSecundaria.title(f"{nombre_de_la_tabla.upper()}")

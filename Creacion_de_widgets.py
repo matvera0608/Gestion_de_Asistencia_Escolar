@@ -4,9 +4,9 @@ from Elementos import *
 from funciones_necesarias import *
 
 
-def crear_etiqueta(contenedor, texto, fuenteLetra=("Arial", 10, "bold")):
+def crear_etiqueta(contenedor, texto, color=colores["negro"], fuenteLetra=("Arial", 10, "bold")):
   color_padre = contenedor.cget("bg")
-  return tk.Label(contenedor, text=texto, fg=colores["negro"], bg=color_padre, font=fuenteLetra)
+  return tk.Label(contenedor, text=texto, fg=color, bg=color_padre, font=fuenteLetra)
 
 
 def crear_entrada(contenedor, ancho, estado="readonly",estilo="Entrada.TEntry"):
