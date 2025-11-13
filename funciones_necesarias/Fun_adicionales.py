@@ -224,10 +224,10 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             nombre_a_buscar = datos[campo_fkID]
             consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
             cursor.execute(consulta, (nombre_a_buscar,))
-            resultado = cursor.fetchall()
+            resultado = cursor.fetchone()
             
             if resultado:
-                datos_traducidos[campo_fkID] = resultado[0][0]
+                datos_traducidos[campo_fkID] = resultado[0]
             else:
                 mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{nombre_a_buscar}' no existe en la base de datos.")
                 return None

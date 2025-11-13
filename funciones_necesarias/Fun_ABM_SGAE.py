@@ -37,7 +37,9 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       return
 
   datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
-
+  
+  print(datos_traducidos)
+  
   if datos_traducidos is None:
     return
 
@@ -447,4 +449,3 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
   finally:
     cursor.close()
     conexión.close()
-

@@ -24,7 +24,8 @@ colores = {
   "azul_claro": "#C5C5FF",
   "azul_oscuro": "#00004D",
   "rojo_error": "#B90000",
-  "verde_éxito": "#00AA00"
+  "verde_éxito": "#00AA00",
+  "amarillo_alerta": "#DCB700DB"
 }
 
 campos_en_db = {
@@ -223,9 +224,6 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             if orden in columnas:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
-            # print("Columnas:", columnas)
-            # print("OrdenDatos:", ordenDatos, "→ Orden real:", orden)
-
     return sql, params
 
 def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):

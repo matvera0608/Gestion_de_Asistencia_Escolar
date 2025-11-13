@@ -128,7 +128,8 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
           if widget_interno.startswith("cbBox_"):
             if cbBox_tabla.lower() == "asistencia" and widget_interno.startswith("cbBox_Estado"):
               widget["values"] = ["presente", "ausente"]
-              widget.set("presente")
+              if not widget.get().strip():  # solo establecer si está vacío
+                widget.set("presente")
             widget.config(state="readonly")
           elif widget_interno.startswith("txBox_"):
             widget.config(state="normal")
