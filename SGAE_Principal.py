@@ -101,6 +101,8 @@ mi_ventana = tk.Tk()
 }
 
 imágenes_por_botón = {
+  "iniciar_sesion": cargar_imagen("botones", "iniciar_sesion.png"),
+  "regresar_al_menu_principal": cargar_imagen("botones", "regresar_al_menu_principal.png"),
   "cancelar": cargar_imagen("botones", "cancelar.png"),
   "agregar": cargar_imagen("botones", "agregar.png"),
   "modificar": cargar_imagen("botones", "modificar.png"),
@@ -119,6 +121,11 @@ def pantallaLogin():
   ventana.resizable(width=False, height=False)
   ventana.grid_columnconfigure(0, weight=1)
   ventana.grid_rowconfigure(2, weight=1)
+
+  estilo = ttk.Style()
+  estilo.theme_use("clam") #clam es el mejor tema para personalizar
+  estilo.configure("Boton.TButton", font=("Arial", 10, "bold"), foreground=colores["blanco"], background=colores["celeste_azulado"], padding=5)
+  estilo.map("Boton.TButton", background=[("active", colores["celeste_resaltado"])])
 
   #Etiqueta para rol
   label_usuario_rol = tk.Label(ventana, text="ROL", bg=colores["blanco"], fg=colores["negro"], font=("Arial", 15, "bold"))
@@ -142,7 +149,6 @@ def pantallaLogin():
     "secretario",
     "secretaria"
   ]
-  
   #Entry para el usuario
   rol = rol_orden_logico
   
@@ -161,8 +167,7 @@ def pantallaLogin():
     mostrar_pestañas(ventana, permiso)
  
   #Iniciar Sesión
-  botón_login = tk.Button(ventana, text="Iniciar Sesión", width=15)
-  botón_login.config(fg="black", bg=colores["gris"], font=("Arial", 15), cursor='hand2', activebackground=colores["gris"], command=iniciar_sesion)
+  botón_login = crear_botón(ventana, "Iniciar Sesión", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
   botón_login.grid(row=3, column=0, sticky="s")
   
   return ventana
@@ -220,6 +225,15 @@ def mostrar_pestañas(ventana, permiso):
       return
     pestaña = notebook.tab(notebook.select(), "text").lower()
     abrir_tablas(pestaña) 
+  
+  def regresar():
+    for widget in mi_ventana.winfo_children():
+      widget.destroy()
+    pantallaLogin()
+  
+  
+  botón_regresar = crear_botón(notebook, "Regresar", imágenes_por_botón["regresar_al_menu_principal"], lambda: regresar(), "normal")
+  botón_regresar.pack(side="top", pady=50)
   
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios", bg=ventana.cget("bg"), font=("Arial", 8))
   lb_obligatoriedad.pack(side="bottom", pady=5)
