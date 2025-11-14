@@ -1,9 +1,24 @@
 {
   "alumno": [
     {
-      "alumno": "Diego Gutiérrez",
-      "asistencia": "05/06/2004",
-      "carrera": "Administración de Empresas"
+      "alumno": "Julián Sánchez",
+      "asistencia": "28/06/2004",
+      "carrera": "Analista de sistemas"
+    },
+    {
+      "alumno": "Gabriel Toledo",
+      "asistencia": "10/08/2004",
+      "carrera": "Analista de sistemas"
+    },
+    {
+      "alumno": "Diego López",
+      "asistencia": "07/06/2004",
+      "carrera": "Analista de sistemas"
+    },
+    {
+      "alumno": "Julián Álvarez",
+      "asistencia": "28/06/2004",
+      "carrera": "Hotelería y Turismo"
     }
   ]
 }

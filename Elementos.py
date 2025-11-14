@@ -25,7 +25,7 @@ colores = {
   "azul_oscuro": "#00004D",
   "rojo_error": "#B90000",
   "verde_éxito": "#00AA00",
-  "amarillo_alerta": "#DCB700DB"
+  "amarillo_alerta": "#CCAE00"
 }
 
 campos_en_db = {

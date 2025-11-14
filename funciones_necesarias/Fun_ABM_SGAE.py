@@ -194,7 +194,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana)
   try:
     selecciónDatos = tablas_de_datos.selection()
     if not selecciónDatos:
-      print("FALTA SELECCIONAR 1 FILA")
+      mostrar_aviso(ventana, "FALTA SELECCIONAR 1 FILA", colores["amarillo_alerta"])
       return False
     
     ítem = selecciónDatos[0]
@@ -215,7 +215,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana)
     
     
     if nombre_de_la_tabla not in datos_en_cache:
-      datos_en_cache[nombre_de_la_tabla] = []
+      datos_en_cache[campos_db] = []
       
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
