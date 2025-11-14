@@ -98,55 +98,44 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
   
   return datos
 
-def conseguir_campo_ID(nombre_de_la_tabla):
-  IDs_mapeados = {
-              'alumno': "ID_Alumno",
-              'asistencia': "ID",
-              'carrera': "ID_Carrera",
-              'materia': "ID_Materia",
-              'enseñanza': "ID",
-              'profesor': "ID_Profesor",
-              'nota': "ID"
-        }
-  return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
-
 def convertir_datos(campos_db, lista_de_cajas):
     datos_convertidos = {}
 
     for campo, caja in zip(campos_db, lista_de_cajas):
-        if not caja.winfo_exists():
-            continue
+      if not caja.winfo_exists():
+          continue
 
-        valor = caja.get().strip()
+      valor = caja.get().strip()
 
-        # Si el campo contiene la palabra 'fecha'
-        if "fecha" in campo.lower():
-            try:
-                # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
-                if "-" in valor:
-                    fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
-                else:
-                    fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
-                valor = fecha_obj.strftime("%d/%m/%Y")
-            except ValueError:
-                pass
-              
-        elif "hora" in campo.lower():
-            try:
-                # Acepta HH:MM o HH:MM:SS
-                if len(valor.split(":")) == 3:
-                    hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
-                else:
-                    hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
-                valor = hora_obj.strftime("%H:%M")
-            except ValueError:
-                pass
+      # Si el campo contiene la palabra 'fecha'
+      if "fecha" in campo.lower():
+          try:
+            # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
+            if "-" in valor:
+                fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
+            else:
+                fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
+            valor = fecha_obj.strftime("%d/%m/%Y")
+          except ValueError:
+            pass
+            
+      elif "hora" in campo.lower():
+          try:
+            # Acepta HH:MM o HH:MM:SS
+            if len(valor.split(":")) == 3:
+                hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
+            else:
+                hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
+            valor = hora_obj.strftime("%H:%M")
+          except ValueError:
+            pass
 
-        datos_convertidos[campo] = valor
-        caja.delete(0, tk.END)
-        caja.insert(0, str(valor))
+      datos_convertidos[campo] = valor
+      caja.delete(0, tk.END)
+      caja.insert(0, str(valor))
 
     return datos_convertidos
+
 
 def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
   
@@ -166,6 +155,19 @@ def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5
   aviso.configure(bg=color_actual)
   aviso.place(relx=0.35, rely=0.2, anchor="n")
   contenedor.after(milisegundos, aviso.destroy)
+
+
+def conseguir_campo_ID(nombre_de_la_tabla):
+  IDs_mapeados = {
+              'alumno': "ID_Alumno",
+              'asistencia': "ID",
+              'carrera': "ID_Carrera",
+              'materia': "ID_Materia",
+              'enseñanza': "ID",
+              'profesor': "ID_Profesor",
+              'nota': "ID"
+        }
+  return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
 
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo

@@ -1,24 +1,9 @@
 {
   "alumno": [
     {
-      "alumno": "Julián Sánchez",
-      "asistencia": "28/06/2004",
-      "carrera": "Analista de sistemas"
-    },
-    {
-      "alumno": "Gabriel Toledo",
-      "asistencia": "10/08/2004",
-      "carrera": "Analista de sistemas"
-    },
-    {
-      "alumno": "Diego López",
-      "asistencia": "07/06/2004",
-      "carrera": "Analista de sistemas"
-    },
-    {
-      "alumno": "Julián Álvarez",
-      "asistencia": "28/06/2004",
-      "carrera": "Hotelería y Turismo"
+      "Nombre": "Diego López",
+      "FechaDeNacimiento": "2004-06-07",
+      "IDCarrera": "Analista de sistemas"
     }
   ]
 }

@@ -187,7 +187,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
   
 datos_en_cache = {}
 
-def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana):
+def guardar_datos(nombre_de_la_tabla, cajaDeTexto, tablas_de_datos, campos_db, ventana):
   global datos_en_cache
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
@@ -198,32 +198,31 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana)
       return False
     
     ítem = selecciónDatos[0]
-    if not all(entry.get().strip() for entry in caja[nombre_de_la_tabla]):
+    if not all(entry.get().strip() for entry in cajaDeTexto[nombre_de_la_tabla]):
       mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
       return False
     
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, caja, campos_db)
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajaDeTexto, campos_db)
     
     if not datos:
       print("NO HAY DATOS QUE GUARDAR")
       return False
-    
-    datos = convertir_datos(campos_db, caja[nombre_de_la_tabla])
-    
+        
     valores = list(datos.values())
     tablas_de_datos.item(ítem, values=valores)
     
+    convertir_datos(campos_en_db, cajaDeTexto[nombre_de_la_tabla])
     
     if nombre_de_la_tabla not in datos_en_cache:
-      datos_en_cache[campos_db] = []
+      datos_en_cache[nombre_de_la_tabla] = []
       
-    for entry in caja[nombre_de_la_tabla]:
+    for entry in cajaDeTexto[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
     mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE", colores["verde_éxito"], 10)
-
+    
     datos_en_cache[nombre_de_la_tabla].append(datos)
     
-
+    
     with open("datos_cache.json", "w", encoding="utf-8") as f:
       json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
     return True
