@@ -109,13 +109,12 @@ echo .........................................................................
             echo ERROR: No se detectó la conexión a Internet. Reintentando en 5 segundos... Intento !INTENTO! de !MAX_INTENTOS!
             timeout /t 5 /nobreak > NUL
             GOTO CHECK_INTERNET
-        )
-        ELSE (
+        ) ELSE (
             color 0C
             echo.
             echo No se puede gitear sin conexión. El proceso está abortado
             echo.
-            GOTO END_SCRIPT
+            GOTO END_SCRIPT 
         ) 
     )
     GOTO :EOF
