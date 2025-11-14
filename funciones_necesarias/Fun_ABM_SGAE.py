@@ -15,6 +15,7 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 import csv
 import pandas as pd
 import json
+import os
 #-------------------------------------#
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
@@ -185,10 +186,8 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
   
-datos_en_cache = {}
-
-def guardar_datos(nombre_de_la_tabla, cajaDeTexto, tablas_de_datos, campos_db, ventana):
-  global datos_en_cache
+def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, ventana):  
+  datos_en_cache = {}
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -198,35 +197,52 @@ def guardar_datos(nombre_de_la_tabla, cajaDeTexto, tablas_de_datos, campos_db, v
       return False
     
     ítem = selecciónDatos[0]
-    if not all(entry.get().strip() for entry in cajaDeTexto[nombre_de_la_tabla]):
+    if not all(entry.get().strip() for entry in cajasDeTexto[nombre_de_la_tabla]):
       mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
       return False
     
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajaDeTexto, campos_db)
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
     
     if not datos:
       print("NO HAY DATOS QUE GUARDAR")
       return False
-        
+    
+    convertir_datos(campos_db[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla])
+    
     valores = list(datos.values())
     tablas_de_datos.item(ítem, values=valores)
     
-    convertir_datos(campos_en_db, cajaDeTexto[nombre_de_la_tabla])
     
     if nombre_de_la_tabla not in datos_en_cache:
       datos_en_cache[nombre_de_la_tabla] = []
       
-    for entry in cajaDeTexto[nombre_de_la_tabla]:
+    for entry in cajasDeTexto[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
     mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE", colores["verde_éxito"], 10)
+
+    def almacenar_en_json():
+      global datos_en_cache
+      # Convertir objetos date/time a strings antes de guardar en JSON
+      datos_serializable = convertir_a_json_serializable(datos)
+      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
+      
+      if os.path.exists("datos_cache.json"):
+        with open("datos_cache.json", "r", encoding="utf-8") as f:
+          datos_en_cache = json.load(f)
+      else:
+        datos_en_cache = {}
+        
+      if nombre_de_la_tabla not in datos_en_cache:
+        datos_en_cache[nombre_de_la_tabla] = []
+        
+      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
+        
+      with open("datos_cache.json", "w", encoding="utf-8") as f:
+        json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
+      return True
     
-    datos_en_cache[nombre_de_la_tabla].append(datos)
+    almacenar_en_json()
     
-    
-    with open("datos_cache.json", "w", encoding="utf-8") as f:
-      json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
-    return True
-  
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False

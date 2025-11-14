@@ -1,6 +1,8 @@
 from Conexión import *
 from PIL import Image, ImageTk
 import os
+import tkinter as tk
+from datetime import datetime as fecha_y_hora
 # --- ELEMENTOS ---
 
 dirección_del_ícono = os.path.dirname(__file__)
@@ -226,6 +228,26 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
 
+
+def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
+  
+  # Asegúrate de que las indentaciones coincidan EXACTAMENTE con este ejemplo:
+  for widget in contenedor.winfo_children(): #Esto recorre los widgets y si existe el aviso reemplaza por el nuevo, ayuda a limpiar y consumir menos recursos
+    if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": 
+      if widget.winfo_exists():
+        widget.destroy()
+      break
+    
+  if not texto:
+    return
+  
+  color_actual = contenedor.cget("bg")
+
+  aviso = tk.Label(contenedor, text=texto, fg=color, font=("Arial", tamañoAviso, "bold"), name="aviso_temporal")
+  aviso.configure(bg=color_actual)
+  aviso.place(relx=0.35, rely=0.2, anchor="n")
+  contenedor.after(milisegundos, aviso.destroy)
+
 def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     ruta = os.path.join(ruta_imagen, ruta_subcarpeta_imagen, nombre_imagen)
     if(not os.path.exists(ruta)):
@@ -238,3 +260,15 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     except Exception as e:
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")
         return None
+
+#En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
+#pero si el label ya existe, sólo se actualiza su texto.
+def actualizar_la_hora(contenedor):
+  color_padre = contenedor.cget('bg')
+  if hasattr(contenedor, 'label_Hora'):
+    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+  else:
+    contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
+    contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
+    contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
+  contenedor.after(1000, lambda: actualizar_la_hora(contenedor))

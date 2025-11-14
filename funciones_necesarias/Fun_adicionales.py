@@ -1,7 +1,7 @@
 from Conexión import *
 from .Fun_Validación_SGAE import *
 from Elementos import *
-from datetime import datetime as fecha_y_hora
+from datetime import datetime as fecha_y_hora, date as fecha, time as hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
@@ -109,53 +109,43 @@ def convertir_datos(campos_db, lista_de_cajas):
 
       # Si el campo contiene la palabra 'fecha'
       if "fecha" in campo.lower():
-          try:
-            # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
-            if "-" in valor:
-                fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
-            else:
-                fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
-            valor = fecha_obj.strftime("%d/%m/%Y")
-          except ValueError:
-            pass
-            
+        try:
+          # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
+          if "-" in valor:
+              fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
+          else:
+              fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
+          valor = fecha_obj.strftime("%d/%m/%Y")
+        except ValueError:
+          pass   
       elif "hora" in campo.lower():
-          try:
-            # Acepta HH:MM o HH:MM:SS
-            if len(valor.split(":")) == 3:
-                hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
-            else:
-                hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
-            valor = hora_obj.strftime("%H:%M")
-          except ValueError:
-            pass
-
+        try:
+          # Acepta HH:MM o HH:MM:SS
+          if len(valor.split(":")) == 3:
+              hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
+          else:
+              hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
+          valor = hora_obj.strftime("%H:%M")
+        except ValueError:
+          pass
       datos_convertidos[campo] = valor
       caja.delete(0, tk.END)
-      caja.insert(0, str(valor))
-
+      caja.insert(0, valor)
     return datos_convertidos
 
+def convertir_a_json_serializable(datos):
 
-def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
-  
-  # Asegúrate de que las indentaciones coincidan EXACTAMENTE con este ejemplo:
-  for widget in contenedor.winfo_children(): #Esto recorre los widgets y si existe el aviso reemplaza por el nuevo, ayuda a limpiar y consumir menos recursos
-    if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": 
-      if widget.winfo_exists():
-        widget.destroy()
-      break
-    
-  if not texto:
-    return
-  
-  color_actual = contenedor.cget("bg")
-
-  aviso = tk.Label(contenedor, text=texto, fg=color, font=("Arial", tamañoAviso, "bold"), name="aviso_temporal")
-  aviso.configure(bg=color_actual)
-  aviso.place(relx=0.35, rely=0.2, anchor="n")
-  contenedor.after(milisegundos, aviso.destroy)
-
+  datos_convertidos = {}
+  for clave, valor in datos.items():
+    if isinstance(valor, fecha):
+      # Convierte date a string en formato DD/MM/YYYY
+      datos_convertidos[clave] = valor.strftime("%d/%m/%Y")
+    elif isinstance(valor, hora):
+      # Convierte time a string en formato HH:MM
+      datos_convertidos[clave] = valor.strftime("%H:%M")
+    else:
+      datos_convertidos[clave] = valor
+  return datos_convertidos
 
 def conseguir_campo_ID(nombre_de_la_tabla):
   IDs_mapeados = {
@@ -169,18 +159,6 @@ def conseguir_campo_ID(nombre_de_la_tabla):
         }
   return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
 
-
-#En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
-#pero si el label ya existe, sólo se actualiza su texto.
-# # def actualizar_la_hora(contenedor):
-# #   color_padre = contenedor.cget('bg')
-# #   if hasattr(contenedor, 'label_Hora'):
-# #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-# #   else:
-# #     contenedor.label_Hora = tk.Label(contenedor, font=("Arial", 10, "bold"), bg=color_padre, fg="blue")
-# #     contenedor.label_Hora.grid(row=20, column=0, sticky="ne", padx=0, pady=0)
-# #     contenedor.label_Hora.config(text=fecha_y_hora.now().strftime("%H:%M:%S"))
-# #   contenedor.after(1000, lambda: actualizar_la_hora(contenedor))
 
 def consultar_tabla(nombre_de_la_tabla):
   try:
