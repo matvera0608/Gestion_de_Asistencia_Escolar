@@ -18,11 +18,7 @@ import json
 #-------------------------------------#
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
-  try:
-    tablas_de_datos.get_children()
-  except:
-      return
-  
+ 
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
 
@@ -70,7 +66,8 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
           entry.delete(0, tk.END)
     mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"ERROR INESPERADO AL INSERTAR: {str(e)}")
+    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    return False
   finally:
     desconectar_base_de_datos(conexión)
 
@@ -141,8 +138,9 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
         caja.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"❌ ERROR AL MODIFICAR: {e}")
-
+    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    return False
+  
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
@@ -184,8 +182,9 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
         entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE ELIMINÓ UNA COLUMNA", colores["verde_éxito"], 10)
   except Exception as e:
-    mensajeTexto.showerror("ERROR", f"❌ ERROR INESPERADO AL ELIMINAR: {str(e)}")
-
+    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    return False
+  
 datos_en_cache = {}
 
 def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana):
@@ -220,7 +219,7 @@ def guardar_datos(nombre_de_la_tabla, caja, tablas_de_datos, campos_db, ventana)
       
     for entry in caja[nombre_de_la_tabla]:
       entry.delete(0, tk.END)
-    mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE EN UN ARCHIVO", colores["verde_éxito"], 10)
+    mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE", colores["verde_éxito"], 10)
 
     datos_en_cache[nombre_de_la_tabla].append(datos)
     

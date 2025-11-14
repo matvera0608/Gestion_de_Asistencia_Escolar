@@ -249,8 +249,16 @@ def abrir_tablas(nombre_de_la_tabla):
   global permitir_inserción
   nombreActual = nombre_de_la_tabla
   permitir_inserción = True
-  if nombre_de_la_tabla in ventanaAbierta and ventanaAbierta[nombre_de_la_tabla].winfo_exists():
-    return
+  
+  # Destruir ventana anterior si existe y limpiar referencias
+  if "ventanaSecundaria" in globals() and ventanaSecundaria and ventanaSecundaria.winfo_exists():
+    ventanaSecundaria.destroy()
+  
+  # Limpiar referencias antiguas de widgets destruidos DESPUÉS de destruir la ventana
+  if nombre_de_la_tabla in cajasDeTexto:
+    cajasDeTexto[nombre_de_la_tabla] = []
+
+  
 
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.geometry("900x600")

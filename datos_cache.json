@@ -1,28 +1,9 @@
 {
   "alumno": [
     {
-      "alumno": "Elena Ponce",
-      "asistencia": "12/04/2006",
-      "carrera": "Analista de sistemas"
-    },
-    {
-      "alumno": "Miguel Castro",
-      "asistencia": "08/08/2000",
-      "carrera": "Analista de sistemas"
-    },
-    {
-      "alumno": "Maria Lopez",
-      "asistencia": "15/01/2005",
-      "carrera": "Analista de sistemas"
-    }
-  ],
-  "asistencia": [
-    {
-      "alumno": "presente",
-      "asistencia": "05/10/2025",
-      "carrera": "Camila Flores",
-      "materia": "Hugo Pérez",
-      "enseñanza": "Análisis y Diseño de Sistemas"
+      "alumno": "Diego Gutiérrez",
+      "asistencia": "05/06/2004",
+      "carrera": "Administración de Empresas"
     }
   ]
 }

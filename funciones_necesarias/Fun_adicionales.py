@@ -79,7 +79,14 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
   datos = {}
 
   for campo, caja in zip(campos_db, lista_de_cajas):
-    texto = caja.get().strip()
+   
+    if not caja.winfo_exists():
+      continue
+    
+    try:
+      texto = caja.get().strip()
+    except tk.TclError:
+      continue
     try:
       if texto.count("/") == 2:
         texto = fecha_y_hora.strptime(texto, "%d/%m/%Y").date()
@@ -140,7 +147,6 @@ def convertir_datos(campos_db, lista_de_cajas):
         caja.insert(0, str(valor))
 
     return datos_convertidos
-
 
 def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
   
