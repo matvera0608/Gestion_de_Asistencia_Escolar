@@ -97,39 +97,39 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
   return datos
 
 def convertir_datos(campos_db, lista_de_cajas):
-    datos_convertidos = {}
+  datos_convertidos = {}
 
-    for campo, caja in zip(campos_db, lista_de_cajas):
-      if not caja.winfo_exists():
-          continue
+  for campo, caja in zip(campos_db, lista_de_cajas):
+    if not caja.winfo_exists():
+      continue
 
-      valor = caja.get().strip()
+    valor = caja.get().strip()
 
-      # Si el campo contiene la palabra 'fecha'
-      if "fecha" in campo.lower():
-        try:
-          # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
-          if "-" in valor:
-              fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
-          else:
-              fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
-          valor = fecha_obj.strftime("%d/%m/%Y")
-        except ValueError:
-          pass   
-      elif "hora" in campo.lower():
-        try:
-          # Acepta HH:MM o HH:MM:SS
-          if len(valor.split(":")) == 3:
-              hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
-          else:
-              hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
-          valor = hora_obj.strftime("%H:%M")
-        except ValueError:
-          pass
-      datos_convertidos[campo] = valor
-      caja.delete(0, tk.END)
-      caja.insert(0, valor)
-    return datos_convertidos
+    # Si el campo contiene la palabra 'fecha'
+    if "fecha" in campo.lower():
+      try:
+        # Acepta tanto YYYY-MM-DD como DD/MM/YYYY
+        if "-" in valor:
+          fecha_obj = fecha_y_hora.strptime(valor, "%Y-%m-%d")
+        else:
+          fecha_obj = fecha_y_hora.strptime(valor, "%d/%m/%Y")
+        valor = fecha_obj.strftime("%d/%m/%Y")
+      except ValueError:
+        pass   
+    elif "hora" in campo.lower():
+      try:
+        # Acepta HH:MM o HH:MM:SS
+        if len(valor.split(":")) == 3:
+          hora_obj = fecha_y_hora.strptime(valor, "%H:%M:%S")
+        else:
+          hora_obj = fecha_y_hora.strptime(valor, "%H:%M")
+        valor = hora_obj.strftime("%H:%M")
+      except ValueError:
+        pass
+    datos_convertidos[campo] = valor
+    caja.delete(0, tk.END)
+    caja.insert(0, valor)
+  return datos_convertidos
 
 def convertir_a_json_serializable(datos):
 
@@ -156,7 +156,6 @@ def conseguir_campo_ID(nombre_de_la_tabla):
               'nota': "ID"
         }
   return IDs_mapeados.get(nombre_de_la_tabla.strip().lower())
-
 
 def consultar_tabla(nombre_de_la_tabla):
   try:

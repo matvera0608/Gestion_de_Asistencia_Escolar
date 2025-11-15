@@ -2,6 +2,7 @@ from Conexión import *
 from .Fun_adicionales import *
 from .Fun_Validación_SGAE import *
 import tkinter as tk
+from dateutil.parser import parse
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 #IMPORTACIÓN PARA CREAR PDF#
 from reportlab.lib import colors
@@ -35,7 +36,11 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR O IGUAL\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
       return
 
-  datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+  datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
+  
+  if error:
+    mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
+    return
   
   print(datos_traducidos)
   
@@ -102,7 +107,11 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
       mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
       return
   
-  datos_traducidos = traducir_IDs(nombre_de_la_tabla, datos)
+  datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
+  
+  if error:
+    mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
+    return
   
   if datos_traducidos is None or not datos_traducidos:
     return
@@ -249,6 +258,26 @@ def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, 
 
 def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   global datos_en_cache
+  
+  def convertir_datos_para_mysql(valor):
+    if not isinstance(valor, str):
+        return valor
+    
+    try:
+        parsed_date = parse(valor, dayfirst=True)
+        
+        # Decide si es solo fecha o solo hora basado en el componente de hora
+        if parsed_date.hour == 0 and parsed_date.minute == 0:
+            # Es probable que sea solo una fecha (YYYY-MM-DD)
+            return parsed_date.strftime("%Y-%m-%d")
+        else:
+            # Es probable que sea una hora (HH:MM:SS)
+            return parsed_date.strftime("%H:%M:%S")
+
+    except Exception:
+        # Si no se puede parsear, devuelve el valor original o None para indicar un error
+        return valor
+  
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
@@ -280,15 +309,15 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
           lector = csv.reader(archivo, delimiter="\t")
           datos = list(lector)
           
-          encabezado = [col for col in datos[0] if col.strip() != ""]
-          filas = [[celda for celda in fila if celda.strip() != ""] for fila in datos[1:]]
-          
-          datos = pd.DataFrame(filas, columns=encabezado)
-          datos = datos.rename(columns=alias)
+        encabezado = [col for col in datos[0] if col.strip() != ""]
+        filas = [[celda for celda in fila if celda.strip() != ""] for fila in datos[1:]]
+        
+        datos = pd.DataFrame(filas, columns=encabezado)
+        datos = datos.rename(columns=alias)
       case _:
         print("No compatible el formato de archivo")
         return
-        
+
     for índice, fila in datos.iterrows():
       tablas_de_datos.insert("", "end", values=tuple(fila))
     
@@ -305,11 +334,23 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
       if error:
         mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
         return
-
       
       filas_traducidas_a_nombres_legibles.append(traducción)
-    
     datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
+    
+    # ----------------------------------------------------------------------
+    # 3. NORMALIZACIÓN DE FECHAS/HORAS PARA MYSQL
+    # ----------------------------------------------------------------------
+    for columna in datos.columns:
+      columna_lower = columna.lower()
+      # La conversión solo se aplica si la columna es relevante
+      if "fecha" in columna_lower or "horario" in columna_lower:
+        datos[columna] = datos[columna].apply(convertir_datos_para_mysql)
+        
+        # Chequeo por valores inválidos después de la conversión
+        if datos[columna].apply(lambda x: isinstance(x, str) and (x.count('/') > 0 or x.count(':') > 2)).any():
+          mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ Formato de fecha/hora inválido en la columna '{columna}' después de la conversión. Revise el archivo original.")
+          return
     
     if conseguir_campo_ID(nombre_de_la_tabla) in datos.columns:
       datos = datos.drop(columns=[conseguir_campo_ID(nombre_de_la_tabla)])
