@@ -53,7 +53,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     datos = consultar_tabla(nombre_de_la_tabla)
 
     for item in tablas_de_datos.get_children():
-        tablas_de_datos.delete(item)
+      tablas_de_datos.delete(item)
 
     for índice, fila in enumerate(datos):
       id_val = fila[0]
@@ -187,7 +187,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
     return False
   
 def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, ventana):  
-  datos_en_cache = {}
+  
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   try:
@@ -207,7 +207,7 @@ def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, 
       print("NO HAY DATOS QUE GUARDAR")
       return False
     
-    convertir_datos(campos_db[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla])
+    datos = convertir_datos(campos_db[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla])
     
     valores = list(datos.values())
     tablas_de_datos.item(ítem, values=valores)
@@ -289,18 +289,57 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
         print("No compatible el formato de archivo")
         return
         
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
-        
     for índice, fila in datos.iterrows():
       tablas_de_datos.insert("", "end", values=tuple(fila))
     
     alias_invertido = {v: k for k, v in alias.items()}
     datos = datos.rename(columns=alias_invertido)
     
-    datos_en_cache[nombre_de_la_tabla] = datos.copy()
+    filas_traducidas_a_nombres_legibles = []
     
-    print(f"{len(datos)} registros importados correctamente en {nombre_de_la_tabla}")
+    for _, fila in datos.iterrows():
+      dict_fila = fila.to_dict()
+      
+      traducción, error = traducir_IDs(nombre_de_la_tabla, dict_fila)
+
+      if error:
+        mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
+        return
+
+      
+      filas_traducidas_a_nombres_legibles.append(traducción)
+    
+    datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
+    
+    if conseguir_campo_ID(nombre_de_la_tabla) in datos.columns:
+      datos = datos.drop(columns=[conseguir_campo_ID(nombre_de_la_tabla)])
+    
+    columnas = datos.columns.tolist()
+    campos = ', '.join(columnas)
+    placeholder = ', '.join(['%s'] * len(columnas))
+    
+    consulta_sql = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
+    
+    valores_a_importar = [tuple(fila) for fila in datos.values]
+    
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      cursor.executemany(consulta_sql, valores_a_importar)
+      conexión.commit()
+      
+    for item in tablas_de_datos.get_children():
+      tablas_de_datos.delete(item)
+    
+    datos_actualizados = consultar_tabla(nombre_de_la_tabla)
+    
+    for índice, fila in enumerate(datos_actualizados): #Este crea el diseño zebra rows iterando 2 variables como índice y la fila. Índice es el ID y fila es cualquier campos diferente
+      id_val = fila[0]
+      valores_visibles = fila[1:]
+      tag = "par" if índice % 2 == 0 else "impar"
+      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      
+    datos_en_cache[nombre_de_la_tabla] = datos.copy()
+    print(f"{len(datos_actualizados)} registros importados correctamente en {nombre_de_la_tabla}")
     
   except Exception as e:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
@@ -322,8 +361,6 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
       valores = tablas_de_datos.item(i, "values")
       datos.append(valores)
 
-    
-    
     ruta_archivo_pdf = diálogoArchivo.asksaveasfilename(
         defaultextension=".pdf",
         filetypes=[("Archivo PDF", "*.pdf")],
@@ -334,20 +371,13 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
     if not ruta_archivo_pdf:
       return   
     
-    # ancho_col = [max(len(str(fila[i])) for fila in datos) * 5 for i in range(len(enc_legible))]
-    
     pdf = SimpleDocTemplate(
       ruta_archivo_pdf,
       pagesize=A4,
       rightMargin=40, leftMargin=40,
       topMargin=20, bottomMargin=40
     )
-    
-    # pdfmetrics.registerFont(TTFont("Arial", "Arial.ttf"))
-    # pdfmetrics.registerFont(TTFont("Arial-Bold", "Arialbd.ttf"))
-    # pdfmetrics.registerFont(TTFont("Arial-Italic", "Ariali.ttf"))
-    # pdfmetrics.registerFont(TTFont("Arial-BoldItalic", "Arialbi.ttf"))
-    
+   
     estilos = getSampleStyleSheet()
     
     título_con_estilo = ParagraphStyle(
@@ -381,8 +411,6 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
       estilo = encabezado_estilo if i == 0 else celda_estilo
       datos_con_estilo.append([Paragraph(str(c), estilo) for c in fila])
 
-
-    
     tabla = Table(datos_con_estilo, repeatRows=1)
     
     tabla.setStyle(TableStyle([

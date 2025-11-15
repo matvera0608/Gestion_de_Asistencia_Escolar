@@ -14,6 +14,8 @@ nombreActual = None
 permitir_inserción = False
 ventanaAbierta = {}
 
+datos_en_cache = {}
+
 colores = {
   "blanco": "#FFFFFF",
   "gris": "#AAAAAA",
@@ -227,7 +229,6 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
-
 
 def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
   

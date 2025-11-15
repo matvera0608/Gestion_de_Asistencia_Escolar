@@ -4,6 +4,31 @@
       "Nombre": "Juan Gómez",
       "FechaDeNacimiento": "15/06/2004",
       "IDCarrera": "Analista de sistemas"
+    },
+    {
+      "Nombre": "Juan Gómez",
+      "FechaDeNacimiento": "15/06/2004",
+      "IDCarrera": "Analista de sistemas"
+    },
+    {
+      "Nombre": "Gabriel Toledo",
+      "FechaDeNacimiento": "10/08/2004",
+      "IDCarrera": "Analista de sistemas"
+    },
+    {
+      "Nombre": "Julián Bottcher",
+      "FechaDeNacimiento": "28/07/2004",
+      "IDCarrera": "Hotelería y Turismo"
+    }
+  ],
+  "nota": [
+    {
+      "IDAlumno": "Juan Pérez",
+      "IDMateria": "Algoritmo",
+      "IDProfesor": "Hugo Pérez",
+      "valorNota": "8.00",
+      "tipoNota": "Parcial",
+      "fechaEvaluación": "05/08/2025"
     }
   ]
 }

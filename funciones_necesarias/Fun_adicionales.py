@@ -70,8 +70,6 @@ def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_b
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
   lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
   
-  convertir_datos(campos_db, lista_de_cajas)
-  
   if nombre_de_la_tabla not in cajasDeTexto or nombre_de_la_tabla not in campos_de_la_base_de_datos:
     mensajeTexto.showerror("Error", f"Configuración no encontrada para la tabla: {nombre_de_la_tabla}")
     return None
@@ -196,16 +194,17 @@ def traducir_IDs(nombre_de_la_tabla, datos):
                "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
   if not datos:
-    return None
+    return None, "Datos vacíos."
+  
   # Crear un nuevo diccionario para almacenar los datos traducidos
   datos_traducidos = datos.copy()
-  relación = campos_a_traducir.get(nombre_de_la_tabla.lower())
-  if not relación:
-    return datos
+  reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())
+  if not reglas:
+    return datos, None
   try:
       with conectar_base_de_datos() as conexión:
         cursor = conexión.cursor()
-        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in relación.items():
+        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
           if campo_fkID in datos:
             nombre_a_buscar = datos[campo_fkID]
             consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
@@ -215,13 +214,11 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             if resultado:
                 datos_traducidos[campo_fkID] = resultado[0]
             else:
-                mensajeTexto.showerror("ERROR DE DATOS", f"❌ El '{nombre_a_buscar}' no existe en la base de datos.")
-                return None
-      return datos_traducidos
+                return None, f"❌ El '{nombre_a_buscar}' no existe en la base de datos."
+      return datos_traducidos, None
       
   except Exception as e:
-      mensajeTexto.showerror("ERROR DE CONEXIÓN", f"❌ Error al conectar a la base de datos: {e}")
-      return None
+    return None , f"Error de conexión: {e}"
    
     
 campos_con_claves = {
