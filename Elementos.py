@@ -263,6 +263,18 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")
         return None
 
+orden_campo_actual = None
+orden_sentido_actual = None
+
+def manejar_click_columna(campo):
+    global orden_campo_actual, orden_sentido_actual
+  
+    if orden_sentido_actual == "ASC":
+        orden_sentido_actual = "DESC"
+    else:
+        orden_sentido_actual = "ASC"
+
+    orden_campo_actual = campo
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
 #pero si el label ya existe, sólo se actualiza su texto.
 def actualizar_la_hora(contenedor):
