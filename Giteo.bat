@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 SET MAX_INTENTOS=5
 SET INTENTO=1
 SET INTENTO_DE_PUSHEO=1
-SET COMMIT_MESSAGE=Mi primer proyecto de edición
+SET COMMIT_MESSAGE=En arreglos
 echo .........................................................................
 echo Giteo v2.3 pro
 echo Iniciando subida a GitHub...
@@ -58,7 +58,6 @@ CALL :INICIAR_O_ACTUALIZAR
     echo 4. Java
     echo 5. Otro / Ninguno
     echo.
-
 
     SET /P "leng_prog_opcion=Ingresa el numero del lenguaje que estas usando: "
 

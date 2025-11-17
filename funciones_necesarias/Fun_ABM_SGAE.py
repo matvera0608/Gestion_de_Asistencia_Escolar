@@ -60,7 +60,13 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       tag = "par" if índice % 2 == 0 else "impar"
       
       tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-          
+    
+    # 5. Aplicar el orden elegido por el usuario (si existe)
+    try:
+        ordenar_datos(nombre_de_la_tabla, tablas_de_datos, None, None)
+    except:
+        pass  
+       
     campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
     for i, campo in enumerate(campos_oficiales):
