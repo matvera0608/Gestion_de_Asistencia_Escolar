@@ -41,3 +41,78 @@ interfaz.mainloop()
 # "ns"    Se estira verticalmente
 # "ew"    Se estira horizontalmente
 # "nsew"  Se estira completamente (ocupa todo)** ⬅️ más usado
+
+def convertir_a_json_serializable(datos):
+
+  datos_convertidos = {}
+  for clave, valor in datos.items():
+    if isinstance(valor, fecha):
+      # Convierte date a string en formato DD/MM/YYYY
+      datos_convertidos[clave] = valor.strftime("%d/%m/%Y")
+    elif isinstance(valor, hora):
+      # Convierte time a string en formato HH:MM
+      datos_convertidos[clave] = valor.strftime("%H:%M")
+    else:
+      datos_convertidos[clave] = valor
+  return datos_convertidos
+
+def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, ventana):  
+  
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return
+  try:
+    selecciónDatos = tablas_de_datos.selection()
+    if not selecciónDatos:
+      mostrar_aviso(ventana, "FALTA SELECCIONAR 1 FILA", colores["amarillo_alerta"])
+      return False
+    
+    ítem = selecciónDatos[0]
+    if not all(entry.get().strip() for entry in cajasDeTexto[nombre_de_la_tabla]):
+      mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
+      return False
+    
+    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
+    
+    if not datos:
+      print("NO HAY DATOS QUE GUARDAR")
+      return False
+    
+    datos = convertir_datos(campos_db[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla])
+    
+    valores = list(datos.values())
+    tablas_de_datos.item(ítem, values=valores)
+    
+    
+    if nombre_de_la_tabla not in datos_en_cache:
+      datos_en_cache[nombre_de_la_tabla] = []
+      
+    for entry in cajasDeTexto[nombre_de_la_tabla]:
+      entry.delete(0, tk.END)
+    mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE", colores["verde_éxito"], 10)
+
+    def almacenar_en_json():
+      global datos_en_cache
+      # Convertir objetos date/time a strings antes de guardar en JSON
+      datos_serializable = convertir_a_json_serializable(datos)
+      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
+      
+      if os.path.exists("datos_cache.json"):
+        with open("datos_cache.json", "r", encoding="utf-8") as f:
+          datos_en_cache = json.load(f)
+      else:
+        datos_en_cache = {}
+        
+      if nombre_de_la_tabla not in datos_en_cache:
+        datos_en_cache[nombre_de_la_tabla] = []
+        
+      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
+        
+      with open("datos_cache.json", "w", encoding="utf-8") as f:
+        json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
+      return True
+    
+    almacenar_en_json()
+    
+  except Exception as e:
+    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    return False

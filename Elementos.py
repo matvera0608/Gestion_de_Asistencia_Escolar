@@ -3,6 +3,7 @@ from PIL import Image, ImageTk
 import os
 import tkinter as tk
 from datetime import datetime as fecha_y_hora
+
 # --- ELEMENTOS ---
 
 dirección_del_ícono = os.path.dirname(__file__)

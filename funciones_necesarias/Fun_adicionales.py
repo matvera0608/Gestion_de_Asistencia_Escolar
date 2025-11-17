@@ -131,20 +131,6 @@ def convertir_datos(campos_db, lista_de_cajas):
     caja.insert(0, valor)
   return datos_convertidos
 
-def convertir_a_json_serializable(datos):
-
-  datos_convertidos = {}
-  for clave, valor in datos.items():
-    if isinstance(valor, fecha):
-      # Convierte date a string en formato DD/MM/YYYY
-      datos_convertidos[clave] = valor.strftime("%d/%m/%Y")
-    elif isinstance(valor, hora):
-      # Convierte time a string en formato HH:MM
-      datos_convertidos[clave] = valor.strftime("%H:%M")
-    else:
-      datos_convertidos[clave] = valor
-  return datos_convertidos
-
 def conseguir_campo_ID(nombre_de_la_tabla):
   IDs_mapeados = {
               'alumno': "ID_Alumno",
@@ -213,7 +199,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             if resultado:
                 datos_traducidos[campo_fkID] = resultado[0]
             else:
-                return None, f"❌ El '{nombre_a_buscar}' no existe en la base de datos."
+                return None, f" El '{nombre_a_buscar}' no existe en la base de datos."
       return datos_traducidos, None
       
   except Exception as e:

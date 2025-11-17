@@ -133,21 +133,12 @@ def pantallaLogin():
   
   rolesVálidos = {
     "docente": ("alumno", "asistencia", "materia", "nota"),
-
     "personal administrativo": ("carrera", "profesor", "materia", "enseñanza"),
-    "coordinador": ("carrera", "profesor", "materia", "enseñanza"),
-    "coordinadora": ("carrera", "profesor", "materia", "enseñanza"),
-    "secretario": ("carrera", "profesor", "materia", "enseñanza"),
-    "secretaria": ("carrera", "profesor", "materia", "enseñanza")
     }
   
   rol_orden_logico = [
     "docente",
-    "personal administrativo",
-    "coordinador",
-    "coordinadora",
-    "secretario",
-    "secretaria"
+    "personal administrativo"
   ]
   #Entry para el usuario
   rol = rol_orden_logico
@@ -171,7 +162,6 @@ def pantallaLogin():
   botón_login.grid(row=3, column=0, sticky="s")
   
   return ventana
-
 
 def mostrar_pestañas(ventana, permiso):
   ventana.geometry("350x200")
@@ -241,7 +231,6 @@ def mostrar_pestañas(ventana, permiso):
   notebook.bind("<<NotebookTabChanged>>", on_tab_change)
   
   ventana.after(1000, setattr(notebook, "carga_inicial", False))
-
 
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
@@ -323,7 +312,6 @@ def abrir_tablas(nombre_de_la_tabla):
   opciónSeleccionado = tk.StringVar(value=opciones[0])
     
   orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado, state="readonly", values=opciones)
-  opciónSeleccionado.get()
   orden.grid(row=0, column=2, sticky="n", pady=5)
 
   for col in tabla_treeview["columns"]:
@@ -344,7 +332,7 @@ def abrir_tablas(nombre_de_la_tabla):
   btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, ventanaSecundaria), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, campos_en_db, ventanaSecundaria), "disabled")
+  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")
   btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnImportar = crear_botón(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: importar_datos(nombre_de_la_tabla, tabla_treeview), "disabled")
@@ -368,7 +356,7 @@ def abrir_tablas(nombre_de_la_tabla):
       "Agregar": partial(insertar_al_habilitar, tabla_treeview),
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
-      "Guardar": partial(guardar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),
+      "Guardar": partial(insertar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),
       "Importar": partial(importar_datos, nombreActual, tabla_treeview),
       "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
       "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
@@ -378,7 +366,7 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(tabla_treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
   ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
   ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
-  ventanaSecundaria.bind("<Control-s>", lambda e: (acciones["Guardar"]()))
+  ventanaSecundaria.bind("<Control-a>", lambda e: (acciones["Guardar"]()))
 
 
 # --- INICIO DEL SISTEMA ---

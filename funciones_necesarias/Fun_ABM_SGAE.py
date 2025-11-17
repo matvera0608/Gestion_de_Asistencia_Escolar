@@ -15,22 +15,18 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 #IMPORTACIÓN PARA IMPORTAR ARCHIVOS TXT, EXCEL O CSV
 import csv
 import pandas as pd
-import json
 import os
 #-------------------------------------#
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
- 
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-
   if not datos:
     return
-
+  
   if detectar_repeticiones_de_datos(datos, nombre_de_la_tabla):
     mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
     return
-  
   if nombre_de_la_tabla == "materia":
     if verificar_horarioSalida_mayor_horarioEntrada(datos):
       mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR O IGUAL\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
@@ -41,8 +37,6 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
   if error:
     mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
     return
-  
-  print(datos_traducidos)
   
   if datos_traducidos is None:
     return
@@ -56,20 +50,27 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     cursor.execute(consulta, tuple(valores_sql))
     conexión.commit()
     datos = consultar_tabla(nombre_de_la_tabla)
-
+    
     for item in tablas_de_datos.get_children():
       tablas_de_datos.delete(item)
-
+    
     for índice, fila in enumerate(datos):
       id_val = fila[0]
       valores_visibles = fila[1:]
       tag = "par" if índice % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
       
-    for i, (campo, valor) in enumerate(datos_traducidos.items()):
-      entry = cajasDeTexto[nombre_de_la_tabla][i]
-      if entry.winfo_exists():
-          entry.delete(0, tk.END)
+      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+          
+    campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+    
+    for i, campo in enumerate(campos_oficiales):
+      try:
+        entry = cajasDeTexto[nombre_de_la_tabla][i]
+      except (KeyError, IndexError):
+        continue
+      if not entry.winfo_exists():
+        continue
+      entry.delete(0, tk.END)
     mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
@@ -84,10 +85,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
     return
   
-  columna_seleccionada = tablas_de_datos.selection()
-  if not columna_seleccionada:
-    return
-
   selección = tablas_de_datos.selection()
   if not selección:
     return
@@ -125,7 +122,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
   valores_sql.append(idSeleccionado)
   try:
     with conectar_base_de_datos() as conexión:
-      
       try:
         cursor = conexión.cursor()
         cursor.execute(consulta, tuple(valores_sql))
@@ -143,9 +139,18 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
         tag = "par" if índice % 2 == 0 else "impar"
        
         tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-          
-      for caja in cajasDeTexto[nombre_de_la_tabla]:
-        caja.delete(0, tk.END)
+      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+    
+      for i, campo in enumerate(campos_oficiales):
+        try:
+          entry = cajasDeTexto[nombre_de_la_tabla][i]
+        except (KeyError, IndexError):
+          continue
+        if not entry.winfo_exists():
+          continue
+        entry.delete(0, tk.END)    
+      # for caja in cajasDeTexto[nombre_de_la_tabla]:
+      #   caja.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
@@ -165,8 +170,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
     ID_Seleccionado = int(iid)
   except ValueError:
     ID_Seleccionado = iid
-          
-  
+
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
@@ -194,95 +198,32 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
-  
-def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, ventana):  
-  
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
-  try:
-    selecciónDatos = tablas_de_datos.selection()
-    if not selecciónDatos:
-      mostrar_aviso(ventana, "FALTA SELECCIONAR 1 FILA", colores["amarillo_alerta"])
-      return False
-    
-    ítem = selecciónDatos[0]
-    if not all(entry.get().strip() for entry in cajasDeTexto[nombre_de_la_tabla]):
-      mensajeTexto.showinfo("ATENCIÓN", "HAY QUE COMPLETAR TODOS LOS CAMPOS")
-      return False
-    
-    datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
-    
-    if not datos:
-      print("NO HAY DATOS QUE GUARDAR")
-      return False
-    
-    datos = convertir_datos(campos_db[nombre_de_la_tabla], cajasDeTexto[nombre_de_la_tabla])
-    
-    valores = list(datos.values())
-    tablas_de_datos.item(ítem, values=valores)
-    
-    
-    if nombre_de_la_tabla not in datos_en_cache:
-      datos_en_cache[nombre_de_la_tabla] = []
-      
-    for entry in cajasDeTexto[nombre_de_la_tabla]:
-      entry.delete(0, tk.END)
-    mostrar_aviso(ventana, "✅ SE HA GUARDADO EXITOSAMENTE", colores["verde_éxito"], 10)
 
-    def almacenar_en_json():
-      global datos_en_cache
-      # Convertir objetos date/time a strings antes de guardar en JSON
-      datos_serializable = convertir_a_json_serializable(datos)
-      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
-      
-      if os.path.exists("datos_cache.json"):
-        with open("datos_cache.json", "r", encoding="utf-8") as f:
-          datos_en_cache = json.load(f)
-      else:
-        datos_en_cache = {}
-        
-      if nombre_de_la_tabla not in datos_en_cache:
-        datos_en_cache[nombre_de_la_tabla] = []
-        
-      datos_en_cache[nombre_de_la_tabla].append(datos_serializable)
-        
-      with open("datos_cache.json", "w", encoding="utf-8") as f:
-        json.dump(datos_en_cache, f, ensure_ascii=False, indent=2)
-      return True
-    
-    almacenar_en_json()
-    
-  except Exception as e:
-    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
-    return False
 
 def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   global datos_en_cache
-  
+  #Convierte los datos de fecha y hora para SQL
   def convertir_datos_para_mysql(valor):
     if not isinstance(valor, str):
-        return valor
+      return valor
     
     try:
-        parsed_date = parse(valor, dayfirst=True)
-        
-        # Decide si es solo fecha o solo hora basado en el componente de hora
-        if parsed_date.hour == 0 and parsed_date.minute == 0:
-            # Es probable que sea solo una fecha (YYYY-MM-DD)
-            return parsed_date.strftime("%Y-%m-%d")
-        else:
-            # Es probable que sea una hora (HH:MM:SS)
-            return parsed_date.strftime("%H:%M:%S")
+      parsed_date = parse(valor, dayfirst=True)
+      
+      if parsed_date.hour != 0 and parsed_date.minute != 0:
+        return parsed_date.strftime("%H:%M:%S")
 
+      else:
+        return parsed_date.strftime("%Y-%m-%d")
+    
     except Exception:
-        # Si no se puede parsear, devuelve el valor original o None para indicar un error
-        return valor
+      return valor
   
   try:
     if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
-  
+    #Esta es una tupla que contiene tipos de archivos para la importación de datos
     tipos_de_archivos = (
       ("bloc de notas","*.txt"),
       ("hoja con comas separadas","*.csv"),
@@ -296,6 +237,13 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     extensión = ruta_archivo.split(".")[-1].lower() #<= Obtiene la extensión del archivo, el -1 es para tomar la última parte después del punto, si pusiera 0 tomaría todo el nombre del archivo.
     
     if not ruta_archivo:
+      return
+    
+    #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
+    nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
+    
+    if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
+      mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
       return
     
     match extensión:
@@ -328,9 +276,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     
     for _, fila in datos.iterrows():
       dict_fila = fila.to_dict()
-      
       traducción, error = traducir_IDs(nombre_de_la_tabla, dict_fila)
-
       if error:
         mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
         return
@@ -343,11 +289,10 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     # ----------------------------------------------------------------------
     for columna in datos.columns:
       columna_lower = columna.lower()
-      # La conversión solo se aplica si la columna es relevante
+    
       if "fecha" in columna_lower or "horario" in columna_lower:
         datos[columna] = datos[columna].apply(convertir_datos_para_mysql)
         
-        # Chequeo por valores inválidos después de la conversión
         if datos[columna].apply(lambda x: isinstance(x, str) and (x.count('/') > 0 or x.count(':') > 2)).any():
           mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ Formato de fecha/hora inválido en la columna '{columna}' después de la conversión. Revise el archivo original.")
           return
@@ -356,13 +301,15 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
       datos = datos.drop(columns=[conseguir_campo_ID(nombre_de_la_tabla)])
     
     columnas = datos.columns.tolist()
-    campos = ', '.join(columnas)
+    columna_con_acentos = [f"`{columna}`" for columna in columnas]
+    campos = ', '.join(columna_con_acentos)
     placeholder = ', '.join(['%s'] * len(columnas))
     
     consulta_sql = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
     
     valores_a_importar = [tuple(fila) for fila in datos.values]
     
+    #Acá comienza la importación de los registros, es decir, sube a la base de datos
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
       cursor.executemany(consulta_sql, valores_a_importar)
@@ -372,6 +319,8 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
       tablas_de_datos.delete(item)
     
     datos_actualizados = consultar_tabla(nombre_de_la_tabla)
+    
+    desconectar_base_de_datos(conexión) #DESCONECTO LA BASE DE DATOS EN CASO DE QUE NO USE MÁS, AYUDA A QUE LA CONEXIÓN NO SE LLENE EN MEMORIA.
     
     for índice, fila in enumerate(datos_actualizados): #Este crea el diseño zebra rows iterando 2 variables como índice y la fila. Índice es el ID y fila es cualquier campos diferente
       id_val = fila[0]
