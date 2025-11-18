@@ -37,7 +37,7 @@ colores = {
   "negro": "#000000",
   "negro_resaltado": "#3A3A3A",
   "celeste_azulado": "#004CFF",
-  "celeste": "#3F92FF",
+  "celeste": "#72AFFF",
   "celeste_resaltado": "#9AB5FF",
   "azul": "#0000FF",
   "azul_claro": "#C5C5FF",

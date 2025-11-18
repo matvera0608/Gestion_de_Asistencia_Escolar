@@ -316,7 +316,7 @@ def abrir_tablas(nombre_de_la_tabla):
 
   for col in tabla_treeview["columns"]:
     nombre_legible = alias.get(col, col)
-    tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: manejar_click_columna(col, opciónSeleccionado.get(), nombreActual, tabla_treeview, ordenar_datos, consultas))
+    tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: manejar_click_columna(campo, opciónSeleccionado.get(), nombreActual, tabla_treeview, ordenar_datos, consultas))
     tabla_treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, tabla_treeview, cajasDeTexto))
   
   
