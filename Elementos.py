@@ -11,9 +11,23 @@ dirección_del_ícono = os.path.dirname(__file__)
 ruta_base = os.path.dirname(os.path.abspath(__file__))
 ruta_imagen = os.path.join(ruta_base, "imágenes")
 
+orden_campo_actual = None
+orden_sentido_actual = None
+
 nombreActual = None
 permitir_inserción = False
 ventanaAbierta = {}
+
+orden_campo_actual = None
+orden_sentido_actual = None
+
+mapa_orden = {
+    "ASCENDENTE": "ASC",
+    "DESCENDENTE": "DESC",
+    "ASC": "ASC",
+    "DESC": "DESC"
+}
+
 
 datos_en_cache = {}
 
@@ -263,18 +277,13 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")
         return None
 
-orden_campo_actual = None
-orden_sentido_actual = None
-
-def manejar_click_columna(campo):
+def manejar_click_columna(campo, sentido_gui, nombre_tabla, treeview, ordenar_func, meta):
     global orden_campo_actual, orden_sentido_actual
-  
-    if orden_sentido_actual == "ASC":
-        orden_sentido_actual = "DESC"
-    else:
-        orden_sentido_actual = "ASC"
-
+    orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
     orden_campo_actual = campo
+    sql, params = consulta_semántica(meta, nombre_tabla, orden_sentido_actual, None, orden_campo_actual)
+    ordenar_func(treeview, sql, params)
+
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
 #pero si el label ya existe, sólo se actualiza su texto.
 def actualizar_la_hora(contenedor):

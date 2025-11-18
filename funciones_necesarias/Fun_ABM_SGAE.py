@@ -61,13 +61,6 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
       
       tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
     
-    # Después de refrescar la tabla:
-    try:
-      if orden_campo_actual and orden_sentido_actual:
-        ordenar_datos(nombre_de_la_tabla, tablas_de_datos, orden_campo_actual, orden_sentido_actual)
-    except Exception as e:
-        print("No se pudo aplicar el orden:", e)
-
     campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
     for i, campo in enumerate(campos_oficiales):
@@ -205,7 +198,6 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
-
 
 def importar_datos(nombre_de_la_tabla, tablas_de_datos):
   global datos_en_cache
@@ -433,36 +425,24 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
   finally:
     pass
 
-def ordenar_datos(nombre_de_la_tabla, tablas_de_datos, campo, orden):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
-    return
+def ordenar_datos(treeview, sql, params):
   try:
-    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, orden, None, campo)
-    
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
       cursor.execute(sql, params)
       resultado = cursor.fetchall()
-      columnas = [desc[0] for desc in cursor.description]
       
-      if tablas_de_datos.winfo_exists():
-        for item in tablas_de_datos.get_children():
-          tablas_de_datos.delete(item)
-          
-      if not resultado:
-        return
-    
-    visibles = alias_a_traducir[nombre_de_la_tabla]
 
+      treeview.delete(*treeview.get_children())
+          
     for index, fila in enumerate(resultado):
-      ID = fila[0]
-      valores_visibles = tuple(fila[columnas.index(alias)] for alias in visibles.values())
+      IID = fila[0]
+      valores = fila[1:]
       tag = "par" if index % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end",iid=ID, values=valores_visibles, tags=(tag,))
+      treeview.insert("", "end",iid=IID, values=valores, tags=(tag,))
   
   except error_sql as e:
     print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
-    desconectar_base_de_datos(conexión)
 
 def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
   if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
