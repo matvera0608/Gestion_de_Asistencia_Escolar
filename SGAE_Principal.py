@@ -240,7 +240,7 @@ def abrir_tablas(nombre_de_la_tabla):
   permitir_inserción = True
   
   # Destruir ventana anterior si existe y limpiar referencias
-  if "ventanaSecundaria" in globals() and ventanaSecundaria and ventanaSecundaria.winfo_exists():
+  if "ventanaSecundaria" in globals() and ventanaSecundaria.winfo_exists():
     ventanaSecundaria.destroy()
   
   # Limpiar referencias antiguas de widgets destruidos DESPUÉS de destruir la ventana

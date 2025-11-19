@@ -116,3 +116,58 @@ def guardar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, campos_db, 
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
+
+
+def guardar_snapshot(treeview):
+  #Guardamos el contenido de los datos como la selección y la copia de datos de manera temporal#
+  copia_de_datos = {
+    "filas": [],
+    "selección": treeview.selection()
+  }
+  
+  for item in treeview.get_children():
+    valor = treeview.item(item, "values")
+    tags = treeview.item(item, "tags")
+    fila = { "iid": item, "valores": valor, "tags": tags}
+    copia_de_datos["filas"].append(fila)
+    
+  return copia_de_datos
+
+def restaurar_snapshot(treeview, copia_de_datos):
+  #Restauramos cuando se deshabilitan los botones#
+  
+  treeview.delete(*treeview.get_children()) #Esto hace que limpie visualmente
+  
+  for fila in copia_de_datos["filas"]:
+    treeview.insert("", "end", iid=fila["iid"], values=fila["valores"], tags=fila["tags"]) #Mientras recorro los datos voy volviendo a insertar todo
+    
+  treeview.selection_set(copia_de_datos["selección"]) #Y Este lo restaura todo
+
+def filtrar(tablas_de_datos, nombre_tabla, selecciónEncabezado):
+  #En esta función voy a filtrar todos los datos de la treeview.
+  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    return 
+  
+  with conectar_base_de_datos() as conexión:
+    cursor = conexión.cursor()
+  for item in tablas_de_datos.get_children():
+    tablas_de_datos.delete(item)
+  
+  sql, parametros = consulta_semántica(consultas, nombre_tabla, selecciónEncabezado, "%{}%")
+  cursor.execute(sql, parametros)
+  registros_ocultos = cursor.fetchall()
+  cursor.close()
+  for índice, fila in enumerate(registros_ocultos):
+    if len(fila) > 1:
+      valores_visibles = fila[1:]
+      id_iid = fila[0]
+    else:
+      valores_visibles = fila
+      id_iid = None
+
+    tag = "par" if índice % 2 == 0 else "impar"
+    if id_iid is not None:
+      tablas_de_datos.insert("", "end", iid=str(id_iid), values=valores_visibles, tags=(tag,))
+    else:
+      tablas_de_datos.insert("", "end", values=valores_visibles, tags=(tag,))
+  desconectar_base_de_datos(conexión)

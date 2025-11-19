@@ -1,4 +1,5 @@
 from Conexión import *
+import Estado_de_ordenamiento as estado
 from PIL import Image, ImageTk
 import os
 import tkinter as tk
@@ -11,15 +12,9 @@ dirección_del_ícono = os.path.dirname(__file__)
 ruta_base = os.path.dirname(os.path.abspath(__file__))
 ruta_imagen = os.path.join(ruta_base, "imágenes")
 
-orden_campo_actual = None
-orden_sentido_actual = None
-
 nombreActual = None
 permitir_inserción = False
 ventanaAbierta = {}
-
-orden_campo_actual = None
-orden_sentido_actual = None
 
 mapa_orden = {
     "ASCENDENTE": "ASC",
@@ -56,7 +51,6 @@ campos_en_db = {
       "profesor": ["Nombre"],
       "nota": ["IDAlumno", "IDMateria","IDProfesor", "valorNota", "tipoNota", "fechaEvaluación"]
   }
-
 
 alias = {
 "IDCarrera": "Carrera",
@@ -278,10 +272,9 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
         return None
 
 def manejar_click_columna(campo, sentido_gui, nombre_tabla, treeview, ordenar_func, meta):
-    global orden_campo_actual, orden_sentido_actual
-    orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
-    orden_campo_actual = campo
-    sql, params = consulta_semántica(meta, nombre_tabla, orden_sentido_actual, None, orden_campo_actual)
+    estado.orden_campo_actual = campo
+    estado.orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
+    sql, params = consulta_semántica(meta, nombre_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
     ordenar_func(treeview, sql, params)
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo

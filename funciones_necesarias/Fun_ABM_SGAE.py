@@ -18,7 +18,7 @@ import pandas as pd
 import os
 #-------------------------------------#
 
-def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
+def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
   conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
@@ -51,15 +51,23 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
     conexión.commit()
     datos = consultar_tabla(nombre_de_la_tabla)
     
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
+    for item in treeview.get_children():
+      treeview.delete(item)
     
     for índice, fila in enumerate(datos):
       id_val = fila[0]
       valores_visibles = fila[1:]
       tag = "par" if índice % 2 == 0 else "impar"
-      
-      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+    
+    try:
+      if estado.orden_campo_actual:
+        sql, params = consulta_semántica(consultas,nombre_de_la_tabla,estado.orden_sentido_actual,None,estado.orden_campo_actual)
+      else:
+          sql, params = consulta_semántica(consultas,nombre_de_la_tabla,None,None,None)
+      ordenar_datos(treeview, sql, params)
+    except Exception as e:
+      print(e)
     
     campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
@@ -78,14 +86,14 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos,
   finally:
     desconectar_base_de_datos(conexión)
 
-def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos, ventana):
-  selección = obtener_selección(tablas_de_datos)
+def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
+  selección = obtener_selección(treeview)
   if not selección:
     return
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+  if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
     return
   
-  selección = tablas_de_datos.selection()
+  selección = treeview.selection()
   if not selección:
     return
   
@@ -130,15 +138,23 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
         desconectar_base_de_datos(conexión)
       datos = consultar_tabla(nombre_de_la_tabla)
 
-      for item in tablas_de_datos.get_children():
-          tablas_de_datos.delete(item)
+      for item in treeview.get_children():
+          treeview.delete(item)
 
       for índice, fila in enumerate(datos):
         id_val = fila[0]
         valores_visibles = fila[1:]
         tag = "par" if índice % 2 == 0 else "impar"
-       
-        tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+        treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      try:
+        if estado.orden_campo_actual:
+          sql, params = consulta_semántica(consultas,nombre_de_la_tabla,estado.orden_sentido_actual,None,estado.orden_campo_actual)
+        else:
+            sql, params = consulta_semántica(consultas,nombre_de_la_tabla,None,None,None)
+        ordenar_datos(treeview, sql, params)
+      except Exception as e:
+        print(e)    
+        
       campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
       for i, campo in enumerate(campos_oficiales):
@@ -148,19 +164,17 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, tablas_de_datos
           continue
         if not entry.winfo_exists():
           continue
-        entry.delete(0, tk.END)    
-      # for caja in cajasDeTexto[nombre_de_la_tabla]:
-      #   caja.delete(0, tk.END)
+        entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
   
-def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
+  if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
     return
   
-  selección = tablas_de_datos.selection()
+  selección = treeview.selection()
   
   if not selección:
     return
@@ -181,8 +195,8 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
       cursor.execute(query, (ID_Seleccionado,))
       conexión.commit()
 
-      for item in tablas_de_datos.get_children():
-        tablas_de_datos.delete(item)
+      for item in treeview.get_children():
+        treeview.delete(item)
 
       datos = consultar_tabla(nombre_de_la_tabla)
 
@@ -190,25 +204,30 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tablas_de_datos, ventana):
         id_val = fila[0]
         valores_visibles = fila[1:]
         tag = "par" if índice % 2 == 0 else "impar"
-        tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-      
+        treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      try:
+        if estado.orden_campo_actual:
+          sql, params = consulta_semántica(consultas,nombre_de_la_tabla,estado.orden_sentido_actual,None,estado.orden_campo_actual)
+        else:
+            sql, params = consulta_semántica(consultas,nombre_de_la_tabla,None,None,None)
+        ordenar_datos(treeview, sql, params)
+      except Exception as e:
+        print(e)
+    
       for entry in cajasDeTexto[nombre_de_la_tabla]:
-        entry.delete(0, tk.END)
+        if entry.winfo_exists():
+          entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE ELIMINÓ UNA COLUMNA", colores["verde_éxito"], 10)
   except Exception as e:
-    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    print(f"HA OCURRIDO UN ERROR AL ELIMINAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, tablas_de_datos):
-  global datos_en_cache
-  #Convierte los datos de fecha y hora para SQL
+def importar_datos(nombre_de_la_tabla, treeview):
   def convertir_datos_para_mysql(valor):
     if not isinstance(valor, str):
       return valor
-    
     try:
       parsed_date = parse(valor, dayfirst=True)
-      
       if parsed_date.hour != 0 and parsed_date.minute != 0:
         return parsed_date.strftime("%H:%M:%S")
 
@@ -219,7 +238,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
       return valor
   
   try:
-    if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
     #Esta es una tupla que contiene tipos de archivos para la importación de datos
@@ -237,14 +256,7 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     
     if not ruta_archivo:
       return
-    
-    #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
-    nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
-    
-    if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
-      mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
-      return
-    
+
     match extensión:
       case "xlsx":
         datos = pd.read_excel(ruta_archivo, encoding="utf-8")
@@ -256,19 +268,49 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
           lector = csv.reader(archivo, delimiter="\t")
           datos = list(lector)
           
-        encabezado = [col for col in datos[0] if col.strip() != ""]
+        encabezado = [col.strip() for col in datos[0] if col.strip() != ""]
         filas = [[celda for celda in fila if celda.strip() != ""] for fila in datos[1:]]
         
         datos = pd.DataFrame(filas, columns=encabezado)
+        datos.columns = [c.strip() for c in datos.columns]
         datos = datos.rename(columns=alias)
       case _:
         print("No compatible el formato de archivo")
         return
 
-    for índice, fila in datos.iterrows():
-      tablas_de_datos.insert("", "end", values=tuple(fila))
+    #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
+    nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
     
-    alias_invertido = {v: k for k, v in alias.items()}
+    alias_invertido = {v.strip(): k for k, v in alias.items()}
+    
+    if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
+      mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
+      return
+    
+    #Este sirve para obtener los campos
+    campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+    campos_archivo_aliasados = [alias_invertido.get(c, c) for c in datos.columns]
+
+    # Verificar que todos los campos del archivo estén en la tabla
+    campos_invalidos = [c for c in campos_archivo_aliasados if c not in campos_oficiales] #Esto es verdadero, porque los campos en la tabla alumno como Fecha de nacimiento y Carrera no existen. Pero para la base de datos no existe
+    if campos_invalidos:
+      mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
+      return
+    
+    campos_faltantes = [c for c in campos_oficiales if c not in campos_archivo_aliasados]
+    if campos_faltantes:
+      mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
+      return
+    
+    for i, fila in enumerate(datos.values):
+      if len(fila) != len(campos_oficiales):
+        mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
+        return
+    
+
+    for índice, fila in datos.iterrows():
+      treeview.insert("", "end", values=tuple(fila))
+    
     datos = datos.rename(columns=alias_invertido)
     
     filas_traducidas_a_nombres_legibles = []
@@ -283,12 +325,9 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
       filas_traducidas_a_nombres_legibles.append(traducción)
     datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
     
-    # ----------------------------------------------------------------------
-    # 3. NORMALIZACIÓN DE FECHAS/HORAS PARA MYSQL
-    # ----------------------------------------------------------------------
+    
     for columna in datos.columns:
       columna_lower = columna.lower()
-    
       if "fecha" in columna_lower or "horario" in columna_lower:
         datos[columna] = datos[columna].apply(convertir_datos_para_mysql)
         
@@ -308,46 +347,55 @@ def importar_datos(nombre_de_la_tabla, tablas_de_datos):
     
     valores_a_importar = [tuple(fila) for fila in datos.values]
     
-    #Acá comienza la importación de los registros, es decir, sube a la base de datos
+    
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
       cursor.executemany(consulta_sql, valores_a_importar)
       conexión.commit()
       
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
+    for item in treeview.get_children():
+      treeview.delete(item)
     
     datos_actualizados = consultar_tabla(nombre_de_la_tabla)
     
-    desconectar_base_de_datos(conexión) #DESCONECTO LA BASE DE DATOS EN CASO DE QUE NO USE MÁS, AYUDA A QUE LA CONEXIÓN NO SE LLENE EN MEMORIA.
+    desconectar_base_de_datos(conexión)
     
-    for índice, fila in enumerate(datos_actualizados): #Este crea el diseño zebra rows iterando 2 variables como índice y la fila. Índice es el ID y fila es cualquier campos diferente
+    for índice, fila in enumerate(datos_actualizados):
       id_val = fila[0]
       valores_visibles = fila[1:]
       tag = "par" if índice % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+      treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
       
+    try:
+      if estado.orden_campo_actual:
+        sql, params = consulta_semántica(consultas,nombre_de_la_tabla,estado.orden_sentido_actual,None,estado.orden_campo_actual)
+      else:
+          sql, params = consulta_semántica(consultas,nombre_de_la_tabla,None,None,None)
+      ordenar_datos(treeview, sql, params)
+    except Exception as e:
+      print(e)
+    
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
-    print(f"{len(datos_actualizados)} registros importados correctamente en {nombre_de_la_tabla}")
+    print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")
     
   except Exception as e:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
   
-def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
+def exportar_en_PDF(nombre_de_la_tabla, treeview, ventana):
   try:
-    if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+    if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       return
-    datos_a_exportar = tablas_de_datos.get_children()
+    datos_a_exportar = treeview.get_children()
     datos = []
    
-    encabezado = tablas_de_datos["columns"]
+    encabezado = treeview["columns"]
     
     enc_legible = [alias.get(col, col) for col in encabezado]
     
     datos.append(enc_legible)
 
     for i in datos_a_exportar:
-      valores = tablas_de_datos.item(i, "values")
+      valores = treeview.item(i, "values")
       datos.append(valores)
 
     ruta_archivo_pdf = diálogoArchivo.asksaveasfilename(
@@ -406,13 +454,13 @@ def exportar_en_PDF(nombre_de_la_tabla, tablas_de_datos, ventana):
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0000ff")),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3d3dff")),
         ('FONTSIZE', (0, 0), (-1, 0), 14),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
         ('BOX', (0, 0), (-1, -1), 1, colors.black),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#a8f3ff")]),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#bef6ff")]),
     ]))
     
     titulo = Paragraph(f"<b>Reporte de {nombre_de_la_tabla.capitalize()}</b>", título_con_estilo)
@@ -444,8 +492,8 @@ def ordenar_datos(treeview, sql, params):
   except error_sql as e:
     print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
 
-def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
-  if not hasattr(tablas_de_datos, "winfo_exists") or not tablas_de_datos.winfo_exists():
+def buscar_datos(nombre_de_la_tabla, treeview, busqueda, consultas):
+  if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
     return
   
   try:
@@ -456,14 +504,14 @@ def buscar_datos(nombre_de_la_tabla, tablas_de_datos, busqueda, consultas):
     cursor.execute(sql, params)
     resultado = cursor.fetchall()
     
-    for item in tablas_de_datos.get_children():
-      tablas_de_datos.delete(item)
+    for item in treeview.get_children():
+      treeview.delete(item)
     
     for i, fila in enumerate(resultado):
       id_a_ocultar = fila[0]
       datos_visibles = fila[1:]
       tag = "par" if i % 2 == 0 else "impar"
-      tablas_de_datos.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
+      treeview.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
 
    
   except error_sql as e:
