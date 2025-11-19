@@ -62,9 +62,9 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
     
     try:
       if estado.orden_campo_actual:
-        sql, params = consulta_semántica(consultas,nombre_de_la_tabla,estado.orden_sentido_actual,None,estado.orden_campo_actual)
+        sql, params = consulta_semántica(consultas,nombre_de_la_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
       else:
-          sql, params = consulta_semántica(consultas,nombre_de_la_tabla,None,None,None)
+          sql, params = consulta_semántica(consultas,nombre_de_la_tabla, None, None, None)
       ordenar_datos(treeview, sql, params)
     except Exception as e:
       print(e)
@@ -307,7 +307,6 @@ def importar_datos(nombre_de_la_tabla, treeview):
         mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
         return
     
-
     for índice, fila in datos.iterrows():
       treeview.insert("", "end", values=tuple(fila))
     
