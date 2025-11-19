@@ -1,6 +1,7 @@
 from funciones_necesarias import *
 from Eventos import *
 from Elementos import *
+from Disenho import *
 from Creacion_de_widgets import *
 import os
 import tkinter as tk
@@ -234,7 +235,7 @@ def mostrar_pestañas(ventana, permiso):
 
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
-  global tabla_treeview, campos_por_tabla, entryBuscar, botones, acciones, opciones
+  global tabla_treeview, widgets_para_tablas, entryBuscar, botones, acciones, opciones
   global permitir_inserción
   nombreActual = nombre_de_la_tabla
   permitir_inserción = True
@@ -291,7 +292,7 @@ def abrir_tablas(nombre_de_la_tabla):
   estilo.configure("Entrada.TEntry", padding=5, relief="flat", foreground=colores["negro"], fieldbackground=colores["blanco"])
   estilo.map("Boton.TButton", background=[("active", colores["celeste_resaltado"])])
 
-  campos = campos_por_tabla.get(nombre_de_la_tabla, None)
+  campos = widgets_para_tablas.get(nombre_de_la_tabla, None)
   if not campos:
     return
   

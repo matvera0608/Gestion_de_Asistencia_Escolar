@@ -1,0 +1,26 @@
+Nombre	Horario de entrada	Horario de salida	Carrera
+Programación I	18:00	20:00	Analista de sistemas
+Base de Datos	16:30	18:00	Analista de sistemas
+Algoritmos Avanzados	19:00	21:30	Analista de sistemas
+Estructuras de Datos	10:00	12:00	Analista de sistemas
+Análisis de Sistemas I	08:00	10:00	Analista de sistemas
+Diseño Web	14:00	15:30	Analista de sistemas
+Matemática Discreta	17:00	18:30	Analista de sistemas
+Inglés Técnico	09:00	10:30	Analista de sistemas
+Finanzas Hoteleras	15:30	17:00	Hotelería y Turismo
+Gestión de Alimentos	11:00	13:00	Hotelería y Turismo
+Marketing Turístico	19:30	21:00	Hotelería y Turismo
+Servicios Hoteleros	07:00	09:00	Hotelería y Turismo
+Legislación Turística	13:00	15:00	Hotelería y Turismo
+Contabilidad I	17:30	19:00	Administración de empresas
+Economía General	08:30	10:30	Administración de empresas
+Marketing Estratégico	14:30	16:30	Administración de empresas
+Recursos Humanos	16:00	17:30	Administración de empresas
+Derecho Empresarial	10:30	12:30	Administración de empresas
+Estadística	18:00	19:30	Administración de empresas
+Diseño de Redes	11:30	13:30	Analista de sistemas
+Ciberseguridad	15:00	17:00	Analista de sistemas
+Alojamiento Hotelero	09:30	11:00	Hotelería y Turismo
+Operaciones Turísticas	12:30	14:30	Hotelería y Turismo
+Gestión Financiera	16:30	18:30	Administración de empresas
+Innovación Empresarial	19:00	20:30	Administración de empresas

@@ -1,6 +1,7 @@
 from Conexión import *
 from .Fun_adicionales import *
 from .Fun_Validación_SGAE import *
+from Disenho import *
 import tkinter as tk
 from dateutil.parser import parse
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
@@ -14,7 +15,7 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 
 #IMPORTACIÓN PARA IMPORTAR ARCHIVOS TXT, EXCEL O CSV
 import csv
-import pandas as pd
+import pandas as pd, re
 import os
 #-------------------------------------#
 
@@ -236,7 +237,7 @@ def importar_datos(nombre_de_la_tabla, treeview):
     
     except Exception:
       return valor
-  
+
   try:
     if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
@@ -266,14 +267,26 @@ def importar_datos(nombre_de_la_tabla, treeview):
       case "txt":
         with open(ruta_archivo, "r", encoding="utf-8") as archivo:
           lector = csv.reader(archivo, delimiter="\t")
-          datos = list(lector)
-          
-        encabezado = [col.strip() for col in datos[0] if col.strip() != ""]
-        filas = [[celda for celda in fila if celda.strip() != ""] for fila in datos[1:]]
+          filas = list(lector)
         
-        datos = pd.DataFrame(filas, columns=encabezado)
-        datos.columns = [c.strip() for c in datos.columns]
-        datos = datos.rename(columns=alias)
+        encabezado = [col.strip() for col in filas[0]]
+        num_columnas = len(encabezado)
+
+        filas_limpias = []
+        for fila in filas[1:]:
+            fila_limpia = [c.strip() for c in fila]
+
+            if len(fila_limpia) < num_columnas:
+              fila_limpia += [""] * (num_columnas - len(fila_limpia))
+
+            elif len(fila_limpia) > num_columnas:
+              fila_limpia = fila_limpia[:num_columnas]
+
+            filas_limpias.append(fila_limpia)
+            
+        datos = pd.DataFrame(filas_limpias, columns=encabezado)
+        # datos.columns = [c.strip() for c in datos.columns]
+        # datos = datos.rename(columns=alias)
       case _:
         print("No compatible el formato de archivo")
         return
@@ -377,8 +390,8 @@ def importar_datos(nombre_de_la_tabla, treeview):
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
     print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")
     
-  except Exception as e:
-    print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e)}")
+  except error_sql as e_sql:
+    print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e_sql)}")
   
 def exportar_en_PDF(nombre_de_la_tabla, treeview, ventana):
   try:

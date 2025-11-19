@@ -108,7 +108,7 @@ def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
     cajasDeTexto[nombre_de_la_tabla].append(combo)
    
   cargar_datos_en_Combobox(nombre_de_la_tabla, listaDesplegable[nombre_de_la_tabla])  
-  for tabla, campos in campos_por_tabla.items():
+  for tabla, campos in widgets_para_tablas.items():
     for etiqueta, widget_interno in campos:
       widget = next((w for w in cajasDeTexto.get(tabla, []) if getattr(w, "widget_interno", "") == widget_interno), None)
       if widget and widget.winfo_exists():
@@ -118,7 +118,7 @@ def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
 
 
 def configurar_ciertos_comboboxes(cbBox_tabla):
-  for etiqueta, widget_interno in campos_por_tabla.get(cbBox_tabla, []):
+  for etiqueta, widget_interno in widgets_para_tablas.get(cbBox_tabla, []):
     try:
       for widget in cajasDeTexto.get(cbBox_tabla, []):
         if not widget.winfo_exists():

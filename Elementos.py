@@ -14,32 +14,19 @@ ruta_imagen = os.path.join(ruta_base, "imágenes")
 
 nombreActual = None
 permitir_inserción = False
+
+cajasDeTexto = {}
+
+datos_en_cache = {}
+
 ventanaAbierta = {}
+
 
 mapa_orden = {
     "ASCENDENTE": "ASC",
     "DESCENDENTE": "DESC",
     "ASC": "ASC",
     "DESC": "DESC"
-}
-
-
-datos_en_cache = {}
-
-colores = {
-  "blanco": "#FFFFFF",
-  "gris": "#AAAAAA",
-  "negro": "#000000",
-  "negro_resaltado": "#3A3A3A",
-  "celeste_azulado": "#004CFF",
-  "celeste": "#72AFFF",
-  "celeste_resaltado": "#9AB5FF",
-  "azul": "#0000FF",
-  "azul_claro": "#C5C5FF",
-  "azul_oscuro": "#00004D",
-  "rojo_error": "#B90000",
-  "verde_éxito": "#00AA00",
-  "amarillo_alerta": "#CCAE00"
 }
 
 campos_en_db = {
@@ -52,23 +39,9 @@ campos_en_db = {
       "nota": ["IDAlumno", "IDMateria","IDProfesor", "valorNota", "tipoNota", "fechaEvaluación"]
   }
 
-alias = {
-"IDCarrera": "Carrera",
-"IDMateria": "Materia",
-"IDProfesor": "Profesor",
-"IDAlumno": "Alumno",
-"FechaDeNacimiento": "Fecha de nacimiento",
-"fechaEvaluación": "Fecha",
-"valorNota": "Nota",
-"tipoNota": "Evaluación",
-"Fecha_Asistencia": "Fecha",
-"HorarioEntrada": "Horario de entrada",
-"HorarioSalida": "Horario de salida"
-}
-
 campos_comunes = [("Nombre*", "txBox_Nombre")]
   
-campos_por_tabla = {
+widgets_para_tablas = {
 "alumno": campos_comunes + [
     ("Fecha de nacimiento*", "txBox_FechaNacimiento"),
     ("Carrera*", "cbBox_Carrera")
@@ -102,8 +75,6 @@ campos_por_tabla = {
     ("Fecha*", "txBox_Fecha")
     ]
 }
-
-cajasDeTexto = {}
 
 consultas = {
       "alumno": {
@@ -158,7 +129,21 @@ consultas = {
           }
     }
 
-alias_a_traducir = {
+alias = { #Este diccionario guarda los alias para los nombres de campos en la base de datos
+"IDCarrera": "Carrera",
+"IDMateria": "Materia",
+"IDProfesor": "Profesor",
+"IDAlumno": "Alumno",
+"FechaDeNacimiento": "Fecha de nacimiento",
+"fechaEvaluación": "Fecha",
+"valorNota": "Nota",
+"tipoNota": "Evaluación",
+"Fecha_Asistencia": "Fecha",
+"HorarioEntrada": "Horario de entrada",
+"HorarioSalida": "Horario de salida"
+}
+
+alias_a_traducir = { #Este diccionario guarda los alias para traducir los nombres de campos en la base de datos, a nombres más amigables con el fin de evitar confusiones o ambigüedades en la base de datos
     "alumno": {
         "Nombre": "AlumnoNombre",
         "FechaDeNacimiento": "Fecha",
