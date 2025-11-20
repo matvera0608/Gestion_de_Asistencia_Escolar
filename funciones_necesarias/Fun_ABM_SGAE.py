@@ -174,8 +174,8 @@ def importar_datos(nombre_de_la_tabla, treeview):
     
     refrescar_Treeview(nombre_de_la_tabla, treeview, estado, consultas)
     
-    datos_en_cache[nombre_de_la_tabla] = datos.copy()
-    print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")
+    # datos_en_cache[nombre_de_la_tabla] = datos.copy()
+    # print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")
     
   except error_sql as e_sql:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e_sql)}")

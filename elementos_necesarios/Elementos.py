@@ -8,9 +8,9 @@ from datetime import datetime as fecha_y_hora
 # --- ELEMENTOS ---
 
 dirección_del_ícono = os.path.dirname(__file__)
-ícono = os.path.join(dirección_del_ícono, "imágenes","escuela.ico")
-ruta_base = os.path.dirname(os.path.abspath(__file__))
-ruta_imagen = os.path.join(ruta_base, "imágenes")
+ruta_raíz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ícono = os.path.join(ruta_raíz_proyecto, "imágenes","escuela.ico")
+ruta_imagen = os.path.join(ruta_raíz_proyecto, "imágenes")
 
 nombreActual = None
 permitir_inserción = False

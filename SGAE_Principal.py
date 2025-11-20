@@ -1,5 +1,10 @@
-from funciones_necesarias import *
-from elementos_necesarios import *
+from elementos_necesarios.Creacion_de_widgets import *
+from elementos_necesarios.Disenho import *
+from elementos_necesarios.Elementos import *
+
+from funciones_necesarias.Fun_ABM_SGAE import *
+from funciones_necesarias.Fun_adicionales import *
+
 from Eventos import *
 import os
 import tkinter as tk
@@ -75,13 +80,13 @@ def deshabilitar(treeview):
 mi_ventana = tk.Tk()
 
 íconos_por_tabla = {
-  "alumno": os.path.join(ruta_base, "imágenes", "alumno.ico"),
-  "asistencia": os.path.join(ruta_base, "imágenes", "asistencia.ico"),
-  "carrera": os.path.join(ruta_base, "imágenes", "carrera.ico"),
-  "materia": os.path.join(ruta_base, "imágenes", "materia.ico"),
-  "enseñanza": os.path.join(ruta_base, "imágenes", "enseñanza.ico"),
-  "profesor": os.path.join(ruta_base, "imágenes", "profesor.ico"),
-  "nota": os.path.join(ruta_base, "imágenes", "nota.ico")
+  "alumno": os.path.join(ruta_raíz_proyecto, "imágenes", "alumno.ico"),
+  "asistencia": os.path.join(ruta_raíz_proyecto, "imágenes", "asistencia.ico"),
+  "carrera": os.path.join(ruta_raíz_proyecto, "imágenes", "carrera.ico"),
+  "materia": os.path.join(ruta_raíz_proyecto, "imágenes", "materia.ico"),
+  "enseñanza": os.path.join(ruta_raíz_proyecto, "imágenes", "enseñanza.ico"),
+  "profesor": os.path.join(ruta_raíz_proyecto, "imágenes", "profesor.ico"),
+  "nota": os.path.join(ruta_raíz_proyecto, "imágenes", "nota.ico")
 }
 
 imágenes_por_botón = {

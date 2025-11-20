@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from .Elementos import *
 from .Disenho import *
-from funciones_necesarias import *
+from funciones_necesarias.Fun_adicionales import *
 
 
 def crear_etiqueta(contenedor, texto, color=colores["negro"], fuenteLetra=("Arial", 10, "bold")):

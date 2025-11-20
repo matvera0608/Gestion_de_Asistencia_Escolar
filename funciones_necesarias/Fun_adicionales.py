@@ -1,6 +1,7 @@
 from Conexión import *
 from .Fun_Validación_SGAE import *
-from elementos_necesarios import *
+from elementos_necesarios.Creacion_de_widgets import *
+from elementos_necesarios.Elementos import *
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
