@@ -1,5 +1,5 @@
 from Conexión import *
-import Estado_de_ordenamiento as estado
+from . import Estado_de_ordenamiento as estado
 from PIL import Image, ImageTk
 import os
 import tkinter as tk

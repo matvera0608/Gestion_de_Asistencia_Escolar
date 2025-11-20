@@ -1,5 +1,5 @@
-from .funciones_necesarias.Fun_ABM_SGAE import *
-from .elementos_necesarios.Creacion_de_widgets import *
+from funciones_necesarias import *
+from elementos_necesarios import *
 from Eventos import *
 import os
 import tkinter as tk
@@ -28,7 +28,6 @@ def habilitar(treeview):
   treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombreActual, tabla_treeview, cajasDeTexto))
   
   configurar_ciertos_comboboxes(nombreActual)
-
 
 def deshabilitar(treeview):
   global permitir_inserción
@@ -70,20 +69,6 @@ def deshabilitar(treeview):
     except Exception:
         pass
 
-
-def insertar_al_habilitar(tabla_treeview):
-  global permitir_inserción
-  if not permitir_inserción:
-    return
-  
-  if not hasattr(tabla_treeview, "winfo_exists") or not tabla_treeview.winfo_exists():
-    return
-  
-  habilitar(tabla_treeview)
-  
-  if any(widget.winfo_exists() and widget.get().strip() == "" for widget in cajasDeTexto.get(nombreActual, [])):
-    return
-  insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria)
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
@@ -351,7 +336,7 @@ def abrir_tablas(nombre_de_la_tabla):
 
   acciones = {
       "Cancelar": partial(deshabilitar, tabla_treeview),
-      "Agregar": partial(insertar_al_habilitar, tabla_treeview),
+      "Agregar": partial(habilitar, tabla_treeview),
       "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
       "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
       "Guardar": partial(insertar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),

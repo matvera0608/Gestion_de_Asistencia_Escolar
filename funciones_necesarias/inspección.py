@@ -1,10 +1,10 @@
-import dis
+import dis, marshal
 
-# # Desensamblar un archivo fuente
-# dis.dis(open("funciones_necesarias/Fun_adicionales.py", "r").read())
-
+# with open("funciones_necesarias/Fun_adicionales.py", "r", encoding="utf-8") as f:
+#     dis.dis(f.read())
+    
 # O desensamblar el .pyc directamente
-import marshal
+
 with open("__pycache__/Fun_adicionales.cpython-310.pyc", "rb") as f:
     f.read(16)  # saltar cabecera
     code = marshal.load(f)
