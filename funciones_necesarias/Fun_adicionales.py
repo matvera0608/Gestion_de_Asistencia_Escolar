@@ -1,11 +1,11 @@
 from Conexión import *
 from .Fun_Validación_SGAE import *
-from Elementos import *
+from elementos_necesarios import *
 from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
-def refrescar_Treeview(nombre_de_la_tabla, treeview, estado, consultas):
+def refrescar_Treeview(nombre_de_la_tabla, treeview, consultas):
   datos = consultar_tabla(nombre_de_la_tabla)
 
   for item in treeview.get_children():

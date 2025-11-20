@@ -1,8 +1,6 @@
-from funciones_necesarias import *
+from .funciones_necesarias.Fun_ABM_SGAE import *
+from .elementos_necesarios.Creacion_de_widgets import *
 from Eventos import *
-from Elementos import *
-from Disenho import *
-from Creacion_de_widgets import *
 import os
 import tkinter as tk
 from tkinter import ttk
@@ -248,7 +246,6 @@ def abrir_tablas(nombre_de_la_tabla):
   if nombre_de_la_tabla in cajasDeTexto:
     cajasDeTexto[nombre_de_la_tabla] = []
 
-  
 
   ventanaSecundaria = tk.Toplevel()
   ventanaSecundaria.geometry("900x600")
@@ -324,7 +321,7 @@ def abrir_tablas(nombre_de_la_tabla):
   btnCancelar = crear_botón(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: deshabilitar(tabla_treeview), "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
-  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda t=tabla_treeview: insertar_al_habilitar(t), "normal")
+  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: habilitar(tabla_treeview), "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
   btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from Elementos import *
+from .Elementos import *
+from .Disenho import *
 from funciones_necesarias import *
 
 
