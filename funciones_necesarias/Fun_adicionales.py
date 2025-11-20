@@ -5,6 +5,73 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
+def refrescar_Treeview(nombre_de_la_tabla, treeview, estado, consultas):
+  datos = consultar_tabla(nombre_de_la_tabla)
+
+  for item in treeview.get_children():
+    treeview.delete(item)
+  
+  for índice, fila in enumerate(datos):
+    id_val = fila[0]
+    valores_visibles = fila[1:]
+    tag = "par" if índice % 2 == 0 else "impar"
+    treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+  
+  try:
+    if estado.orden_campo_actual:
+      sql, params = consulta_semántica(consultas,nombre_de_la_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
+    else:
+        sql, params = consulta_semántica(consultas,nombre_de_la_tabla, None, None, None)
+    ordenar_datos(treeview, sql, params)
+  except Exception as e:
+    print(e)
+
+def ordenar_datos(treeview, sql, params):
+  try:
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      cursor.execute(sql, params)
+      resultado = cursor.fetchall()
+      
+
+      treeview.delete(*treeview.get_children())
+          
+    for index, fila in enumerate(resultado):
+      IID = fila[0]
+      valores = fila[1:]
+      tag = "par" if index % 2 == 0 else "impar"
+      treeview.insert("", "end",iid=IID, values=valores, tags=(tag,))
+  
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL ORDENAR LA TABLA: {str(e)}")
+
+def buscar_datos(nombre_de_la_tabla, treeview, busqueda, consultas):
+  if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
+    return
+  
+  try:
+    conexión = conectar_base_de_datos()
+    cursor = conexión.cursor()
+    valor_busqueda = busqueda.get().strip()
+    sql, params = consulta_semántica(consultas, nombre_de_la_tabla, None, valor_busqueda or "", None)
+    cursor.execute(sql, params)
+    resultado = cursor.fetchall()
+    
+    for item in treeview.get_children():
+      treeview.delete(item)
+    
+    for i, fila in enumerate(resultado):
+      id_a_ocultar = fila[0]
+      datos_visibles = fila[1:]
+      tag = "par" if i % 2 == 0 else "impar"
+      treeview.insert("", "end", iid=id_a_ocultar, values=datos_visibles, tags=(tag,))
+
+   
+  except error_sql as e:
+    print(f"HA OCURRIDO UN ERROR AL BUSCAR: {str(e)}")
+  finally:
+    cursor.close()
+    conexión.close()
 
 def obtener_selección(treeview):
     try:
