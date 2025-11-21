@@ -18,11 +18,11 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
   return ttk.Combobox(contenedor, width=ancho, state=estado)
 
 
-def crear_botón(contenedor, texto, imágen, comando, estado, estilo="Boton.TButton"):
+def crear_boton(contenedor, texto, imágen, comando, estado, estilo="Boton.TButton"):
   return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, state=estado, cursor='hand2')
 
 
-def crear_tabla_Treeview(contenedor, tabla):
+def crear_Treeview(contenedor, tabla):
   columnas = campos_en_db[tabla]
 
   estilo = ttk.Style()
@@ -123,7 +123,7 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
     try:
       for widget in cajasDeTexto.get(cbBox_tabla, []):
         if not widget.winfo_exists():
-            continue
+          continue
         
         if getattr(widget, "widget_interno", "") == widget_interno:
           if widget_interno.startswith("cbBox_"):

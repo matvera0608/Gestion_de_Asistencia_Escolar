@@ -2,8 +2,9 @@ from elementos_necesarios.Creacion_de_widgets import *
 from elementos_necesarios.Disenho import *
 from elementos_necesarios.Elementos import *
 
-from funciones_necesarias.Fun_ABM_SGAE import *
+from funciones_necesarias.Operaciones_ABM import *
 from funciones_necesarias.Fun_adicionales import *
+from funciones_necesarias.Fun_Botones_ABM import *
 
 from Eventos import *
 import os
@@ -11,11 +12,10 @@ import tkinter as tk
 from tkinter import ttk
 from functools import partial
 
+# --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
 def habilitar(treeview):
-  tabla_treeview.delete(*tabla_treeview.get_children())
-  
-  #LO DE ARRIBA COMENTÉ PORQUE NO HAY DATOS EN MEMORIA CACHÉ, TRAJE LA MISMA LÓGICA ZEBRA ROWS PARA QUE A LA HORA DE ITERAR
-  #NO ME MUESTREN LOS IDs ARTIFICIALES.
+  treeview.delete(*treeview.get_children())
+ 
   datos_a_refrescar = consultar_tabla(nombreActual)
   for índice, fila in enumerate(datos_a_refrescar):
     id_val = fila[0]
@@ -30,7 +30,7 @@ def habilitar(treeview):
   treeview.config(selectmode="browse")
   treeview.unbind("<Button-1>")
   treeview.unbind("<Key>")
-  treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombreActual, tabla_treeview, cajasDeTexto))
+  treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombreActual, treeview, cajasDeTexto))
   
   configurar_ciertos_comboboxes(nombreActual)
 
@@ -41,7 +41,7 @@ def deshabilitar(treeview):
   
   if not permitir_inserción:
     return
-  tabla_treeview.delete(*tabla_treeview.get_children())
+  treeview.delete(*treeview.get_children())
   
  
   for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
@@ -73,7 +73,6 @@ def deshabilitar(treeview):
         entry.config(state="readonly")
     except Exception:
         pass
-
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
@@ -147,7 +146,7 @@ def pantallaLogin():
     mostrar_pestañas(ventana, permiso)
  
   #Iniciar Sesión
-  botón_login = crear_botón(ventana, "Iniciar", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
+  botón_login = crear_boton(ventana, "Iniciar", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
   botón_login.grid(row=3, column=0, sticky="s")
   
   return ventana
@@ -211,7 +210,7 @@ def mostrar_pestañas(ventana, permiso):
     pantallaLogin()
   
   
-  botón_regresar = crear_botón(notebook, "Regresar", imágenes_por_botón["regresar_al_menu_principal"], lambda: regresar(), "normal")
+  botón_regresar = crear_boton(notebook, "Regresar", imágenes_por_botón["regresar_al_menu_principal"], lambda: regresar(), "normal")
   botón_regresar.pack(side="top", pady=50)
   
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios", bg=ventana.cget("bg"), font=("Arial", 8))
@@ -223,7 +222,7 @@ def mostrar_pestañas(ventana, permiso):
 
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar, cajasDeTexto, nombreActual
-  global tabla_treeview, widgets_para_tablas, entryBuscar, botones, acciones, opciones
+  global treeview, widgets_para_tablas, entryBuscar, botones, acciones, opciones
   global permitir_inserción
   nombreActual = nombre_de_la_tabla
   permitir_inserción = True
@@ -286,14 +285,14 @@ def abrir_tablas(nombre_de_la_tabla):
   crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
   entryBuscar = crear_entrada(ventanaSecundaria, 40)
   entryBuscar.grid(row=3, column=0)
-  entryBuscar.bind("<KeyRelease>", lambda e: buscar_datos(nombre_de_la_tabla, tabla_treeview, entryBuscar, consultas))
+  entryBuscar.bind("<KeyRelease>", lambda e: buscar_datos(nombre_de_la_tabla, treeview, entryBuscar, consultas))
 
   crear_widgets(marco_izquierdo, nombre_de_la_tabla, campos, mi_ventana)
   
-  tabla_treeview = crear_tabla_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
-  tabla_treeview.config(selectmode="none")
+  treeview = crear_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
+  treeview.config(selectmode="none")
 
-  tabla_treeview.delete(*tabla_treeview.get_children())
+  treeview.delete(*treeview.get_children())
   
   crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=0, column=1, sticky="n")
   opciones = ["ASCENDENTE", "DESCENDENTE"]
@@ -302,31 +301,31 @@ def abrir_tablas(nombre_de_la_tabla):
   orden = ttk.Combobox(marco_izquierdo, textvariable=opciónSeleccionado, state="readonly", values=opciones)
   orden.grid(row=0, column=2, sticky="n", pady=5)
 
-  for col in tabla_treeview["columns"]:
+  for col in treeview["columns"]:
     nombre_legible = alias.get(col, col)
-    tabla_treeview.heading(col, text=nombre_legible, command=lambda campo=col: manejar_click_columna(campo, opciónSeleccionado.get(), nombreActual, tabla_treeview, ordenar_datos, consultas))
-    tabla_treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, tabla_treeview, cajasDeTexto))
+    treeview.heading(col, text=nombre_legible, command=lambda campo=col: manejar_click_columna(campo, opciónSeleccionado.get(), nombreActual, treeview, ordenar_datos, consultas))
+    treeview.bind("<<TreeviewSelect>>", lambda e: mostrar_registro(nombre_de_la_tabla, treeview, cajasDeTexto))
   
   
-  btnCancelar = crear_botón(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: deshabilitar(tabla_treeview), "disabled")
+  btnCancelar = crear_boton(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: deshabilitar(treeview), "disabled")
   btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
-  btnAgregar = crear_botón(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: habilitar(tabla_treeview), "normal")
+  btnAgregar = crear_boton(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: nuevo_registro(treeview), "normal")
   btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
-  btnModificar = crear_botón(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")
+  btnModificar = crear_boton(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: editar_registro(treeview), "disabled")
   btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  btnEliminar = crear_botón(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, tabla_treeview, ventanaSecundaria), "disabled")
+  btnEliminar = crear_boton(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventanaSecundaria), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnGuardar = crear_botón(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: insertar_datos(nombreActual, cajasDeTexto, campos_en_db, tabla_treeview, ventanaSecundaria), "disabled")
+  btnGuardar = crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: guardar_registros(nombreActual, cajasDeTexto, campos_en_db, treeview, ventanaSecundaria), "disabled")
   btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  btnImportar = crear_botón(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: importar_datos(nombre_de_la_tabla, tabla_treeview), "disabled")
+  btnImportar = crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: importar_datos(nombre_de_la_tabla, treeview), "disabled")
   btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
-  btnExportarPDF = crear_botón(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, tabla_treeview, ventanaSecundaria), "disabled")
+  btnExportarPDF = crear_boton(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: exportar_en_PDF(nombre_de_la_tabla, treeview, ventanaSecundaria), "disabled")
   btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
   botones = [
@@ -340,18 +339,18 @@ def abrir_tablas(nombre_de_la_tabla):
   ]
 
   acciones = {
-      "Cancelar": partial(deshabilitar, tabla_treeview),
-      "Agregar": partial(habilitar, tabla_treeview),
-      "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, tabla_treeview),
-      "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, tabla_treeview),
-      "Guardar": partial(insertar_datos, nombreActual, cajasDeTexto, tabla_treeview, campos_en_db),
-      "Importar": partial(importar_datos, nombreActual, tabla_treeview),
-      "Exportar": partial(exportar_en_PDF, nombreActual, tabla_treeview),
-      "Mostrar": partial(mostrar_registro, nombreActual, tabla_treeview, cajasDeTexto)
+      "Cancelar": partial(deshabilitar, treeview),
+      "Agregar": partial(habilitar, treeview),
+      "Modificar": partial(modificar_datos, nombreActual, cajasDeTexto, campos_en_db, treeview),
+      "Eliminar": partial(eliminar_datos, nombreActual, cajasDeTexto, treeview),
+      "Guardar": partial(insertar_datos, nombreActual, cajasDeTexto, treeview, campos_en_db),
+      "Importar": partial(importar_datos, nombreActual, treeview),
+      "Exportar": partial(exportar_en_PDF, nombreActual, treeview),
+      "Mostrar": partial(mostrar_registro, nombreActual, treeview, cajasDeTexto)
   }
   # --- BINDEOS DE EVENTOS ---
   
-  ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(tabla_treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
+  ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(treeview, cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
   ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
   ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
   ventanaSecundaria.bind("<Control-a>", lambda e: (acciones["Guardar"]()))

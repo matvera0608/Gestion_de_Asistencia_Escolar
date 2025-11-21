@@ -13,7 +13,6 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
-  conexión = conectar_base_de_datos()
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
     return
@@ -35,42 +34,40 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
   if datos_traducidos is None:
     return
 
-  campos = ', '.join(datos_traducidos.keys())
-  valores = ', '.join(['%s'] * len(datos_traducidos))
-  consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-  valores_sql = list(datos_traducidos.values())
   try:
-    cursor = conexión.cursor()
-    cursor.execute(consulta, tuple(valores_sql))
-    conexión.commit()
+    with conectar_base_de_datos() as conexión:
+      campos = ', '.join(datos_traducidos.keys())
+      valores = ', '.join(['%s'] * len(datos_traducidos))
+      consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
+      valores_sql = list(datos_traducidos.values())
+      
+      cursor = conexión.cursor()
+      cursor.execute(consulta, tuple(valores_sql))
+      conexión.commit()
+      
+      refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
     
-    refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
-  
-    campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-    
-    for i, campo in enumerate(campos_oficiales):
-      try:
-        entry = cajasDeTexto[nombre_de_la_tabla][i]
-      except (KeyError, IndexError):
-        continue
-      if not entry.winfo_exists():
-        continue
-      entry.delete(0, tk.END)
-    mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
+      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+      
+      for i, campo in enumerate(campos_oficiales):
+        try:
+          entry = cajasDeTexto[nombre_de_la_tabla][i]
+        except (KeyError, IndexError):
+          continue
+        if not entry.winfo_exists():
+          continue
+        entry.delete(0, tk.END)
+      mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
-  finally:
-    desconectar_base_de_datos(conexión)
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
-  selección = obtener_selección(treeview)
-  if not selección:
-    return
   if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
     return
   
   selección = treeview.selection()
+  
   if not selección:
     return
   
@@ -107,13 +104,10 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
   valores_sql.append(idSeleccionado)
   try:
     with conectar_base_de_datos() as conexión:
-      try:
-        cursor = conexión.cursor()
-        cursor.execute(consulta, tuple(valores_sql))
-        conexión.commit()
-      finally:
-        desconectar_base_de_datos(conexión)
-        
+      cursor = conexión.cursor()
+      cursor.execute(consulta, tuple(valores_sql))
+      conexión.commit()
+      
       refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
         
       campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])

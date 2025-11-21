@@ -5,7 +5,7 @@ import dis, marshal
     
 # O desensamblar el .pyc directamente
 
-with open("__pycache__/Fun_adicionales.cpython-310.pyc", "rb") as f:
+with open("__pycache__/Fun_ABM_SGAE.cpython-310.pyc", "rb") as f:
     f.read(16)  # saltar cabecera
     code = marshal.load(f)
     dis.dis(code)

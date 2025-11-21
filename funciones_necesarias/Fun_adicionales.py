@@ -74,13 +74,6 @@ def buscar_datos(nombre_de_la_tabla, treeview, busqueda, consultas):
     cursor.close()
     conexión.close()
 
-def obtener_selección(treeview):
-    try:
-      return treeview.selection()
-    except tk.TclError:
-      mensajeTexto.showerror("ERROR", "La tabla ya no está disponible.")
-      return None
-
 def obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_de_la_base_de_datos):
   campos_db = campos_de_la_base_de_datos[nombre_de_la_tabla]
   lista_de_cajas = cajasDeTexto[nombre_de_la_tabla]
