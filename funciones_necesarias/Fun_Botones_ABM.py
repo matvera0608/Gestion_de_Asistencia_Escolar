@@ -1,5 +1,5 @@
 from .Operaciones_ABM import *
-from SGAE_Principal import habilitar, deshabilitar
+from control_form import *
 
 modo_actual = None
 

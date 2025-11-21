@@ -8,72 +8,11 @@ import funciones_necesarias.Fun_Botones_ABM as btn_abm
 
 
 from Eventos import *
+from control_form import *
 import os
 import tkinter as tk
 from tkinter import ttk
 from functools import partial
-
-# --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
-def habilitar(treeview):
-  treeview.delete(*treeview.get_children())
- 
-  datos_a_refrescar = fun.consultar_tabla(ele.nombreActual)
-  for índice, fila in enumerate(datos_a_refrescar):
-    id_val = fila[0]
-    valores_visibles = fila[1:]
-    tag = "par" if índice % 2 == 0 else "impar"
-    treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-
-  for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
-    botón.config(state="normal")
-  
-  entryBuscar.config(state="normal")
-  treeview.config(selectmode="browse")
-  treeview.unbind("<Button-1>")
-  treeview.unbind("<Key>")
-  treeview.bind("<<TreeviewSelect>>", lambda e: fun.mostrar_registro(ele.nombreActual, treeview, ele.cajasDeTexto))
-  
-  wid.configurar_ciertos_comboboxes(ele.nombreActual)
-
-def deshabilitar(treeview):
-  global permitir_inserción
-  
-  fun.mostrar_aviso(ventanaSecundaria, "")
-  
-  if not permitir_inserción:
-    return
-  treeview.delete(*treeview.get_children())
-  
- 
-  for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
-    botón.config(state="disabled")
-  
-  treeview.bind("<Button-1>", lambda e: "break")
-  treeview.bind("<Key>", lambda e: "break")
-  treeview.selection_remove(treeview.selection())
-  entryBuscar.config(state="readonly")
-  for entry in ele.cajasDeTexto.get(ele.nombreActual, []):
-    if not entry.winfo_exists():
-        continue
-      
-    tipo_de_widget = getattr(entry, "widget_interno", "")
-    try:
-      if tipo_de_widget.startswith("cbBox_"):
-        entry.set("") 
-      elif tipo_de_widget.startswith("txBox_"):
-        entry.delete(0, tk.END)
-      else:
-        entry.delete(0, tk.END)
-        
-    except Exception:
-        try:
-          entry.set("") 
-        except Exception:
-            pass
-    try:
-        entry.config(state="readonly")
-    except Exception:
-        pass
 
 # --- EJECUCIÓN DE LA VENTANA PRINCIPAL ---
 
@@ -224,9 +163,8 @@ def mostrar_pestañas(ventana, permiso):
 def abrir_tablas(nombre_de_la_tabla):
   global ventanaSecundaria, btnAgregar, btnModificar, btnEliminar, btnGuardar, btnExportarPDF, btnCancelar, btnImportar
   global treeview, entryBuscar, botones, acciones, opciones
-  global permitir_inserción
   ele.nombreActual = nombre_de_la_tabla
-  permitir_inserción = True
+  ele.permitir_inserción = True
   
   # Destruir ventana anterior si existe y limpiar referencias
   if "ventanaSecundaria" in globals() and ventanaSecundaria.winfo_exists():
@@ -320,7 +258,7 @@ def abrir_tablas(nombre_de_la_tabla):
   btnEliminar = wid.crear_boton(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: abm.eliminar_datos(nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria), "disabled")
   btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  btnGuardar = wid.crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: abm.guardar_registros(ele.nombreActual, ele.cajasDeTexto, ele.campos_en_db, treeview, ventanaSecundaria), "disabled")
+  btnGuardar = wid.crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: btn_abm.guardar_registros(ele.nombreActual, ele.cajasDeTexto, ele.campos_en_db, treeview, ventanaSecundaria), "disabled")
   btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
   btnImportar = wid.crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: abm.importar_datos(nombre_de_la_tabla, treeview), "disabled")
