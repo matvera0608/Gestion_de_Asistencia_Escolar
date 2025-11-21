@@ -3,16 +3,17 @@ from control_form import *
 
 modo_actual = None
 
-def nuevo_registro(treeview): #Se puso un parámetro de treeview, porque habilitar y deshabilitar si o si usa un argumento
+def nuevo_registro(nombre_de_la_tabla, treeview): #Se puso un parámetro de treeview, porque habilitar y deshabilitar si o si usa un argumento
     global modo_actual
     modo_actual = "nuevo"
-    habilitar(treeview)
+    habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
     
-def editar_registro(treeview):
+def editar_registro(nombre_de_la_tabla, treeview):
     global modo_actual
     modo_actual = "editar"
-    habilitar(treeview)
-    
+    habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+
+ 
 def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
     global modo_actual
     if modo_actual == "nuevo":
@@ -23,4 +24,4 @@ def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ven
         mostrar_aviso(ventana, "No hay operación activa", colores["rojo_error"], 10)
         return
     modo_actual = None
-    deshabilitar(treeview) #Acá deshabilita toda la operación
+    deshabilitar(nombre_de_la_tabla, treeview) #Acá deshabilita toda la operación

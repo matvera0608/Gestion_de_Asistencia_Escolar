@@ -2,6 +2,7 @@
 import tkinter as tk
 import funciones_necesarias.Fun_adicionales as fun #No sé si está bien que importe módulos de otros archivos
 import elementos_necesarios.Creacion_de_widgets as wid
+import elementos_necesarios.Elementos as ele
 
 # --- REFERENCIAS GLOBALES A WIDGETS ---
 btnAgregar = None
@@ -12,18 +13,19 @@ btnExportarPDF = None
 btnImportar = None
 btnCancelar = None
 entryBuscar = None
-cajasDeTexto = {}
-nombreActual = ""
-ventanaSecundaria = None
-ventanaAbierta = {}
 permitir_insercion = True
 entry = None
+ventanaSecundaria = None
+
+
 
 # --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
-def habilitar(treeview):
+def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
      treeview.delete(*treeview.get_children())
-
-     datos = fun.consultar_tabla(nombreActual)
+     if not nombre_de_la_tabla:
+        return
+   
+     datos = fun.consultar_tabla(nombre_de_la_tabla)
      for índice, fila in enumerate(datos):
           id_val = fila[0]
           valores_visibles = fila[1:]
@@ -38,12 +40,12 @@ def habilitar(treeview):
      treeview.config(selectmode="browse")
      treeview.unbind("<Button-1>")
      treeview.unbind("<Key>")
-     treeview.bind("<<TreeviewSelect>>", lambda e: fun.mostrar_registro(nombreActual, treeview, cajasDeTexto))
+     treeview.bind("<<TreeviewSelect>>", lambda e: fun.mostrar_registro(nombre_de_la_tabla, treeview, cajasDeTexto))
 
-     wid.configurar_ciertos_comboboxes(nombreActual)
+     wid.configurar_ciertos_comboboxes(nombre_de_la_tabla)
 
 
-def deshabilitar(treeview):
+def deshabilitar(nombre_de_la_tabla, treeview):
      global permitir_insercion
   
      if ventanaSecundaria:
@@ -62,7 +64,7 @@ def deshabilitar(treeview):
      treeview.bind("<Key>", lambda e: "break")
      treeview.selection_remove(treeview.selection())
      entryBuscar.config(state="readonly")
-     for entry in cajasDeTexto.get(nombreActual, []):
+     for entry in ele.cajasDeTexto.get(nombre_de_la_tabla, []):
           if not entry.winfo_exists():
                continue
                
@@ -84,3 +86,4 @@ def deshabilitar(treeview):
           entry.config(state="readonly")
      except Exception:
           pass
+     

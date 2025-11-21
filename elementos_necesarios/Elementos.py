@@ -12,6 +12,8 @@ ruta_raíz_proyecto = os.path.dirname(os.path.dirname(os.path.abspath(__file__))
 ícono = os.path.join(ruta_raíz_proyecto, "imágenes","escuela.ico")
 ruta_imagen = os.path.join(ruta_raíz_proyecto, "imágenes")
 
+ventanaAbierta = {}
+
 cajasDeTexto = {}
 
 datos_en_cache = {}
