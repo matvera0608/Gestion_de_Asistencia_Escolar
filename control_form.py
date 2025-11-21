@@ -18,8 +18,18 @@ entry = None
 ventanaSecundaria = None
 
 
-
 # --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
+
+def restaurar_botonera():
+     btnAgregar.config(state="normal")
+     btnModificar.config(state="disabled")
+     btnEliminar.config(state="normal")
+     btnGuardar.config(state="disabled")
+     btnCancelar.config(state="normal")
+     
+     global modo_actual
+     modo_actual = None
+
 def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
      treeview.delete(*treeview.get_children())
      if not nombre_de_la_tabla:
@@ -31,10 +41,6 @@ def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
           valores_visibles = fila[1:]
           tag = "par" if índice % 2 == 0 else "impar"
           treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
-
-     for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
-          if botón is not None:
-               botón.config(state="normal")
 
      entryBuscar.config(state="normal")
      treeview.config(selectmode="browse")
@@ -55,11 +61,7 @@ def deshabilitar(nombre_de_la_tabla, treeview):
           return
      treeview.delete(*treeview.get_children())
 
-
-     for botón in [btnModificar, btnEliminar, btnExportarPDF, btnGuardar, btnImportar, btnCancelar]:
-          if botón is not None:
-               botón.config(state="disabled")
-
+    
      treeview.bind("<Button-1>", lambda e: "break")
      treeview.bind("<Key>", lambda e: "break")
      treeview.selection_remove(treeview.selection())
@@ -76,7 +78,6 @@ def deshabilitar(nombre_de_la_tabla, treeview):
                entry.delete(0, tk.END)
           else:
                entry.delete(0, tk.END)
-          
      except Exception:
           try:
                entry.set("") 
@@ -86,4 +87,3 @@ def deshabilitar(nombre_de_la_tabla, treeview):
           entry.config(state="readonly")
      except Exception:
           pass
-     
