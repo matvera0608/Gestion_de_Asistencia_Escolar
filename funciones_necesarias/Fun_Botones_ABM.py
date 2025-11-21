@@ -8,8 +8,9 @@ def nuevo_registro(nombre_de_la_tabla, treeview): #Se puso un parámetro de tree
     global modo_actual
     modo_actual = "nuevo"
     
-    cf.restaurar_botonera()
     cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+    cf.restaurar_botonera()
+
     cf.btnAgregar.config(state="disabled")
     cf.btnGuardar.config(state="normal")
     cf.btnCancelar.config(state="normal")
@@ -20,8 +21,9 @@ def editar_registro(nombre_de_la_tabla, treeview):
     global modo_actual
     modo_actual = "editar"
     
-    cf.restaurar_botonera()
     cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+    cf.restaurar_botonera()
+    
     cf.btnModificar.config(state="disabled")
     cf.btnGuardar.config(state="normal")
     cf.btnCancelar.config(state="normal")
@@ -40,3 +42,4 @@ def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ven
         return
     modo_actual = None
     cf.deshabilitar(nombre_de_la_tabla, treeview) #Acá deshabilita toda la operación
+    cf.restaurar_botonera()

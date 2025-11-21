@@ -54,16 +54,14 @@ def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
 def deshabilitar(nombre_de_la_tabla, treeview):
      global permitir_insercion
   
-     if ventanaSecundaria:
-          fun.mostrar_aviso(ventanaSecundaria, "")
-
      if not permitir_insercion:
           return
+     
      treeview.delete(*treeview.get_children())
 
-    
      treeview.bind("<Button-1>", lambda e: "break")
      treeview.bind("<Key>", lambda e: "break")
+     
      treeview.selection_remove(treeview.selection())
      entryBuscar.config(state="readonly")
      for entry in ele.cajasDeTexto.get(nombre_de_la_tabla, []):
