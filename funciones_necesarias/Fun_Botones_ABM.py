@@ -5,31 +5,27 @@ modo_actual = None
 
 
 def nuevo_registro(nombre_de_la_tabla, treeview): #Se puso un parámetro de treeview, porque habilitar y deshabilitar si o si usa un argumento
+    """Prepara la interfaz para agregar un nuevo registro."""
     global modo_actual
     modo_actual = "nuevo"
     
     cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+    if not treeview.winfo_exists():
+        print("Advertencia: el Treeview no está disponible.")
+        return
     cf.restaurar_botonera()
-
     cf.btnAgregar.config(state="disabled")
-    cf.btnGuardar.config(state="normal")
-    cf.btnCancelar.config(state="normal")
-    cf.btnModificar.config(state="normal")
-    cf.btnEliminar.config(state="normal")
  
 def editar_registro(nombre_de_la_tabla, treeview):
     global modo_actual
     modo_actual = "editar"
     
     cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+    if not treeview.winfo_exists():
+        print("Advertencia: el Treeview no está disponible.")
+        return
     cf.restaurar_botonera()
-    
     cf.btnModificar.config(state="disabled")
-    cf.btnGuardar.config(state="normal")
-    cf.btnCancelar.config(state="normal")
-    cf.btnAgregar.config(state="normal")
-    cf.btnEliminar.config(state="normal")
-    
  
 def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
     global modo_actual
@@ -41,5 +37,4 @@ def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ven
         mostrar_aviso(ventana, "No hay operación activa", colores["rojo_error"], 10)
         return
     modo_actual = None
-    cf.deshabilitar(nombre_de_la_tabla, treeview) #Acá deshabilita toda la operación
     cf.restaurar_botonera()

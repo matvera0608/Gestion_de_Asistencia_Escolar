@@ -14,9 +14,9 @@ ruta_imagen = os.path.join(ruta_raíz_proyecto, "imágenes")
 
 ventanaAbierta = {}
 
-cajasDeTexto = {}
-
 datos_en_cache = {}
+
+cajasDeTexto = {}
 
 mapa_orden = {
     "ASCENDENTE": "ASC",
@@ -47,7 +47,7 @@ widgets_para_tablas = {
     ("Fecha*", "txBox_FechaAsistencia"),
     ("Alumno*", "cbBox_Alumno"),
     ("Profesor*", "cbBox_Profesor"),
-    ("Materia*", "cbBox_Materia"),
+    ("Materia*", "cbBox_Materia")
 ],
 "carrera": campos_comunes + [
     ("Duración*", "txBox_Duración")

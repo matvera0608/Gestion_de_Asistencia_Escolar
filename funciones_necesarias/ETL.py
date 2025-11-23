@@ -8,30 +8,31 @@ import os
 from Conexión import *
 from .Fun_adicionales import *
 
-def convertir_datos_para_mysql(valor):
-    if not isinstance(valor, str):
-      return valor
-    try:
-      v = valor.strip()
-      # → Si es un horario (formato HH:MM o HH:MM:SS) 
-      if re.fullmatch(r"\d{1,2}:\d{2}(:\d{2})?", v): 
-        try: 
-          t = datetime.strptime(v, "%H:%M:%S") if ":" in v[3:] \
-          else datetime.strptime(v, "%H:%M")
-          return t.strftime("%H:%M:%S") 
-        except:
-          return None # → Si es una fecha (formato YYYY-MM-DD o DD/MM/YYYY) 
-        
-      if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) or re.fullmatch(r"\d{2}/\d{2}/\d{4}", v): 
-        try: 
-          d = parse(v, dayfirst=True) 
-          return d.strftime("%Y-%m-%d") 
-        except: 
-          return None # → De lo contrario, devolver texto return v 
-    except Exception:
-      return v
+def convertir_datos_para_mysql():
+     valor = None #o valor = ""
+     if not isinstance(valor, str):
+          return valor
+     try:
+          v = valor.strip()
+          # → Si es un horario (formato HH:MM o HH:MM:SS) 
+          if re.fullmatch(r"\d{1,2}:\d{2}(:\d{2})?", v): 
+               try: 
+                    t = datetime.strptime(v, "%H:%M:%S") if ":" in v[3:] \
+                    else datetime.strptime(v, "%H:%M")
+                    return t.strftime("%H:%M:%S") 
+               except:
+                    return None # → Si es una fecha (formato YYYY-MM-DD o DD/MM/YYYY) 
+          
+          if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) or re.fullmatch(r"\d{2}/\d{2}/\d{4}", v): 
+               try: 
+                    d = parse(v, dayfirst=True) 
+                    return d.strftime("%Y-%m-%d") 
+               except: 
+                    return None # → De lo contrario, devolver texto return v 
+     except Exception:
+          return v
  
-def seleccionar_archivo_siguiendo_extension(ruta_archivo, alias):
+def seleccionar_archivo_siguiendo_extension():
      tipos_de_archivos = (
      ("bloc de notas","*.txt"),
      ("hoja con comas separadas","*.csv"),
@@ -87,6 +88,8 @@ def seleccionar_archivo_siguiendo_extension(ruta_archivo, alias):
           case _:
                print("No compatible el formato de archivo")
                return
+
+     return ruta_archivo, datos
  
 def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview):
      #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
@@ -94,7 +97,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      alias_invertido = {v.strip(): k for k, v in alias.items()}
      
-     if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
+     if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and \
+     nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
           return
      
@@ -113,16 +117,11 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
           return
      
-     for i, fila in enumerate(datos.values):
+     for i, fila in enumerate(datos.values): #Validar largo de la fila
           if len(fila) != len(campos_oficiales):
                mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
                return
-     
-     for índice, fila in datos.iterrows():
-          treeview.insert("", "end", values=tuple(fila))
-     
-     datos = datos.rename(columns=alias_invertido)
-     
+
      filas_traducidas_a_nombres_legibles = []
      
      for _, fila in datos.iterrows():
@@ -132,11 +131,9 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
                mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
                return
      
-     filas_traducidas_a_nombres_legibles.append(traducción)
+          filas_traducidas_a_nombres_legibles.append(traducción)
      datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
     
-     #NORMALIZACIÓN DE FECHA Y HORA PARA MYSQL, SE HACE ANTES DE LA IMPORTACIÓN A LA BASE DE DATOS.
-     #CONVERTIR LOS DATOS AL FORMATO ACEPTADO POR MYSQL, ADEMÁS PUEDE PARECER UN ESFUERZO INNECESARIO, PERO EVITA MUCHOS ERRORES DE IMPORTACIÓN.
      for columna in datos.columns:
           columna_lower = columna.lower()
           if "fecha" in columna_lower or "horario" in columna_lower:
@@ -145,7 +142,12 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
           if datos[columna].apply(lambda x: isinstance(x, str) and (x.count('/') > 0 or x.count(':') > 2)).any():
                mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ Formato de fecha/hora inválido en la columna '{columna}' después de la conversión. Revise el archivo original.")
                return
-    
+           
+     for _, fila in datos.iterrows():
+          treeview.insert("", "end", values=tuple(fila))
+          
+     return datos
+       
 def subir_DataFrame(nombre_de_la_tabla):
      if conseguir_campo_ID(nombre_de_la_tabla) in datos.columns:
           datos = datos.drop(columns=[conseguir_campo_ID(nombre_de_la_tabla)])
@@ -157,12 +159,13 @@ def subir_DataFrame(nombre_de_la_tabla):
      
      consulta_sql = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({placeholder})"
      
-     valores_a_importar = [tuple(fila) for fila in datos.values]
+     valores = [tuple(fila) for fila in datos.values]
      
      
      with conectar_base_de_datos() as conexión:
           cursor = conexión.cursor()
-          cursor.executemany(consulta_sql, valores_a_importar)
+          cursor.executemany(consulta_sql, valores)
           conexión.commit()
      
      desconectar_base_de_datos(conexión)
+     return valores

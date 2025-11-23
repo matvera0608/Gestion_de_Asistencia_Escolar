@@ -241,7 +241,7 @@ def abrir_tablas(nombre_de_la_tabla):
     treeview.bind("<<TreeviewSelect>>", lambda e: fun.mostrar_registro(nombre_de_la_tabla, treeview, ele.cajasDeTexto))
   
   
-  cf.btnCancelar = wid.crear_boton(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: cf.deshabilitar(nombre_de_la_tabla, treeview), "disabled")
+  cf.btnCancelar = wid.crear_boton(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: cf.deshabilitar(nombre_de_la_tabla, treeview, ele.cajasDeTexto), "disabled")
   cf.btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
   cf.btnAgregar = wid.crear_boton(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: btn_abm.nuevo_registro(nombre_de_la_tabla, treeview), "normal")

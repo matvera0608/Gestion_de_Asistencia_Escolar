@@ -1,4 +1,3 @@
-""" SE LLAMA control_form.py. Crear variables para tener como referencia es bueno porque evita el famoso mensaje que no está definido."""
 import tkinter as tk
 import funciones_necesarias.Fun_adicionales as fun #No sé si está bien que importe módulos de otros archivos
 import elementos_necesarios.Creacion_de_widgets as wid
@@ -12,23 +11,48 @@ btnGuardar = None
 btnExportarPDF = None
 btnImportar = None
 btnCancelar = None
-entryBuscar = None
-permitir_insercion = True
-entry = None
 ventanaSecundaria = None
+entryBuscar = None
 
 
 # --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
 
 def restaurar_botonera():
-     btnAgregar.config(state="normal")
-     btnModificar.config(state="disabled")
-     btnEliminar.config(state="normal")
-     btnGuardar.config(state="disabled")
-     btnCancelar.config(state="normal")
-     
+     # Estado por defecto: permitir agregar/modificar/eliminar, guardar deshabilitado
+     estados_defecto = {
+          'btnAgregar': 'normal',
+          'btnModificar': 'normal',
+          'btnEliminar': 'normal',
+          'btnGuardar': 'disabled',
+          'btnCancelar': 'normal',
+          'btnImportar': 'normal',
+          'btnExportar': 'normal'
+     }
+     aplicar_estados_botonera(estados_defecto)
+
      global modo_actual
      modo_actual = None
+
+
+def aplicar_estados_botonera(estados: dict):
+   
+     mapping = {
+          'btnAgregar': btnAgregar,
+          'btnModificar': btnModificar,
+          'btnEliminar': btnEliminar,
+          'btnGuardar': btnGuardar,
+          'btnCancelar': btnCancelar,
+          'btnImportar': btnImportar,
+          'btnExportar': btnExportarPDF
+     }
+     for nombre, estado in estados.items():
+          widget = mapping.get(nombre)
+          if widget is None:
+               continue
+          try:
+               widget.config(state=estado)
+          except Exception:
+               pass
 
 def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
      treeview.delete(*treeview.get_children())
@@ -36,6 +60,7 @@ def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
         return
    
      datos = fun.consultar_tabla(nombre_de_la_tabla)
+     #Este for crea el diseño zebra rows de la Treeview
      for índice, fila in enumerate(datos):
           id_val = fila[0]
           valores_visibles = fila[1:]
@@ -50,13 +75,7 @@ def habilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
 
      wid.configurar_ciertos_comboboxes(nombre_de_la_tabla)
 
-
-def deshabilitar(nombre_de_la_tabla, treeview):
-     global permitir_insercion
-  
-     if not permitir_insercion:
-          return
-     
+def deshabilitar(nombre_de_la_tabla, treeview, cajasDeTexto):
      treeview.delete(*treeview.get_children())
 
      treeview.bind("<Button-1>", lambda e: "break")
@@ -64,24 +83,24 @@ def deshabilitar(nombre_de_la_tabla, treeview):
      
      treeview.selection_remove(treeview.selection())
      entryBuscar.config(state="readonly")
-     for entry in ele.cajasDeTexto.get(nombre_de_la_tabla, []):
+     
+     
+     for entry in cajasDeTexto.get(nombre_de_la_tabla, []):
           if not entry.winfo_exists():
                continue
                
-     tipo_de_widget = getattr(entry, "widget_interno", "")
-     try:
-          if tipo_de_widget.startswith("cbBox_"):
-               entry.set("") 
-          elif tipo_de_widget.startswith("txBox_"):
-               entry.delete(0, tk.END)
-          else:
-               entry.delete(0, tk.END)
-     except Exception:
+          tipo_de_widget = getattr(entry, "widget_interno", "")
           try:
-               entry.set("") 
+               if tipo_de_widget.startswith("cbBox_"):
+                    entry.set("") 
+               elif tipo_de_widget.startswith("txBox_"):
+                    entry.delete(0, tk.END)
+               else:
+                    entry.delete(0, tk.END)
+          except Exception:
+               entry.set("")
+               pass
+          try:
+               entry.config(state="readonly")
           except Exception:
                pass
-     try:
-          entry.config(state="readonly")
-     except Exception:
-          pass
