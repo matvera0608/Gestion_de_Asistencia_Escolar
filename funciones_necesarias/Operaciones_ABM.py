@@ -160,16 +160,17 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
     print(f"HA OCURRIDO UN ERROR AL ELIMINAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, treeview): #En mi importar_datos 2 variables me están subrayando en amarillo. No encuentra datos ni valores a importar, porque esos están en funciones ETL
+def importar_datos(nombre_de_la_tabla, treeview):
   try:
-    convertir_datos_para_mysql()
     if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
     
     ruta, datos = seleccionar_archivo_siguiendo_extension()
     
-    datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, treeview)
+    datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, treeview, datos)
+    
+    datos = datos.applymap(convertir_datos_para_mysql)
     
     valores_a_importar = subir_DataFrame(nombre_de_la_tabla)
     

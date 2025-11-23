@@ -8,8 +8,11 @@ import os
 from Conexión import *
 from .Fun_adicionales import *
 
-def convertir_datos_para_mysql():
-     valor = None #o valor = ""
+def convertir_datos_para_mysql(valor):
+     """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
+     PORQUE LA DB ES MUY ESTRICTA CON LOS VALORES"""
+     if valor is None:
+          return None
      if not isinstance(valor, str):
           return valor
      try:
@@ -91,7 +94,10 @@ def seleccionar_archivo_siguiendo_extension():
 
      return ruta_archivo, datos
  
-def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview):
+def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview, datos):
+     """ VALIDAMOS EL ARCHIVO ASEGURANDO QUE EL NOMBRE SE LLAME EXACTAMENTE IGUAL, DETECTANDO LOS CAMPOS QUE REALMENTE EXISTAN,
+     DESPUÉS SI FALTAN QUE TIRE UN AVISO Y QUE VERIFIQUE UN REGISTRO INVÁLIDO """
+     
      #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
      nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
      
@@ -149,6 +155,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      return datos
        
 def subir_DataFrame(nombre_de_la_tabla):
+     """ ACÁ SUBIMOS EL DATAFRAME OBTENIENDO EL CAMPO ID, 
+     PREPARANDO LOS PARÁMETROS PARA SUBIR INCLUSO SI LOS CAMPOS TIENEN NOMBRES DISTINTOS A SQL """
      if conseguir_campo_ID(nombre_de_la_tabla) in datos.columns:
           datos = datos.drop(columns=[conseguir_campo_ID(nombre_de_la_tabla)])
      
