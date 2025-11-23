@@ -169,8 +169,9 @@ def importar_datos(nombre_de_la_tabla, treeview):
     ruta, datos = seleccionar_archivo_siguiendo_extension()
     
     datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, treeview, datos)
-    
-    datos = datos.applymap(convertir_datos_para_mysql)
+    if datos is None:
+      return
+    datos.applymap(convertir_datos_para_mysql)
     
     valores_a_importar = subir_DataFrame(nombre_de_la_tabla)
     
