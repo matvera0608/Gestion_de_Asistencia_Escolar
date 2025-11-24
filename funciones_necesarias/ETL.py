@@ -35,7 +35,7 @@ def convertir_datos_para_mysql(valor):
      except Exception:
           return v
  
-def seleccionar_archivo_siguiendo_extension():
+def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
      tipos_de_archivos = (
      ("bloc de notas","*.txt"),
      ("hoja con comas separadas","*.csv"),
@@ -64,7 +64,6 @@ def seleccionar_archivo_siguiendo_extension():
                     return
           case "csv":
                datos = pd.read_csv(ruta_archivo,sep="\t",engine="python" ,encoding="utf-8")
-               datos = datos.rename(columns=alias)
           case "txt":
                with open(ruta_archivo, "r", encoding="utf-8") as archivo:
                     lector = csv.reader(archivo, delimiter="\t")
@@ -85,9 +84,11 @@ def seleccionar_archivo_siguiendo_extension():
 
                     filas_limpias.append(fila_limpia)
               
-               datos = pd.DataFrame(filas_limpias, columns=encabezado)
-               datos.columns = [c.strip() for c in datos.columns]
-               datos = datos.rename(columns=alias)
+               datos_crudos = pd.DataFrame(filas_limpias, columns=encabezado)
+               datos_crudos.columns = [c.strip() for c in datos_crudos.columns]
+               datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview, datos_crudos)
+               if datos is None:
+                    return None, None
           case _:
                print("No compatible el formato de archivo")
                return
@@ -100,9 +101,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
      nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
-     
-     alias_invertido = {v.strip(): k for k, v in alias.items()}
-     
+          
      if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and \
      nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
@@ -110,10 +109,11 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      #Este sirve para obtener los campos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-     campos_archivo_aliasados = [alias_invertido.get(c, c) for c in datos.columns]
+     alias_invertido = {v.strip(): k for k, v in alias.items()}
+     campos_archivo_aliasados = [alias_invertido.get(c.strip(), c.strip()) for c in datos.columns if c.strip()]
 
      # Verificar que todos los campos del archivo estén en la tabla
-     campos_invalidos = [c for c in campos_archivo_aliasados if c not in campos_oficiales] #Esto es verdadero, porque los campos en la tabla alumno como Fecha de nacimiento y Carrera no existen. Pero para la base de datos no existe
+     campos_invalidos = [c for c in campos_archivo_aliasados if c and c not in campos_oficiales]
      if campos_invalidos:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
           return

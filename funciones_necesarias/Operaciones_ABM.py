@@ -160,18 +160,19 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
     print(f"HA OCURRIDO UN ERROR AL ELIMINAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, treeview):
+def importar_datos(nombre_de_la_tabla, treeview): #ASÍ ESTÁ MI IMPORTAR DATOS
   try:
     if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
       return
     
-    ruta, datos = seleccionar_archivo_siguiendo_extension()
-    
+    ruta, datos = seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview)
+    if datos is None:
+      return
     datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, treeview, datos)
     if datos is None:
       return
-    datos.applymap(convertir_datos_para_mysql)
+    datos = datos.applymap(convertir_datos_para_mysql)
     
     valores_a_importar = subir_DataFrame(nombre_de_la_tabla)
     
