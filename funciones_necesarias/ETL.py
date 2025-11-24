@@ -50,10 +50,11 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
      extensión = extensión.lower().replace(".", "")
      
      if not ruta_archivo:
-        return
+          return None, None
+
      if "." not in ruta_archivo:
           mensajeTexto.showerror("Error", "El archivo seleccionado no tiene extensión válida.")
-          return
+          return None, None
      
      match extensión:
           case "xlsx":
@@ -61,15 +62,21 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
                     datos = pd.read_excel(ruta_archivo)
                except Exception as e:
                     mensajeTexto.showerror("Error al leer Excel", str(e))
-                    return
+                    return None, None
           case "csv":
                datos = pd.read_csv(ruta_archivo,sep="\t",engine="python" ,encoding="utf-8")
           case "txt":
                with open(ruta_archivo, "r", encoding="utf-8") as archivo:
-                    lector = csv.reader(archivo, delimiter="\t")
+                    contenido = archivo.read()
+                    contenido = re.sub(r"\t+", "\t", contenido)  # reemplaza múltiples tabulaciones por una sola. Si el txt tiene tabulaciones adicionales limpia para la importación
+                    lector = csv.reader(contenido.splitlines(), delimiter="\t")
                     filas = list(lector)
-          
+
+
                encabezado = [col.strip() for col in filas[0]]
+               if not filas or len(filas) < 1:
+                    mensajeTexto.showerror("Error", "El archivo está vacío o mal formateado.")
+                    return None, None
                num_columnas = len(encabezado)
 
                filas_limpias = []
@@ -91,7 +98,7 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
                     return None, None
           case _:
                print("No compatible el formato de archivo")
-               return
+               return None, None
 
      return ruta_archivo, datos
  
@@ -110,7 +117,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      #Este sirve para obtener los campos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
      alias_invertido = {v.strip(): k for k, v in alias.items()}
-     campos_archivo_aliasados = [alias_invertido.get(c.strip(), c.strip()) for c in datos.columns if c.strip()]
+     campos_archivo_aliasados = [alias_invertido.get(c.strip(), c.strip()) for c in datos.columns]
+     datos.columns = campos_archivo_aliasados
 
      # Verificar que todos los campos del archivo estén en la tabla
      campos_invalidos = [c for c in campos_archivo_aliasados if c and c not in campos_oficiales]
@@ -139,22 +147,26 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
           filas_traducidas_a_nombres_legibles.append(traducción)
      datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
-    
-     for columna in datos.columns:
-          columna_lower = columna.lower()
-          if "fecha" in columna_lower or "horario" in columna_lower:
-               datos[columna] = datos[columna].apply(convertir_datos_para_mysql)
-          
-          if datos[columna].apply(lambda x: isinstance(x, str) and (x.count('/') > 0 or x.count(':') > 2)).any():
-               mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ Formato de fecha/hora inválido en la columna '{columna}' después de la conversión. Revise el archivo original.")
-               return
-           
+     
      for _, fila in datos.iterrows():
           treeview.insert("", "end", values=tuple(fila))
           
      return datos
-       
-def subir_DataFrame(nombre_de_la_tabla):
+
+def normalizar_datos(datos):
+     for columna in datos.columns:
+          columna_lower = columna.lower()
+          if "fecha" in columna_lower or "horario" in columna_lower:
+               datos[columna] = datos[columna].map(convertir_datos_para_mysql)
+          
+          for i, valor in enumerate(datos[columna]):
+               if isinstance(valor, str) and (valor.count('/') > 0 or valor.count(':') > 2):
+                    mensajeTexto.showerror("ERROR DE DATOS", f"❌ Error en fila {i+1}, columna '{columna}': valor inválido '{valor}'")
+                    return None
+     return datos
+
+
+def subir_DataFrame(nombre_de_la_tabla, datos):
      """ ACÁ SUBIMOS EL DATAFRAME OBTENIENDO EL CAMPO ID, 
      PREPARANDO LOS PARÁMETROS PARA SUBIR INCLUSO SI LOS CAMPOS TIENEN NOMBRES DISTINTOS A SQL """
      if conseguir_campo_ID(nombre_de_la_tabla) in datos.columns:

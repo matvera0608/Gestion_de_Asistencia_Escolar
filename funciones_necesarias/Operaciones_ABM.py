@@ -172,9 +172,12 @@ def importar_datos(nombre_de_la_tabla, treeview): #ASÍ ESTÁ MI IMPORTAR DATOS
     datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, treeview, datos)
     if datos is None:
       return
-    datos = datos.applymap(convertir_datos_para_mysql)
     
-    valores_a_importar = subir_DataFrame(nombre_de_la_tabla)
+    datos = normalizar_datos(datos)
+    if datos is None: #LOS Nones SIRVEN PARA BLOQUEAR EL PASO DE LA IMPORTACIÓN. LA NORMALIZACIÓN DE FECHA Y HORA ESTÁ GUARDADO EN UNA FUNCIÓN PARA EVITAR AGRANDAR EL CÓDIGO
+      return
+    
+    valores_a_importar = subir_DataFrame(nombre_de_la_tabla, datos)
     
     refrescar_Treeview(nombre_de_la_tabla, treeview, estado, consultas)
     
