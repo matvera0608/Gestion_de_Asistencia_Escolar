@@ -202,8 +202,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             nombre_a_buscar = datos[campo_fkID]
             if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
               datos_traducidos[campo_fkID] = int(nombre_a_buscar)
-              continue  # saltamos la traducción
-                        
+              continue  # saltamos la traducción          
             consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
             cursor.execute(consulta, (nombre_a_buscar,))
             resultado = cursor.fetchone()

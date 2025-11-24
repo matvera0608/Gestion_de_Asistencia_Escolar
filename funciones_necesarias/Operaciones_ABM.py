@@ -179,7 +179,7 @@ def importar_datos(nombre_de_la_tabla, treeview): #ASÍ ESTÁ MI IMPORTAR DATOS
     
     valores_a_importar = subir_DataFrame(nombre_de_la_tabla, datos)
     
-    refrescar_Treeview(nombre_de_la_tabla, treeview, estado, consultas)
+    refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
     
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
     print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")

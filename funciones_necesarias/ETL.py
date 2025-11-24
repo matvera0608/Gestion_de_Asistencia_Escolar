@@ -1,7 +1,7 @@
 from datetime import datetime
 import re
-from dateutil.parser import parse
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
+from dateutil.parser import parse
 import csv
 import pandas as pd
 import os
@@ -34,7 +34,7 @@ def convertir_datos_para_mysql(valor):
                     return None # → De lo contrario, devolver texto return v 
      except Exception:
           return v
- 
+
 def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
      tipos_de_archivos = (
      ("bloc de notas","*.txt"),
@@ -164,7 +164,6 @@ def normalizar_datos(datos):
                     mensajeTexto.showerror("ERROR DE DATOS", f"❌ Error en fila {i+1}, columna '{columna}': valor inválido '{valor}'")
                     return None
      return datos
-
 
 def subir_DataFrame(nombre_de_la_tabla, datos):
      """ ACÁ SUBIMOS EL DATAFRAME OBTENIENDO EL CAMPO ID, 
