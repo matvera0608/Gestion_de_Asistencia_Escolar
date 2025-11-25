@@ -164,7 +164,7 @@ def importar_datos(nombre_de_la_tabla, treeview):
       print("La tabla visual no existe o fue cerrada.")
       return
     
-    ruta, datos = seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview)
+    ruta, datos = seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla)
     if datos is None:
       return
     datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, datos)

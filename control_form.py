@@ -1,7 +1,6 @@
 import tkinter as tk
 import funciones_necesarias.Fun_adicionales as fun #No sé si está bien que importe módulos de otros archivos
 import elementos_necesarios.Creacion_de_widgets as wid
-import elementos_necesarios.Elementos as ele
 
 # --- REFERENCIAS GLOBALES A WIDGETS ---
 btnAgregar = None
@@ -26,13 +25,9 @@ def restaurar_botonera(estado: str):
           'btnGuardar': estado,
           'btnCancelar': estado,
           'btnImportar': estado,
-          'btnExportar': estado
+          'btnExportarPDF': estado
      }
      aplicar_estados_botonera(estados_defecto)
-
-     global modo_actual
-     modo_actual = None
-
 
 def aplicar_estados_botonera(estados: dict):
    
@@ -43,7 +38,7 @@ def aplicar_estados_botonera(estados: dict):
           'btnGuardar': btnGuardar,
           'btnCancelar': btnCancelar,
           'btnImportar': btnImportar,
-          'btnExportar': btnExportarPDF
+          'btnExportarPDF': btnExportarPDF
      }
      for nombre, estado in estados.items():
           widget = mapping.get(nombre)

@@ -6,9 +6,13 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
-def refrescar_Treeview(nombre_de_la_tabla, treeview, consultas):
-  datos = consultar_tabla(nombre_de_la_tabla)
-
+def refrescar_Treeview(nombre_de_la_tabla, treeview, consultas=None):
+  
+  if consultas is None:
+    datos = consultar_tabla(nombre_de_la_tabla)
+  else:
+    datos = consultas
+  
   for item in treeview.get_children():
     treeview.delete(item)
   

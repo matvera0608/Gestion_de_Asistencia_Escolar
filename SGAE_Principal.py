@@ -85,7 +85,8 @@ def pantallaLogin():
     mostrar_pestañas(ventana, permiso)
  
   #Iniciar Sesión
-  botón_login = wid.crear_boton(ventana, "Iniciar", imágenes_por_botón["iniciar_sesion"], iniciar_sesion, "normal")
+  botón_login = wid.crear_boton(ventana, "Iniciar", imágenes_por_botón["iniciar_sesion"], iniciar_sesion)
+  botón_login.config(state="normal")
   botón_login.grid(row=3, column=0, sticky="s")
   
   return ventana
@@ -149,7 +150,8 @@ def mostrar_pestañas(ventana, permiso):
     pantallaLogin()
   
   
-  botón_regresar = wid.crear_boton(notebook, "Regresar", imágenes_por_botón["regresar_al_menu_principal"], lambda: regresar(), "normal")
+  botón_regresar = wid.crear_boton(notebook, "Regresar", imágenes_por_botón["regresar_al_menu_principal"], lambda: regresar())
+  botón_regresar.config(state="normal")
   botón_regresar.pack(side="top", pady=50)
   
   lb_obligatoriedad = tk.Label(notebook, text="* Campos obligatorios", bg=ventana.cget("bg"), font=("Arial", 8))
@@ -241,25 +243,26 @@ def abrir_tablas(nombre_de_la_tabla):
     treeview.bind("<<TreeviewSelect>>", lambda e: fun.mostrar_registro(nombre_de_la_tabla, treeview, ele.cajasDeTexto))
   
   
-  cf.btnCancelar = wid.crear_boton(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: cf.deshabilitar(nombre_de_la_tabla, treeview, ele.cajasDeTexto), "disabled")
+  
+  cf.btnCancelar = wid.crear_boton(marco_izquierdo, "Cancelar", imágenes_por_botón["cancelar"], lambda: btn_abm.limpiar_TODO(nombre_de_la_tabla, treeview))
   cf.btnCancelar.grid(row=0, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnAgregar = wid.crear_boton(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: btn_abm.nuevo_registro(nombre_de_la_tabla, treeview), "normal")
+  cf.btnAgregar = wid.crear_boton(marco_izquierdo, "Agregar",imágenes_por_botón["agregar"], lambda: btn_abm.nuevo_registro(nombre_de_la_tabla, treeview))
   cf.btnAgregar.grid(row=1, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnModificar = wid.crear_boton(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: btn_abm.editar_registro(nombre_de_la_tabla, treeview), "disabled")
+  cf.btnModificar = wid.crear_boton(marco_izquierdo, "Modificar",imágenes_por_botón["modificar"], lambda: btn_abm.editar_registro(nombre_de_la_tabla, treeview))
   cf.btnModificar.grid(row=2, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnEliminar = wid.crear_boton(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: abm.eliminar_datos(nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria), "disabled")
+  cf.btnEliminar = wid.crear_boton(marco_izquierdo, "Eliminar",imágenes_por_botón["eliminar"], lambda: abm.eliminar_datos(nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria))
   cf.btnEliminar.grid(row=3, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnGuardar = wid.crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: btn_abm.guardar_registros(nombre_de_la_tabla, ele.cajasDeTexto, ele.campos_en_db, treeview, ventanaSecundaria), "disabled")
+  cf.btnGuardar = wid.crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: btn_abm.guardar_registros(nombre_de_la_tabla, ele.cajasDeTexto, ele.campos_en_db, treeview, ventanaSecundaria))
   cf.btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnImportar = wid.crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: abm.importar_datos(nombre_de_la_tabla, treeview), "disabled")
+  cf.btnImportar = wid.crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: abm.importar_datos(nombre_de_la_tabla, treeview))
   cf.btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnExportarPDF = wid.crear_boton(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: abm.exportar_en_PDF(nombre_de_la_tabla, treeview, ventanaSecundaria), "disabled")
+  cf.btnExportarPDF = wid.crear_boton(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: abm.exportar_en_PDF(nombre_de_la_tabla, treeview, ventanaSecundaria))
   cf.btnExportarPDF.grid(row=6, column=0, pady=10, padx=0, sticky="ew")
 
   botones = [
@@ -273,15 +276,19 @@ def abrir_tablas(nombre_de_la_tabla):
   ]
 
   acciones = {
-      "Cancelar": partial(cf.deshabilitar,nombre_de_la_tabla, treeview),
+      "Cancelar": partial(btn_abm.limpiar_TODO, nombre_de_la_tabla, treeview),
       "Agregar": partial(btn_abm.nuevo_registro,nombre_de_la_tabla, treeview),
       "Modificar": partial(btn_abm.editar_registro,nombre_de_la_tabla, treeview),
-      "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria),
       "Guardar": partial(btn_abm.guardar_registros, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ele.campos_en_db),
+      "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria),
       "Importar": partial(abm.importar_datos, nombre_de_la_tabla, treeview),
       "Exportar": partial(abm.exportar_en_PDF, nombre_de_la_tabla, treeview),
       "Mostrar": partial(fun.mostrar_registro, nombre_de_la_tabla, treeview, ele.cajasDeTexto)
   }
+  
+  cf.restaurar_botonera("disabled")
+  cf.btnAgregar.config(state="normal")
+  
   # --- BINDEOS DE EVENTOS ---
   
   ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(treeview, ele.cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))

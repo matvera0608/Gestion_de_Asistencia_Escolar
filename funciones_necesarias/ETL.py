@@ -45,7 +45,7 @@ def convertir_datos_para_mysql(valor):
      
      return dt.strftime("%Y-%m-%d %H:%M:%S")
 
-def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
+def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
      tipos_de_archivos = (
      ("bloc de notas","*.txt"),
      ("hoja con comas separadas","*.csv"),
@@ -103,7 +103,7 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
               
                datos_crudos = pd.DataFrame(filas_limpias, columns=encabezado)
                datos_crudos.columns = [c.strip() for c in datos_crudos.columns]
-               datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview, datos_crudos)
+               datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos_crudos)
                if datos is None:
                     return None, None
           case _:

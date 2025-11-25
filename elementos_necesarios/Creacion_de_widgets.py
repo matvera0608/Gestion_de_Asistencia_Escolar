@@ -18,8 +18,8 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
   return ttk.Combobox(contenedor, width=ancho, state=estado)
 
 
-def crear_boton(contenedor, texto, imágen, comando, estado, estilo="Boton.TButton"):
-  return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, state=estado, cursor='hand2')
+def crear_boton(contenedor, texto, imágen, comando, estilo="Boton.TButton"):
+  return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, cursor='hand2')
 
 
 def crear_Treeview(contenedor, tabla):
