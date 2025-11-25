@@ -21,6 +21,8 @@ IF NOT EXIST .gitignore CALL :CREATE_GITIGNORE
 
 GOTO REINTENTAR_CONEXION
 
+EXIT /B
+
 :REINTENTAR_CONEXION
     CALL :CHECK_INTERNET
     IF %INTERNET_STATUS% EQU 0 (
@@ -118,8 +120,7 @@ echo .........................................................................
         echo Conexión a Internet detectada. Continuado con el giteo
     ) ELSE (
         SET "INTERNET_STATUS=1"
-        echo ERROR: No se detectó la conexión a Internet.
-    )
+        echo ERROR: No se detectó la conexión a Internet.)
     echo Intentando verificar conexión a Internet...
 
 echo .........................................................................
@@ -191,6 +192,7 @@ echo .........................................................................
     pause
     GOTO END_SCRIPT
 
+
 :PUSHEO_EXITOSO
     color 0A
     echo .........................................................................
@@ -201,4 +203,3 @@ echo .........................................................................
     echo .........................................................................
     echo Proceso Giteo finalizado.
     timeout /t 1 >NUL
-    EXIT /B
