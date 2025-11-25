@@ -15,25 +15,27 @@ def convertir_datos_para_mysql(valor):
           return None
      if not isinstance(valor, str):
           return valor
+     
+     v = valor.strip()
+     if v == "":
+          return None
+     
      try:
-          v = valor.strip()
-          # → Si es un horario (formato HH:MM o HH:MM:SS) 
-          if re.fullmatch(r"\d{1,2}:\d{2}(:\d{2})?", v): 
-               try: 
-                    t = datetime.strptime(v, "%H:%M:%S") if ":" in v[3:] \
-                    else datetime.strptime(v, "%H:%M")
-                    return t.strftime("%H:%M:%S") 
-               except:
-                    return None # → Si es una fecha (formato YYYY-MM-DD o DD/MM/YYYY) 
-          
-          if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v) or re.fullmatch(r"\d{2}/\d{2}/\d{4}", v): 
-               try: 
-                    d = parse(v, dayfirst=True) 
-                    return d.strftime("%Y-%m-%d") 
-               except: 
-                    return None # → De lo contrario, devolver texto return v 
-     except Exception:
-          return v
+          dt = parse(v, dayfirst=True)
+     except:
+          return 
+     
+     
+     sólo_tipo_fecha = dt.time().hour == 0 and dt.time().minute == 0 and dt.time().second == 0 \
+          and not any(c in v for c in [":"])
+     sólo_tipo_hora = any(c in v for c in [":"]) and not any(c in v for c in ["-", "/"])
+     
+     if sólo_tipo_fecha:
+          dt.strftime("%Y-%m-%d")
+     if sólo_tipo_hora:
+          dt.strftime("%H:%M:%S")
+     
+     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
      tipos_de_archivos = (
