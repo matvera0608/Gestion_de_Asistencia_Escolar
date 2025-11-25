@@ -118,7 +118,7 @@ echo .........................................................................
         color 0A
         SET "INTERNET_STATUS=0"
         echo Conexión a Internet detectada. Continuado con el giteo
-    ) ELSE (
+    ) ELSE IF %ERRORLEVEL% EQU 1 (
         SET "INTERNET_STATUS=1"
         echo ERROR: No se detectó la conexión a Internet.)
     echo Intentando verificar conexión a Internet...
