@@ -1,4 +1,4 @@
-Estado	Fecha 	Alumno	Profesor	Materia
+estado	fecha 	Alumno	Profesor	Materia
 presente	15/11/2025	Julio Pérez	Hugo López	Base de Datos
 ausente	15/11/2025	Sofía Ruiz	Hugo López	Base de Datos
 presente	16/11/2025	Julio Pérez	Hugo López	Base de Datos

@@ -3,7 +3,7 @@ from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
 import csv
 import pandas as pd
-import os
+import os, difflib
 from Conexión import *
 from .Fun_adicionales import *
 
@@ -13,6 +13,8 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
+def normalizar_expresión(s):
+     return s.strip().lower()
 
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
@@ -124,17 +126,57 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      #Este sirve para obtener los campos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-     alias_invertido = {v.strip(): k for k, v in alias.items()} #Esto va a  tirar error?
-     campos_archivo_aliasados = [alias_invertido.get(c.strip(), c.strip()) for c in datos.columns]
-     datos.columns = campos_archivo_aliasados
+     
+     campos_oficiales_normalizados = [normalizar_expresión(c) for c in campos_oficiales]
+     
+     alias_invertido = {normalizar_expresión(v): k for k, v in alias.items()}
+     
+     alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
+     
+     columnas_finales_de_campos = []
+     
+     for columna_original in datos.columns:
+        c_norm = normalizar_expresión(columna_original)
+        # 1) Coincidencia exacta por alias
+        if c_norm in alias_invertido:
+            columnas_finales_de_campos.append(alias_invertido[c_norm])
+            continue
+        # 2) Coincidencia exacta por nombre oficial
+        if c_norm in campos_oficiales_normalizados:
+            # Buscar el nombre original respetando mayúsculas/minúsculas
+            indice = campos_oficiales_normalizados.index(c_norm)
+            columnas_finales_de_campos.append(campos_oficiales[indice])
+            continue
+       
+        # 3) Coincidencia aproximada (difflib)
+        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=0.80)
+        if mejor:
+            mejor_norm = mejor[0]
+            if mejor_norm in alias_invertido:
+                columnas_finales_de_campos.append(alias_invertido[mejor_norm])
+            else:
+                # Es un nombre oficial
+                indice = campos_oficiales_normalizados.index(mejor_norm)
+                columnas_finales_de_campos.append(campos_oficiales[indice])
+            continue
 
+        # 4) Nada coincide → inválido
+        mensajeTexto.showerror(
+            "ERROR DE IMPORTACIÓN",
+            f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}."
+        )
+        return
+     
+     
+     datos.columns = columnas_finales_de_campos
+     
      # Verificar que todos los campos del archivo estén en la tabla
-     campos_invalidos = [c for c in campos_archivo_aliasados if c and c not in campos_oficiales]
+     campos_invalidos = [c for c in columnas_finales_de_campos if c and c not in campos_oficiales]
      if campos_invalidos:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
           return
      
-     campos_faltantes = [c for c in campos_oficiales if c not in campos_archivo_aliasados]
+     campos_faltantes = [c for c in campos_oficiales if c not in columnas_finales_de_campos]
      if campos_faltantes:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
           return
@@ -155,10 +197,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
           filas_traducidas_a_nombres_legibles.append(traducción)
      datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
-     
-     for _, fila in datos.iterrows():
-          treeview.insert("", "end", values=tuple(fila))
-          
+    
      return datos
 
 def normalizar_datos(datos):
