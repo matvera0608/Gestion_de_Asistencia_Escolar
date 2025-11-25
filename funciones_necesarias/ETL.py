@@ -112,17 +112,30 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla, treeview):
 
      return ruta_archivo, datos
  
-def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treeview, datos):
+def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos):
      """ VALIDAMOS EL ARCHIVO ASEGURANDO QUE EL NOMBRE SE LLAME EXACTAMENTE IGUAL, DETECTANDO LOS CAMPOS QUE REALMENTE EXISTAN,
      DESPUÉS SI FALTAN QUE TIRE UN AVISO Y QUE VERIFIQUE UN REGISTRO INVÁLIDO """
      
+     #===================================================================
+     # 1. VALIDACIÓN INTELIGENTE DEL NOMBRE DE ARCHIVO DONDE TENGAN UNA SIMILITUD
+     #===================================================================
+     
      #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
-     nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
-      
-     if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and \
-     nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
+     nombre_de_archivo= os.path.splitext(os.path.basename(ruta_archivo))[0]
+     nombre_de_archivo_normalizado = nombre_de_archivo.lower().replace("_", "").replace(" ", "")
+     nombre_de_la_tabla_normalizado = nombre_de_la_tabla.lower().replace("_", "").replace(" ", "")
+
+     # Intentar coincidencias aproximadas
+     mejor_coincidencia = difflib.get_close_matches(nombre_de_archivo_normalizado, [nombre_de_la_tabla_normalizado.lower()] , n=1, cutoff=0.85)
+
+     
+     if not mejor_coincidencia:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
           return
+     
+     #===================================================================
+     # 2. VALIDACIÓN INTELIGENTE DE NOMBRE DE CAMPOS CON EL FIN DE FLEXIBILIZAR UN POCO 
+     #===================================================================
      
      #Variables para flexibilizar el nombre de los campos para la importación de datos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
@@ -131,30 +144,31 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
      columnas_finales_de_campos = []
      
+     #Se recorre con un for el archivo para validar cada atributo dentro del archivo.
      for columna_original in datos.columns:
         c_norm = normalizar_expresión(columna_original)
         # 1) Coincidencia exacta por alias
         if c_norm in alias_invertido:
-            columnas_finales_de_campos.append(alias_invertido[c_norm])
-            continue
+          columnas_finales_de_campos.append(alias_invertido[c_norm])
+          continue
         # 2) Coincidencia exacta por nombre oficial
         if c_norm in campos_oficiales_normalizados:
-            # Buscar el nombre original respetando mayúsculas/minúsculas
-            indice = campos_oficiales_normalizados.index(c_norm)
-            columnas_finales_de_campos.append(campos_oficiales[indice])
-            continue
+          # Buscar el nombre original respetando mayúsculas/minúsculas
+          indice = campos_oficiales_normalizados.index(c_norm)
+          columnas_finales_de_campos.append(campos_oficiales[indice])
+          continue
        
         # 3) Coincidencia aproximada (difflib)
-        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=0.80)
+        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=0.85)
         if mejor:
-            mejor_norm = mejor[0]
-            if mejor_norm in alias_invertido:
-                columnas_finales_de_campos.append(alias_invertido[mejor_norm])
-            else:
-                # Es un nombre oficial
-                indice = campos_oficiales_normalizados.index(mejor_norm)
-                columnas_finales_de_campos.append(campos_oficiales[indice])
-            continue
+          mejor_norm = mejor[0]
+          if mejor_norm in alias_invertido:
+               columnas_finales_de_campos.append(alias_invertido[mejor_norm])
+          else:
+               # Es un nombre oficial
+               indice = campos_oficiales_normalizados.index(mejor_norm)
+               columnas_finales_de_campos.append(campos_oficiales[indice])
+          continue
 
         # 4) Nada coincide → inválido
         mensajeTexto.showerror(
@@ -166,23 +180,40 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      datos.columns = columnas_finales_de_campos
      
+     #===================================================================
+     # 3. VALIDACIÓN INTELIGENTE DE CAMPOS INVÁLIDOS
+     #===================================================================
+     
      # Verificar que todos los campos del archivo estén en la tabla
      campos_invalidos = [c for c in columnas_finales_de_campos if c and c not in campos_oficiales]
      if campos_invalidos:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
           return
      
+     #===================================================================
+     # 4. VALIDACIÓN INTELIGENTE DE CAMPOS FALTANTES
+     #===================================================================
+     
      campos_faltantes = [c for c in campos_oficiales if c not in columnas_finales_de_campos]
      if campos_faltantes:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
           return
      
+     #===================================================================
+     # 5. VALIDACIÓN DE CANTIDAD DE CAMPOS
+     #===================================================================
+     
      for i, fila in enumerate(datos.values): #Validar largo de la fila
           if len(fila) != len(campos_oficiales):
                mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
                return
-
-     filas_traducidas_a_nombres_legibles = []
+     
+     #===================================================================
+     # 6. TRADUCCIÓN DE CAMPOS CLAVES O CRUDOS A NOMBRES LEGIBLES
+     #===================================================================
+     
+     
+     filas_traducidas = []
      
      for _, fila in datos.iterrows():
           dict_fila = fila.to_dict()
@@ -191,8 +222,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
                mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
                return
      
-          filas_traducidas_a_nombres_legibles.append(traducción)
-     datos = pd.DataFrame(filas_traducidas_a_nombres_legibles)
+          filas_traducidas.append(traducción)
+     datos = pd.DataFrame(filas_traducidas)
     
      return datos
 

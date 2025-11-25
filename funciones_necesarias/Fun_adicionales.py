@@ -215,8 +215,8 @@ def traducir_IDs(nombre_de_la_tabla, datos):
       
   except Exception as e:
     return None , f"Error de conexión: {e}"
-   
-    
+
+
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),
   "alumno": ("ID_Alumno","Nombre"),

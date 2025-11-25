@@ -1,6 +1,6 @@
 estado	fecha 	Alumno	Profesor	Materia
-presente	15/11/2025	Julio Pérez	Hugo López	Base de Datos
-ausente	15/11/2025	Sofía Ruiz	Hugo López	Base de Datos
-presente	16/11/2025	Julio Pérez	Hugo López	Base de Datos
-presente	16/11/2025	Sofía Ruiz	María Gómez	Base de Datos
-ausente	17/11/2025	Luisa Pérez	María Gómez	Base de Datos
+presente	15/11/2025	Luisa Méndez	Hugo López	Base de Datos
+ausente	15/11/2025	Carlos Gómez	Hugo López	Base de Datos
+presente	16/11/2025	Luisa Méndez	Hugo López	Base de Datos
+presente	16/11/2025	Carlos Gómez	María Gómez	Base de Datos
+ausente	17/11/2025	Luisa Méndez	María Gómez	Base de Datos
