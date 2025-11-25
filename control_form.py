@@ -17,16 +17,16 @@ entryBuscar = None
 
 # --- FUNCIONES DE CONTROL DE HABILITACIÓN ---
 
-def restaurar_botonera():
+def restaurar_botonera(estado: str):
      # Estado por defecto: permitir agregar/modificar/eliminar, guardar deshabilitado
      estados_defecto = {
-          'btnAgregar': 'normal',
-          'btnModificar': 'normal',
-          'btnEliminar': 'normal',
-          'btnGuardar': 'normal',
-          'btnCancelar': 'normal',
-          'btnImportar': 'normal',
-          'btnExportar': 'normal'
+          'btnAgregar': estado,
+          'btnModificar': estado,
+          'btnEliminar': estado,
+          'btnGuardar': estado,
+          'btnCancelar': estado,
+          'btnImportar': estado,
+          'btnExportar': estado
      }
      aplicar_estados_botonera(estados_defecto)
 
