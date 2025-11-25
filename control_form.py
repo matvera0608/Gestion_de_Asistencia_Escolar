@@ -23,7 +23,7 @@ def restaurar_botonera():
           'btnAgregar': 'normal',
           'btnModificar': 'normal',
           'btnEliminar': 'normal',
-          'btnGuardar': 'disabled',
+          'btnGuardar': 'normal',
           'btnCancelar': 'normal',
           'btnImportar': 'normal',
           'btnExportar': 'normal'

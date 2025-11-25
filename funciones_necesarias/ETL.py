@@ -118,21 +118,17 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
      nombre_de_archivo_base = os.path.splitext(os.path.basename(ruta_archivo))[0].lower()
-          
+      
      if nombre_de_archivo_base not in nombre_de_la_tabla.lower() and \
      nombre_de_la_tabla.lower() not in nombre_de_archivo_base:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
           return
      
-     #Este sirve para obtener los campos
+     #Variables para flexibilizar el nombre de los campos para la importación de datos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-     
      campos_oficiales_normalizados = [normalizar_expresión(c) for c in campos_oficiales]
-     
      alias_invertido = {normalizar_expresión(v): k for k, v in alias.items()}
-     
      alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
-     
      columnas_finales_de_campos = []
      
      for columna_original in datos.columns:

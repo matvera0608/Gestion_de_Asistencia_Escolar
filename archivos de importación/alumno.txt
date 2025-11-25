@@ -1,17 +1,6 @@
-nombre			fecha de nacimiento		carrera
+nombre			fecha de nacimiento		Carrera
 Carlos Gómez		15/10/2003		Analista de sistemas
-Luisa Méndez		4/10/2003		Analista de sistemas
+Luisa Méndez		4/10/2003		     Analista de sistemas
 Roberto Sosa		31/10/2003		Analista de sistemas
 Julio Hernández	28/02/2000		Analista de sistemas
 Luisa Pérez		24/06/2000		Analista de sistemas
-Juan Sosa		5/4/1995		Analista de sistemas
-Gabriel Gómez	5/5/1990		Analista de sistemas
-Hugo Ocampo		5/10/1195		Analista de sistemas
-Gustavo Ocampo	01/03/2003		Analista de sistemas
-Ramiro Gómez		6/1/2005		Analista de sistemas
-Bruno González		5/9/1995		Hotelería y Turismo
-Roberto Gutiérrez		15/10/2003		Analista de sistemas
-Zoe Jansen		15/10/2003		Analista de sistemas
-Bruno Méndez		15/10/2003		Analista de sistemas
-Federico Sosa		15/10/2003		Analista de sistemas
-Sofía Ruiz	04/10/1998		Administración de Empresas

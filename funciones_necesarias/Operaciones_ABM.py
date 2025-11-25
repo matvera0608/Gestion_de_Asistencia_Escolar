@@ -127,14 +127,16 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
   
   if not selección:
     return
-  
   try:
     iid = selección[0]
     ID_Seleccionado = int(iid)
   except ValueError:
     ID_Seleccionado = iid
-
+    
   try:
+    
+    siguiente_iid = treeview.next(iid)
+    
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
       CampoID = conseguir_campo_ID(nombre_de_la_tabla)
@@ -145,7 +147,10 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
       conexión.commit()
 
       refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
-
+      
+      if siguiente_iid:
+        treeview.selection_set(siguiente_iid)
+      
       for entry in cajasDeTexto[nombre_de_la_tabla]:
         if entry.winfo_exists():
           entry.delete(0, tk.END)

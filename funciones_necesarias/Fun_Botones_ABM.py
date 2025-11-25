@@ -1,31 +1,25 @@
 from .Operaciones_ABM import *
 import control_form as cf
 
-modo_actual = None
-
-
+def _preparar_modo(modo, nombre_de_la_tabla, treeview, boton_a_deshabilitar):
+    global modo_actual
+    modo_actual = modo
+    
+    cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
+    if not treeview.winfo_exists():
+        print(f"Advertencia: el Treeview no está disponible en modo '{modo}'.")
+        return
+        
+    cf.restaurar_botonera()
+    # Deshabilita el botón pasado como argumento (ej. cf.btnAgregar o cf.btnModificar)
+    boton_a_deshabilitar.config(state="disabled")
+    
 def nuevo_registro(nombre_de_la_tabla, treeview): #Se puso un parámetro de treeview, porque habilitar y deshabilitar si o si usa un argumento
     """Prepara la interfaz para agregar un nuevo registro."""
-    global modo_actual
-    modo_actual = "nuevo"
     
-    cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
-    if not treeview.winfo_exists():
-        print("Advertencia: el Treeview no está disponible.")
-        return
-    cf.restaurar_botonera()
-    cf.btnAgregar.config(state="disabled")
  
 def editar_registro(nombre_de_la_tabla, treeview):
-    global modo_actual
-    modo_actual = "editar"
-    
-    cf.habilitar(nombre_de_la_tabla, treeview, cajasDeTexto)
-    if not treeview.winfo_exists():
-        print("Advertencia: el Treeview no está disponible.")
-        return
-    cf.restaurar_botonera()
-    cf.btnModificar.config(state="disabled")
+    """Prepara la interfaz para modificar un registro existente."""
  
 def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
     global modo_actual

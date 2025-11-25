@@ -276,7 +276,7 @@ def abrir_tablas(nombre_de_la_tabla):
       "Cancelar": partial(cf.deshabilitar,nombre_de_la_tabla, treeview),
       "Agregar": partial(btn_abm.nuevo_registro,nombre_de_la_tabla, treeview),
       "Modificar": partial(btn_abm.editar_registro,nombre_de_la_tabla, treeview),
-      "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview),
+      "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria),
       "Guardar": partial(btn_abm.guardar_registros, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ele.campos_en_db),
       "Importar": partial(abm.importar_datos, nombre_de_la_tabla, treeview),
       "Exportar": partial(abm.exportar_en_PDF, nombre_de_la_tabla, treeview),
@@ -288,6 +288,7 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
   ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
   ventanaSecundaria.bind("<Control-a>", lambda e: (acciones["Guardar"]()))
+  ventanaSecundaria.bind("<Control-Key-BackSpace>", lambda e: (acciones["Eliminar"]()))
 
 # --- INICIO DEL SISTEMA ---
 pantallaLogin()
