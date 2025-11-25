@@ -5,12 +5,6 @@ from .Fun_Validación_SGAE import *
 from .ETL import *
 import tkinter as tk
 from tkinter import filedialog as diálogoArchivo
-#IMPORTACIÓN PARA CREAR PDF#
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
-
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
@@ -191,6 +185,7 @@ def exportar_en_PDF(nombre_de_la_tabla, treeview, ventana):
   try:
     if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       return
+    
     datos_a_exportar = treeview.get_children()
     datos = []
    
@@ -214,65 +209,8 @@ def exportar_en_PDF(nombre_de_la_tabla, treeview, ventana):
     if not ruta_archivo_pdf:
       return   
     
-    pdf = SimpleDocTemplate(
-      ruta_archivo_pdf,
-      pagesize=A4,
-      rightMargin=40, leftMargin=40,
-      topMargin=20, bottomMargin=40
-    )
-   
-    estilos = getSampleStyleSheet()
+    crear_PDF(ruta_archivo_pdf, datos, nombre_de_la_tabla)
     
-    título_con_estilo = ParagraphStyle(
-      'título',
-      parent=estilos['Title'],
-      fontName='Helvetica-Bold',
-      fontSize=25,
-      alignment=1,
-      spaceAfter=25
-    )
-
-    
-    encabezado_estilo = ParagraphStyle(
-    'encabezado',
-    parent=estilos['Normal'],
-    fontName='Helvetica-Bold',
-    fontSize=16,
-    alignment=1
-    )
-
-    celda_estilo = ParagraphStyle(
-        'celda',
-        parent=estilos['Normal'],
-        fontName='Helvetica',
-        fontSize=12,
-        alignment=1
-    )
-    
-    datos_con_estilo = []
-    for i, fila in enumerate(datos):
-      estilo = encabezado_estilo if i == 0 else celda_estilo
-      datos_con_estilo.append([Paragraph(str(c), estilo) for c in fila])
-
-    tabla = Table(datos_con_estilo, repeatRows=1)
-    
-    tabla.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3d3dff")),
-        ('FONTSIZE', (0, 0), (-1, 0), 14),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
-        ('BOX', (0, 0), (-1, -1), 1, colors.black),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#bef6ff")]),
-    ]))
-    
-    titulo = Paragraph(f"<b>Reporte de {nombre_de_la_tabla.capitalize()}</b>", título_con_estilo)
-    espacio = Spacer(1, 30)
-
-    pdf.build([titulo, espacio, tabla])
     mostrar_aviso(ventana, "✅ SE HA EXPORTADO COMO PDF EXITOSAMENTE", colores["verde_éxito"], 10)  
   except Exception as e:
       print("OCURRIÓ UN ERROR", f"Error al exportar en PDF: {str(e)}")

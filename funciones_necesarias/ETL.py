@@ -1,4 +1,3 @@
-from datetime import datetime
 import re
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
@@ -7,6 +6,13 @@ import pandas as pd
 import os
 from Conexión import *
 from .Fun_adicionales import *
+
+#IMPORTACIÓN PARA CREAR PDF#
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
+
 
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
@@ -118,7 +124,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, treev
      
      #Este sirve para obtener los campos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-     alias_invertido = {v.strip(): k for k, v in alias.items()}
+     alias_invertido = {v.strip(): k for k, v in alias.items()} #Esto va a  tirar error?
      campos_archivo_aliasados = [alias_invertido.get(c.strip(), c.strip()) for c in datos.columns]
      datos.columns = campos_archivo_aliasados
 
@@ -190,3 +196,64 @@ def subir_DataFrame(nombre_de_la_tabla, datos):
      
      desconectar_base_de_datos(conexión)
      return valores
+
+def crear_PDF(ruta_archivo, datos, nombre_de_la_tabla):
+     pdf = SimpleDocTemplate(
+     ruta_archivo,
+     pagesize=A4,
+     rightMargin=40, leftMargin=40,
+     topMargin=20, bottomMargin=40
+     )
+
+     estilos = getSampleStyleSheet()
+     
+     título_con_estilo = ParagraphStyle(
+     'título',
+     parent=estilos['Title'],
+     fontName='Helvetica-Bold',
+     fontSize=25,
+     alignment=1,
+     spaceAfter=25
+     )
+
+     
+     encabezado_estilo = ParagraphStyle(
+     'encabezado',
+     parent=estilos['Normal'],
+     fontName='Helvetica-Bold',
+     fontSize=16,
+     alignment=1
+     )
+
+     celda_estilo = ParagraphStyle(
+     'celda',
+     parent=estilos['Normal'],
+     fontName='Helvetica',
+     fontSize=12,
+     alignment=1
+     )
+     
+     datos_con_estilo = []
+     for i, fila in enumerate(datos):
+          estilo = encabezado_estilo if i == 0 else celda_estilo
+          datos_con_estilo.append([Paragraph(str(c), estilo) for c in fila])
+
+     tabla = Table(datos_con_estilo, repeatRows=1)
+     
+     tabla.setStyle(TableStyle([
+     ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+     ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+     ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3d3dff")),
+     ('FONTSIZE', (0, 0), (-1, 0), 14),
+     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+     ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+     ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
+     ('BOX', (0, 0), (-1, -1), 1, colors.black),
+     ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#bef6ff")]),
+     ]))
+     
+     titulo = Paragraph(f"<b>Reporte de {nombre_de_la_tabla.capitalize()}</b>", título_con_estilo)
+     espacio = Spacer(1, 30)
+
+     pdf.build([titulo, espacio, tabla])

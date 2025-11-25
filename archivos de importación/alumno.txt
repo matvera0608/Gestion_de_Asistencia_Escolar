@@ -1,4 +1,4 @@
-Nombre			Fecha de nacimiento		Carrera
+nombre			fecha de nacimiento		carrera
 Carlos Gómez		15/10/2003		Analista de sistemas
 Luisa Méndez		4/10/2003		Analista de sistemas
 Roberto Sosa		31/10/2003		Analista de sistemas
