@@ -135,7 +135,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
   if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
     return
-
   selección = treeview.selection()
   
   if not selección:
@@ -145,12 +144,18 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
     ID_Seleccionado = int(iid)
   except ValueError:
     ID_Seleccionado = iid
-  
-  # --- 1. CAPTURAR POSICIONES ---
-  # Captura el IID del siguiente registro antes de la eliminación.
-  siguiente_iid = treeview.next(iid)
-  # Captura el IID del registro anterior (por si el borrado es el último).
-  anterior_iid = treeview.prev(iid)
+    
+  idx_a_seleccionar = -1
+  todos_los_iids = treeview.get_children()
+  try:
+    idx_actual = todos_los_iids.index(iid)
+    
+    idx_a_seleccionar = idx_actual
+    
+    if idx_actual == len(todos_los_iids) -1 and len(todos_los_iids) > 1:
+      idx_a_seleccionar = idx_actual - 1
+  except ValueError:
+    pass #PASAMOS AL SIGUIENTE CÓDIGO SI LA RE SELECCIÓN NO EXISTE O SI POSIBLEMENTE FALLA
   
   try:
     with conectar_base_de_datos() as conexión:
@@ -161,29 +166,20 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
       query = f"DELETE FROM {nombre_de_la_tabla} WHERE {CampoID} = %s"
       cursor.execute(query, (ID_Seleccionado,))
       conexión.commit()
-      
-      iid_a_seleccionar = None
-      
-      if siguiente_iid:
-        iid_a_seleccionar = siguiente_iid
-      elif anterior_iid:
-        iid_a_seleccionar = anterior_iid
-      else:
-        # Si no había ni siguiente ni anterior, selecciona el primer elemento (si existe)
-        primer_elemento = treeview.get_children()
-        if primer_elemento:
-          iid_a_seleccionar = primer_elemento[0]
-    
-      if iid_a_seleccionar:
-          try:
-              treeview.selection_set(iid_a_seleccionar)
-              treeview.focus(iid_a_seleccionar)
-          except tk.TclError:
-              # Falla si el IID capturado no existe después del refresco (raro, pero manejado)
-              pass
-      # --- FIN DE LÓGICA SIMPLE ---
-      
       refrescar_Treeview(nombre_de_la_tabla, treeview)
+      
+      # --- 2. LÓGICA DE RE-SELECCIÓN POR ÍNDICE ---
+      if idx_a_seleccionar != -1:
+        nuevos_iids = treeview.get_children() # Obtiene los IIDs después del refresco (todos de la DB)
+        
+        if idx_a_seleccionar < len(nuevos_iids):
+          # El IID en la posición guardada es el que queremos seleccionar
+          iid_a_seleccionar = nuevos_iids[idx_a_seleccionar]
+          
+          treeview.selection_set(iid_a_seleccionar)
+          treeview.focus(iid_a_seleccionar)
+      
+      # ... (código para limpiar cajasDeTexto y mostrar aviso) ...
       for entry in cajasDeTexto[nombre_de_la_tabla]:
         if entry.winfo_exists():
           entry.delete(0, tk.END)
