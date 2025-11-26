@@ -18,23 +18,29 @@ def preparar_modo(modo, nombre_de_la_tabla, treeview, boton_a_deshabilitar):
 def nuevo_registro(nombre_de_la_tabla, treeview): #Se puso un parámetro de treeview, porque habilitar y deshabilitar si o si usa un argumento
     """Prepara la interfaz para agregar un nuevo registro."""
     preparar_modo("nuevo", nombre_de_la_tabla, treeview, cf.btnAgregar)
-    refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+    refrescar_Treeview(nombre_de_la_tabla, treeview)
  
 def editar_registro(nombre_de_la_tabla, treeview):
     """Prepara la interfaz para modificar un registro existente."""
     preparar_modo("editar", nombre_de_la_tabla, treeview, cf.btnModificar)
-    refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+    refrescar_Treeview(nombre_de_la_tabla, treeview)
     
 def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
     global modo_actual
     if modo_actual == "nuevo":
-        insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana)
+        inserción_exitosa = insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana)
+        if inserción_exitosa is True:
+            cf.btnGuardar.config(state="disabled")
+            cf.btnAgregar.config(state="normal")
     elif modo_actual == "editar":
-        modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana)
+        edición_exitosa = modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana)
+        if edición_exitosa is True:
+            cf.btnGuardar.config(state="disabled")
+            cf.btnModificar.config(state="normal")
     else:
         mostrar_aviso(ventana, "No hay operación activa", colores["rojo_error"], 10)
         return
-    cf.btnGuardar.config(state="disabled")
+    
     
 def limpiar_TODO(nombre_de_la_tabla, treeview):
     cf.restaurar_botonera("disabled")

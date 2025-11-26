@@ -6,13 +6,13 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
-def refrescar_Treeview(nombre_de_la_tabla, treeview, consultas=None):
-  
-  if consultas is None:
+def refrescar_Treeview(nombre_de_la_tabla, treeview, datos=None):
+  if datos is None:
     datos = consultar_tabla(nombre_de_la_tabla)
-  else:
-    datos = consultas
-  
+    if datos is None:
+      print("⚠️ Advertencia: No se pudo obtener datos para refrescar el Treeview.")
+      return
+    
   for item in treeview.get_children():
     treeview.delete(item)
   
@@ -24,7 +24,7 @@ def refrescar_Treeview(nombre_de_la_tabla, treeview, consultas=None):
   
   try:
     if estado.orden_campo_actual:
-      sql, params = consulta_semántica(consultas,nombre_de_la_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
+      sql, params = consulta_semántica(consultas, nombre_de_la_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
     else:
         sql, params = consulta_semántica(consultas,nombre_de_la_tabla, None, None, None)
     ordenar_datos(treeview, sql, params)

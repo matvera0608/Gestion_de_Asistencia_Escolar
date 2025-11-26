@@ -9,24 +9,25 @@ from tkinter import filedialog as diálogoArchivo
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
-    return
+    return False
   
   if detectar_repeticiones_de_datos(datos, nombre_de_la_tabla):
     mostrar_aviso(ventana, "HAY REPETICIÓN DE DATOS", colores["rojo_error"], 10)
-    return
+    return False
+  
   if nombre_de_la_tabla == "materia":
     if verificar_horarioSalida_mayor_horarioEntrada(datos):
       mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR O IGUAL\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
-      return
+      return False
 
   datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
   
   if error:
     mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
-    return
+    return False
   
   if datos_traducidos is None:
-    return
+    return False
 
   try:
     with conectar_base_de_datos() as conexión:
@@ -39,7 +40,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
       cursor.execute(consulta, tuple(valores_sql))
       conexión.commit()
       
-      refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+      refrescar_Treeview(nombre_de_la_tabla, treeview)
     
       campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
       
@@ -52,18 +53,20 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
           continue
         entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
+      return True
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
 def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
   if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
-    return
+    return False
   
   selección = treeview.selection()
   
   if not selección:
-    return
+    return False
+  
   
   try:
     iid = selección[0]
@@ -73,27 +76,27 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
 
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
-    return
+    return False
   
   if nombre_de_la_tabla == "materia":
     if verificar_horarioSalida_mayor_horarioEntrada(datos):
       mostrar_aviso(ventana, "EL HORARIO DE SALIDA NO PUEDE SER MENOR\n QUE EL HORARIO DE ENTRADA", colores["rojo_error"], 8)
-      return
+      return False
   
   datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
   
   if error:
     mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
-    return
+    return False
   
   if datos_traducidos is None or not datos_traducidos:
-    return
+    return False
   
   valores_sql = list(datos_traducidos.values())
   campos_sql = [f"{cam} = %s" for cam in datos_traducidos.keys()]
   set_sql = ', '.join(campos_sql)
-  CampoID = conseguir_campo_ID(nombre_de_la_tabla)
-  consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {CampoID} = %s"
+  campoID = conseguir_campo_ID(nombre_de_la_tabla)
+  consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {campoID} = %s"
   
   valores_sql.append(idSeleccionado)
   try:
@@ -102,7 +105,7 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
       cursor.execute(consulta, tuple(valores_sql))
       conexión.commit()
       
-      refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+      refrescar_Treeview(nombre_de_la_tabla, treeview)
         
       campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
@@ -115,8 +118,9 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
           continue
         entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
+      return True
   except Exception as e:
-    print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
+    print(f"HA OCURRIDO UN ERROR AL MODIFICAR LOS DATOS: {str(e)}")
     return False
   
 def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
@@ -145,7 +149,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
       cursor.execute(query, (ID_Seleccionado,))
       conexión.commit()
 
-      refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+      refrescar_Treeview(nombre_de_la_tabla, treeview)
       
       if siguiente_iid:
         treeview.selection_set(siguiente_iid)
@@ -177,7 +181,7 @@ def importar_datos(nombre_de_la_tabla, treeview):
     
     valores_a_importar = subir_DataFrame(nombre_de_la_tabla, datos)
     
-    refrescar_Treeview(nombre_de_la_tabla, treeview, consultas)
+    refrescar_Treeview(nombre_de_la_tabla, treeview)
     
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
     print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")

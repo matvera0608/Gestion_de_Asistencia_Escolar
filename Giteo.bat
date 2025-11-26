@@ -40,7 +40,8 @@ EXIT /B
                 echo No se puede gitear sin conexión. El proceso está abortado
                 echo.
                 GOTO END_SCRIPT
-            ) 
+            )
+        GOTO :EOF
     )
 
 CALL :INICIAR_O_ACTUALIZAR
