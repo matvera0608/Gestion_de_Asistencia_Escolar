@@ -199,22 +199,22 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   if not reglas:
     return datos, None
   try:
-      with conectar_base_de_datos() as conexión:
-        cursor = conexión.cursor()
-        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
-          if campo_fkID in datos:
-            nombre_a_buscar = datos[campo_fkID]
-            if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
-              datos_traducidos[campo_fkID] = int(nombre_a_buscar)
-              continue  # saltamos la traducción          
-            consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
-            cursor.execute(consulta, (nombre_a_buscar,))
-            resultado = cursor.fetchone()
-            
-            if resultado:
-                datos_traducidos[campo_fkID] = resultado[0]
-            else:
-                return None, f" El '{nombre_a_buscar}' no existe en la base de datos."
+    with conectar_base_de_datos() as conexión:
+      cursor = conexión.cursor()
+      for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
+        if campo_fkID in datos:
+          nombre_a_buscar = datos[campo_fkID]
+          if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
+            datos_traducidos[campo_fkID] = int(nombre_a_buscar)
+            continue  # saltamos la traducción          
+          consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
+          cursor.execute(consulta, (nombre_a_buscar,))
+          resultado = cursor.fetchone()
+          
+          if resultado:
+              datos_traducidos[campo_fkID] = resultado[0]
+          else:
+              return None, f" El '{nombre_a_buscar}' no existe en la base de datos."
       return datos_traducidos, None
       
   except Exception as e:

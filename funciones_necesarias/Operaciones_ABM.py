@@ -23,12 +23,23 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
   datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
   
   if error:
-    mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
-    return False
+    return None
   
   if datos_traducidos is None:
     return False
+  
+  campos_vacios = []
+  
+  for campo, valor in datos_traducidos.items():
+    if valor == "" or not valor:
+        datos_traducidos[campo] = None
+        campos_vacios.append(alias.get(campo, campo))
 
+  if campos_vacios:
+      lista = ", ".join(campos_vacios)
+      mostrar_aviso(ventana, f"⚠️ Faltan datos en los campos:\n{lista}", colores["amarillo_alerta"],8)
+      return None
+        
   try:
     with conectar_base_de_datos() as conexión:
       campos = ', '.join(datos_traducidos.keys())
@@ -54,7 +65,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
         entry.delete(0, tk.END)
       mostrar_aviso(ventana, "✅ SE AGREGÓ LOS DATOS NECESARIOS", colores["verde_éxito"], 10)
       return True
-  except Exception as e:
+  except error_sql as e:
     print(f"HA OCURRIDO UN ERROR AL GUARDAR LOS DATOS: {str(e)}")
     return False
 
@@ -66,7 +77,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
   
   if not selección:
     return False
-  
   
   try:
     iid = selección[0]
@@ -86,7 +96,6 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
   datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
   
   if error:
-    mostrar_aviso(ventana, f"❌ {error}", colores["rojo_error"], 10)
     return False
   
   if datos_traducidos is None or not datos_traducidos:
