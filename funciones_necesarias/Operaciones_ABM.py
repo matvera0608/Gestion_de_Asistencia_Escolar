@@ -144,18 +144,8 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
     ID_Seleccionado = int(iid)
   except ValueError:
     ID_Seleccionado = iid
-    
-  idx_a_seleccionar = -1
-  todos_los_iids = treeview.get_children()
-  try:
-    idx_actual = todos_los_iids.index(iid)
-    
-    idx_a_seleccionar = idx_actual
-    
-    if idx_actual == len(todos_los_iids) -1 and len(todos_los_iids) > 1:
-      idx_a_seleccionar = idx_actual - 1
-  except ValueError:
-    pass #PASAMOS AL SIGUIENTE CÓDIGO SI LA RE SELECCIÓN NO EXISTE O SI POSIBLEMENTE FALLA
+  
+  índice_deseado = re_calcular_índice(iid, treeview)  
   
   try:
     with conectar_base_de_datos() as conexión:
@@ -168,16 +158,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
       conexión.commit()
       refrescar_Treeview(nombre_de_la_tabla, treeview)
       
-      # --- 2. LÓGICA DE RE-SELECCIÓN POR ÍNDICE ---
-      if idx_a_seleccionar != -1:
-        nuevos_iids = treeview.get_children() # Obtiene los IIDs después del refresco (todos de la DB)
-        
-        if idx_a_seleccionar < len(nuevos_iids):
-          # El IID en la posición guardada es el que queremos seleccionar
-          iid_a_seleccionar = nuevos_iids[idx_a_seleccionar]
-          
-          treeview.selection_set(iid_a_seleccionar)
-          treeview.focus(iid_a_seleccionar)
+      re_seleccionar_índice(índice_deseado, treeview)
       
       # ... (código para limpiar cajasDeTexto y mostrar aviso) ...
       for entry in cajasDeTexto[nombre_de_la_tabla]:

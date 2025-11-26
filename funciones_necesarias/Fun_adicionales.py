@@ -6,6 +6,34 @@ from datetime import datetime as fecha_y_hora
 from tkinter import messagebox as mensajeTexto
 import tkinter as tk
 
+def re_calcular_índice(iid, treeview):
+  # ---  LÓGICA DE INDEPENDIZAR DEL ÍNDICE TREEVIEW ---
+  idx_a_seleccionar = -1 #ESTE NUNCA SE USA, QUE HACEMOS? REEMPLAZAMOS POR iid o NO?
+  todos_los_iids = treeview.get_children()
+  try:
+    idx_actual = todos_los_iids.index(iid)
+    
+    idx_a_seleccionar = idx_actual
+    
+    if idx_actual == len(todos_los_iids) -1 and len(todos_los_iids) > 1:
+      idx_a_seleccionar = idx_actual - 1
+         
+  except ValueError:
+    pass #PASAMOS AL SIGUIENTE CÓDIGO SI LA RE SELECCIÓN NO EXISTE O SI POSIBLEMENTE FALLA
+  return idx_a_seleccionar
+  
+def re_seleccionar_índice(idx_a_seleccionar, treeview):
+  # ---  LÓGICA DE RE-SELECCIÓN POR ÍNDICE ---
+  if idx_a_seleccionar != -1:
+    nuevos_iids = treeview.get_children() # Obtiene los IIDs después del refresco (todos de la DB)
+    
+    if idx_a_seleccionar < len(nuevos_iids):
+      # El IID en la posición guardada es el que queremos seleccionar
+      iid_a_seleccionar = nuevos_iids[idx_a_seleccionar]
+      
+      treeview.selection_set(iid_a_seleccionar)
+      treeview.focus(iid_a_seleccionar)
+
 def refrescar_Treeview(nombre_de_la_tabla, treeview, datos=None):
   if datos is None:
     datos = consultar_tabla(nombre_de_la_tabla)
@@ -220,7 +248,6 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   except Exception as e:
     return None , f"Error de conexión: {e}"
 
-
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),
   "alumno": ("ID_Alumno","Nombre"),
@@ -234,7 +261,6 @@ campos_foráneos = {"alumno": ("IDCarrera", "carrera"),
                    "enseñanza": [("IDMateria", "materia"), ("IDProfesor","profesor")], 
                    "nota": [("IDMateria", "materia"), ("IDAlumno", "alumno"), ("IDProfesor","profesor")]
                    }
-
 
 def cargar_datos_en_Combobox(tablas_de_datos, combos):
   try:
