@@ -13,9 +13,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
-def normalizar_expresión(s):
-     return s.strip().lower()
-
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
      PORQUE LA DB ES MUY ESTRICTA CON LOS VALORES"""
@@ -120,7 +117,6 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      # 1. VALIDACIÓN INTELIGENTE DEL NOMBRE DE ARCHIVO DONDE TENGAN UNA SIMILITUD
      #===================================================================
      
-     #Se agregó más control, cuando el nombre del archivo no coincide exactamente con una de las tablas tira un error loco
      nombre_de_archivo= os.path.splitext(os.path.basename(ruta_archivo))[0]
      nombre_de_archivo_normalizado = nombre_de_archivo.lower().replace("_", "").replace(" ", "")
      nombre_de_la_tabla_normalizado = nombre_de_la_tabla.lower().replace("_", "").replace(" ", "")
@@ -137,23 +133,22 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      # 2. VALIDACIÓN INTELIGENTE DE NOMBRE DE CAMPOS CON EL FIN DE FLEXIBILIZAR UN POCO 
      #===================================================================
      
-     #Variables para flexibilizar el nombre de los campos para la importación de datos
      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
-     campos_oficiales_normalizados = [normalizar_expresión(c) for c in campos_oficiales]
-     alias_invertido = {normalizar_expresión(v): k for k, v in alias.items()}
+     campos_oficiales_normalizados = [normalizar_encabezado(c) for c in campos_oficiales]
+     alias_invertido = {normalizar_encabezado(v): k for k, v in alias.items()}
      alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
      columnas_finales_de_campos = []
      
      #Se recorre con un for el archivo para validar cada atributo dentro del archivo.
      for columna_original in datos.columns:
-        c_norm = normalizar_expresión(columna_original)
+        c_norm = normalizar_encabezado(columna_original)
         # 1) Coincidencia exacta por alias
         if c_norm in alias_invertido:
           columnas_finales_de_campos.append(alias_invertido[c_norm])
           continue
         # 2) Coincidencia exacta por nombre oficial
         if c_norm in campos_oficiales_normalizados:
-          # Buscar el nombre original respetando mayúsculas/minúsculas
+          
           indice = campos_oficiales_normalizados.index(c_norm)
           columnas_finales_de_campos.append(campos_oficiales[indice])
           continue
@@ -175,16 +170,13 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
             "ERROR DE IMPORTACIÓN",
             f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}."
         )
-        return
-     
-     
+        return None
+
      datos.columns = columnas_finales_de_campos
      
      #===================================================================
      # 3. VALIDACIÓN INTELIGENTE DE CAMPOS INVÁLIDOS
      #===================================================================
-     
-     # Verificar que todos los campos del archivo estén en la tabla
      campos_invalidos = [c for c in columnas_finales_de_campos if c and c not in campos_oficiales]
      if campos_invalidos:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
@@ -217,6 +209,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      
      for _, fila in datos.iterrows():
           dict_fila = fila.to_dict()
+          for campo, valor in dict_fila.items():
+               dict_fila[campo] = normalizar_valor(valor)
           traducción, error = traducir_IDs(nombre_de_la_tabla, dict_fila)
           if error:
                mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")

@@ -7,6 +7,45 @@ patrón_hora = re.compile(r'^([01]\d|2[0-3]):([0-5]\d)$')
 patrón_alfanumérico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_nota = re.compile(r'^(10([.,]0{1,2})?|[1-9]([.,]\d{1,2})?)$')
 
+separadores_comunes = re.compile(r"[–—\-•|→]")
+comillas_o_puntos_suspensivos = re.compile(r"[\"'“”‘’…]")
+separadores_y_comillas = re.compile(r"[–—\-•|→\"'“”‘’…]")
+múltiples_espacios = re.compile(r"\s{2,}")
+punto_y_coma = re.compile(r"[.,;]")
+
+def normalizar_expresión(s):
+    return s.lower().strip()
+
+def normalizar_encabezado(texto: str) -> str:
+    texto = normalizar_expresión(texto)
+    texto = separadores_y_comillas.sub( "", texto)   # separadores y comillas
+    texto = punto_y_coma.sub("", texto)
+    texto = múltiples_espacios.sub(" ", texto)             # múltiples espacios
+    return texto
+
+def normalizar_valor(valor, campo=None):
+    if not isinstance(valor, str):
+        return valor  # no tocamos enteros, fechas, etc. 
+    # 1. Quitar espacios, tabulaciones y saltos de línea
+    original = valor.strip()
+    
+    if campo and campo.lower() in ["nota", "calificación", "calificaciones", "notas"]:
+        return original.replace(",", ".") if "," in original else original
+
+    # 2. Eliminar separadores comunes
+    valor = separadores_comunes.sub("", original)  # guiones, bullets, flechas
+
+    # 3. Eliminar comillas, puntos suspensivos, etc.
+    valor = comillas_o_puntos_suspensivos.sub("", valor)
+
+    # 4. reeemplazar múltiples espacios por uno solo
+    valor = múltiples_espacios.sub(" ", valor)
+    
+    valor = punto_y_coma.sub("", valor)
+
+    # 5. Si queda vacío, devolver None
+    return valor if valor else None
+
 def detectar_repeticiones_de_datos(datos, tabla):
     valorNombre = datos.get("Nombre", "").strip()
     

@@ -1,0 +1,12 @@
+alumno;materia;profesor;nota;tipo_de_evaluacion;fecha_de_evaluacion
+Carlos Gómez;Programación I;Martín Díaz;9;Parcial;05/04/2025
+Luisa Méndez;Base de Datos;Lucía Reyes;8.5;TP;12/04/2025
+Roberto Sosa;Algoritmos Avanzados;Javier López;7;Final;20/05/2025
+Julio Hernández;Estructuras de Datos;Ana Romero;6.5;Parcial;01/06/2025
+Luisa Pérez;Diseño Web;Elena Castro;9.2;TP;15/04/2025
+Carlos Gómez;Análisis de Sistemas I;Martín Díaz;10;Parcial;10/05/2025
+Luisa Méndez;Programación I;Martín Díaz;4;Final;30/06/2025
+Roberto Sosa;Base de Datos;Lucía Reyes;8;TP;25/05/2025
+Julio Hernández;Algoritmos Avanzados;Javier López;5.5;Final;15/07/2025
+Luisa Pérez;Estructuras de Datos;Ana Romero;7.8;Parcial;05/06/2025
+Carlos Gómez;Diseño Web;Elena Castro;8;TP;20/05/2025

@@ -1,6 +1,6 @@
 nombre			fecha de nacimiento		          Carrera
-Carlos Gómez			15/10/2003		Analista de sistemas
-Luisa Méndez			04/10/2003		Analista de sistemas
-Roberto Sosa			31/10/2003		Analista de sistemas
-Julio Hernández		28/02/2000		Analista de sistemas
-Luisa Pérez			24/06/2000		Analista de sistemas
+Carlos Gómez			15/10/2003		 Analista de sistemas
+Luisa Méndez			04/10/2003		 Analista de sistemas
+Roberto Sosa			31/10/2003		 Analista de sistemas
+Julio Hernández		28/02/2000		 Analista de sistemas
+Luisa Pérez			24/06/2000		 Analista de sistemas

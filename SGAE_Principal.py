@@ -36,7 +36,7 @@ imágenes_por_botón = {
   "eliminar": ele.cargar_imagen("botones", "eliminar.png"),
   "guardar": ele.cargar_imagen("botones", "guardar.png"),
   "importar": ele.cargar_imagen("botones", "importar_desde.png"),
-  "exportar": ele.cargar_imagen("botones", "exportar_como_pdf.png")
+  "exportar": ele.cargar_imagen("botones", "exportar_como_pdf.png"),
 }
 
 def pantallaLogin():
@@ -220,14 +220,20 @@ def abrir_tablas(nombre_de_la_tabla):
   
   wid.crear_etiqueta(ventanaSecundaria, "Buscar").grid(row=2, column=0)
   cf.entryBuscar = wid.crear_entrada(ventanaSecundaria, 40)
-  cf.entryBuscar.grid(row=3, column=0)
+  cf.entryBuscar.grid(row=3, column=0, sticky="ew")
   cf.entryBuscar.bind("<KeyRelease>", lambda e: fun.buscar_datos(nombre_de_la_tabla, treeview, cf.entryBuscar, ele.consultas))
 
   wid.crear_widgets(marco_izquierdo, nombre_de_la_tabla, campos, mi_ventana)
   
+  # --- Cargar y mostrar imagen de la tabla en marco_derecho ---
+  imagen_busqueda = ele.cargar_imagen("","busqueda.png")
+  if imagen_busqueda:
+    lbimagen = tk.Label(ventanaSecundaria, image=imagen_busqueda, bg=dis.colores["azul_claro"])
+    lbimagen.image = imagen_busqueda 
+    lbimagen.grid(row=3, column=1, sticky="w", padx=(5, 0))
+  
   treeview = wid.crear_Treeview(marco_derecho, tabla=nombre_de_la_tabla)
   treeview.config(selectmode="none")
-
   treeview.delete(*treeview.get_children())
   
   wid.crear_etiqueta(marco_izquierdo, "Orden de datos").grid(row=0, column=1, sticky="n")

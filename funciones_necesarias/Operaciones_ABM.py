@@ -83,7 +83,9 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
     idSeleccionado = int(iid)
   except ValueError:
     idSeleccionado = iid
-
+  
+  índice_actual = re_calcular_índice(iid, treeview)  
+  
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
   if not datos:
     return False
@@ -115,7 +117,9 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
       conexión.commit()
       
       refrescar_Treeview(nombre_de_la_tabla, treeview)
-        
+      
+      re_seleccionar_índice(índice_actual, treeview)
+      
       campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
     
       for i, campo in enumerate(campos_oficiales):
@@ -145,8 +149,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
   except ValueError:
     ID_Seleccionado = iid
   
-  índice_deseado = re_calcular_índice(iid, treeview)  
-  
+  índice_actual = re_calcular_índice(iid, treeview)
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
@@ -158,7 +161,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
       conexión.commit()
       refrescar_Treeview(nombre_de_la_tabla, treeview)
       
-      re_seleccionar_índice(índice_deseado, treeview)
+      re_seleccionar_índice(índice_actual, treeview)
       
       # ... (código para limpiar cajasDeTexto y mostrar aviso) ...
       for entry in cajasDeTexto[nombre_de_la_tabla]:
@@ -178,6 +181,7 @@ def importar_datos(nombre_de_la_tabla, treeview):
     ruta, datos = seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla)
     if datos is None:
       return
+    
     datos = validar_archivo(ruta, nombre_de_la_tabla, alias, campos_en_db, datos)
     if datos is None:
       return

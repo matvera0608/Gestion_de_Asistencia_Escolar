@@ -33,6 +33,7 @@ def re_seleccionar_índice(idx_a_seleccionar, treeview):
       
       treeview.selection_set(iid_a_seleccionar)
       treeview.focus(iid_a_seleccionar)
+      treeview.see(iid_a_seleccionar)
 
 def refrescar_Treeview(nombre_de_la_tabla, treeview, datos=None):
   if datos is None:
@@ -232,9 +233,11 @@ def traducir_IDs(nombre_de_la_tabla, datos):
       for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
         if campo_fkID in datos:
           nombre_a_buscar = datos[campo_fkID]
+          if nombre_a_buscar is None:
+            continue
           if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
             datos_traducidos[campo_fkID] = int(nombre_a_buscar)
-            continue  # saltamos la traducción          
+            continue  # saltamos la traducción
           consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
           cursor.execute(consulta, (nombre_a_buscar,))
           resultado = cursor.fetchone()
@@ -242,7 +245,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
           if resultado:
               datos_traducidos[campo_fkID] = resultado[0]
           else:
-              return None, f" El '{nombre_a_buscar}' no existe en la base de datos."
+              return None, f" El '{nombre_a_buscar}' no existe en la base de datos." #Acá tira el error de el '' no existe en la base de datos cuando mi txt tiene un espacio en blanco después del registro
       return datos_traducidos, None
       
   except Exception as e:
