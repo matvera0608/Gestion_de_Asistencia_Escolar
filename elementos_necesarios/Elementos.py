@@ -155,9 +155,9 @@ alias_a_traducir = { #Este diccionario guarda los alias para traducir los nombre
         "IDAlumno": "AlumnoNom",
         "IDMateria": "MateriaNom",
         "IDProfesor": "ProfesorNom",
-        "Nota": "Nota",
-        "Tipo": "tipoNota",
-        "FechaEvaluación": "FechaEv"
+        "valorNota": "Nota",
+        "tipoNota": "tipoNota",
+        "FechaEvaluación": "Fecha"
     },
     "asistencia": {
         "Estado": "Estado",
@@ -189,6 +189,7 @@ alias_a_orden_raw = {
         "Materia":  "m.Nombre",
         "Profesor": "p.Nombre"
     }
+    
 }
 
 # --- FUNCIONES DE CARGA Y CONFIGURACIÓN ---
@@ -215,10 +216,16 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             if not orden:
                 orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
 
-            if orden in columnas:
+            if orden in columnas and orden.isidentifier():
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
+
+def manejar_click_columna(campo, sentido_gui, nombre_tabla, treeview, ordenar_func, meta):
+    estado.orden_campo_actual = campo
+    estado.orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
+    sql, params = consulta_semántica(meta, nombre_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
+    ordenar_func(treeview, sql, params)
 
 def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
   
@@ -251,12 +258,6 @@ def cargar_imagen(ruta_subcarpeta_imagen, nombre_imagen, tamaño=(25, 25)):
     except Exception as e:
         print(f"❌ Error al cargar imagen {nombre_imagen}: {e}")
         return None
-
-def manejar_click_columna(campo, sentido_gui, nombre_tabla, treeview, ordenar_func, meta):
-    estado.orden_campo_actual = campo
-    estado.orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
-    sql, params = consulta_semántica(meta, nombre_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
-    ordenar_func(treeview, sql, params)
 
 #En esta función se crea un label que muestra la hora actual y se actualiza cada segundo
 #pero si el label ya existe, sólo se actualiza su texto.

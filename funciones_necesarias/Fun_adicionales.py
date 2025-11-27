@@ -67,7 +67,6 @@ def ordenar_datos(treeview, sql, params):
       cursor.execute(sql, params)
       resultado = cursor.fetchall()
       
-
       treeview.delete(*treeview.get_children())
           
     for index, fila in enumerate(resultado):
@@ -204,20 +203,20 @@ def consultar_tabla(nombre_de_la_tabla):
 
 def traducir_IDs(nombre_de_la_tabla, datos):
   campos_a_traducir = {
-      "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-      
-      "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-      
-      "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-                     "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
-                     "IDMateria": ("ID_Materia", "materia", "Nombre")},
-      
-      "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"),
+    "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
+    
+    "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
+    
+    "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
+                    "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
                     "IDMateria": ("ID_Materia", "materia", "Nombre")},
-      
-      "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-               "IDMateria": ("ID_Materia","materia", "Nombre"),
-               "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
+    
+    "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"),
+                  "IDMateria": ("ID_Materia", "materia", "Nombre")},
+    
+    "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
+              "IDMateria": ("ID_Materia","materia", "Nombre"),
+              "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
   if not datos:
     return None, "Datos vacíos."
@@ -235,12 +234,12 @@ def traducir_IDs(nombre_de_la_tabla, datos):
           nombre_a_buscar = datos[campo_fkID]
           if nombre_a_buscar is None:
             continue
+          if isinstance(nombre_a_buscar, str):
+            nombre_a_buscar = nombre_a_buscar.strip()
+            
           if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
             datos_traducidos[campo_fkID] = int(nombre_a_buscar)
             continue  # saltamos la traducción
-          
-          if isinstance(nombre_a_buscar, str):
-            nombre_a_buscar = nombre_a_buscar.strip()
           
           consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
           cursor.execute(consulta, (nombre_a_buscar,))
