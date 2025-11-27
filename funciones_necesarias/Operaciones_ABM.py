@@ -23,6 +23,7 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
   datos_traducidos, error = traducir_IDs(nombre_de_la_tabla, datos)
   
   if error:
+    print(error)
     return None
   
   if datos_traducidos is None:
