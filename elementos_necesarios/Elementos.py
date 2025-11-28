@@ -192,21 +192,43 @@ alias_a_orden_raw = {
     
 }
 
+ordenables = {
+    "alumno": {
+        "fecha": "FechaDeNacimiento",
+    },
+    "nota": {
+        "fecha": "FechaEvaluación",
+    },
+    "asistencia": {
+        "fecha": "Fecha_Asistencia",
+    }
+}
+
 # --- FUNCIONES DE CARGA Y CONFIGURACIÓN ---
 
-def ordenar_campos_especiales(tabla: str, campo: str):
+def ordenar_campos_especiales(tabla: str, campo: str, subconsultas: list):
      
     tabla = tabla.lower()
-    campo_en_minúscula = campo.lower()
-     
+    campo = campo.lower()
     
+    if tabla in ordenables:
+        for alias, real in ordenables[tabla].items():
+            if campo.startswith(alias):
+                if real in subconsultas:
+                    return real
+            
     orden = alias_a_orden_raw.get(tabla, {}).get(campo)
     if orden:
         return orden
         
     orden = alias_a_traducir.get(tabla, {}).get(campo, campo)
     
-    
+     # 2. Si el campo original existe en la subconsulta, usarlo tal cual
+    if campo in subconsultas:
+        return campo
+
+    # 3. Si falló, no ordenar
+    return None
     
     return orden
 
@@ -227,10 +249,8 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             sql +=  f" WHERE {condiciones}"
             params = tuple(operador_like.format(valorBúsqueda) for _ in columnas)
             
-        if ordenDatos:
-            orden = ordenar_campos_especiales(nombre_de_la_tabla, ordenDatos)
-                
-            if orden in columnas and orden.isidentifier() or "Fecha" in orden or "Hora" in orden:
+            orden = ordenar_campos_especiales(nombre_de_la_tabla, ordenDatos, consultas)
+            if orden:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
