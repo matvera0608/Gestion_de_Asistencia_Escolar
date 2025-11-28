@@ -74,7 +74,7 @@ widgets_para_tablas = {
 
 consultas = {
       "alumno": {
-          "select": """SELECT a.ID_Alumno, a.Nombre AS AlumnoNombre, 
+          "select": """SELECT a.ID_Alumno, a.Nombre AS AlumnoNombre,
                       DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha,
                       c.Nombre AS CarreraNombre
                       FROM alumno a
@@ -206,32 +206,7 @@ def ordenar_campos_especiales(tabla: str, campo: str):
         
     orden = alias_a_traducir.get(tabla, {}).get(campo, campo)
     
-    # 3. Lógica especial para fechas
-    if campo_en_minúscula.startswith("fecha"):
-        if tabla == "alumno":
-            return "FechaDeNacimiento"
-        elif tabla == "nota":
-            return "FechaEvaluación"
-        elif tabla == "asistencia":
-            return "Fecha_Asistencia"
-
-
-    # 4. Lógica especial para horas
-    if campo_en_minúscula.startswith("hora"):
-        if tabla == "materia":
-            if "entrada" in campo_en_minúscula:
-                return "m.HorarioEntrada"
-            elif "salida" in campo_en_minúscula:
-                return "m.HorarioSalida"
-        # elif tabla == "asistencia":
-        #     if "entrada" in campo_en_minúscula:
-        #         return "asis.Hora_Entrada"
-        #     elif "retiro" in campo_en_minúscula:
-        #         return "asis.Hora_Retiro"
-
-    # 5. Lógica especial para notas numéricas
-    if campo_en_minúscula == "nota":
-        return "n.valorNota"  # asegurás que se ordene como número
+    
     
     return orden
 
@@ -253,7 +228,6 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             params = tuple(operador_like.format(valorBúsqueda) for _ in columnas)
             
         if ordenDatos:
-            
             orden = ordenar_campos_especiales(nombre_de_la_tabla, ordenDatos)
                 
             if orden in columnas and orden.isidentifier() or "Fecha" in orden or "Hora" in orden:
