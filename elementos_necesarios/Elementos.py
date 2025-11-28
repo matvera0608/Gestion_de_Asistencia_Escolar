@@ -193,6 +193,16 @@ alias_a_orden_raw = {
 }
 
 # --- FUNCIONES DE CARGA Y CONFIGURACIÓN ---
+
+def ordenar_campos_especiales(tabla: str, campo: str):
+     
+     tabla = tabla.lower()
+     campo = campo.lower()
+     
+     
+     
+     return tabla, campo
+
 def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, valorBúsqueda, ordenDatos, operador_like="%{}%"):
     meta = consultas_meta.get(nombre_de_la_tabla.lower())
     if not meta:
@@ -215,21 +225,22 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
             orden = alias_a_orden_raw.get(tabla, {}).get(ordenDatos)
             if not orden:
                 orden = alias_a_traducir.get(tabla, {}).get(ordenDatos, ordenDatos)
-
-            if orden in columnas and orden.isidentifier():
+                
+            if orden in columnas and orden.isidentifier() or "Fecha" in orden or "Hora" in orden:
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
 
 def manejar_click_columna(campo, sentido_gui, nombre_tabla, treeview, ordenar_func, meta):
     estado.orden_campo_actual = campo
-    estado.orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")
+    estado.orden_sentido_actual = mapa_orden.get(sentido_gui, "ASC")    
     sql, params = consulta_semántica(meta, nombre_tabla, estado.orden_sentido_actual, None, estado.orden_campo_actual)
     ordenar_func(treeview, sql, params)
 
 def mostrar_aviso(contenedor, texto, color=None, tamañoAviso=10, milisegundos=5000):
-  
   # Asegúrate de que las indentaciones coincidan EXACTAMENTE con este ejemplo:
+  """Mostrar aviso es una alternativa de mensaje de texto pero menos molesta para el usuario.
+        Cumple la función de mostrar un mensaje de éxito, advertencia o error."""
   for widget in contenedor.winfo_children(): #Esto recorre los widgets y si existe el aviso reemplaza por el nuevo, ayuda a limpiar y consumir menos recursos
     if isinstance(widget, tk.Label) and widget.winfo_name() == "aviso_temporal": 
       if widget.winfo_exists():
