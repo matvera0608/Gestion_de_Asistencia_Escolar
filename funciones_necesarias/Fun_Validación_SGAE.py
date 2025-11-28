@@ -60,7 +60,7 @@ def detectar_repeticiones_de_datos(datos, tabla):
         
 
     nombres_existentes = []
-    if tabla in ["alumno", "materia", "profesor", "carrera"]:
+    if tabla in ["alumno", "materia", "profesor", "carrera", "nota"]:
         try:
             with conectar_base_de_datos() as conexión:
                 cursor = conexión.cursor()
