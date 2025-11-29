@@ -210,15 +210,9 @@ def ordenar_campos_especiales(tabla: str, campo: str, columnas: list):
         return "STR_TO_DATE(Hora, '%H:%i')"
 
     # Notas numéricas (ejemplo: si vienen como texto)
-    if campo_en_minúsculas.startswith("nota"):
-        # Si en el SELECT existe la columna alias "Nota"
-        if "nota" in [c.lower() for c in columnas]:
+    if campo_en_minúsculas.startswith("nota")  and "nota" in [c.lower() for c in columnas]:
             # Ordenar como número real independientemente del formato
-            return "CAST(REPLACE(n.valorNota, ',', '.') AS DECIMAL(10,2))"
-
-        # Si por algún motivo se usara el nombre original
-        if "valorNota" in [c.lower() for c in columnas]:
-            return "CAST(valorNota AS DECIMAL(10,2))"
+            return "valorNota"
     
     # 2. Alias directos (claves foráneas)
     orden = alias_a_orden_raw.get(tabla, {}).get(campo)
@@ -257,8 +251,9 @@ def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, v
         
         if ordenDatos:
             orden = ordenar_campos_especiales(nombre_de_la_tabla, ordenDatos, columnas)
-            if orden:
+            if orden: #Así estoy ejecutando mi ORDER BY tal como está ahí, orden guarda el campo a ordenar y sentido guarda el ASC o DESC
                 sentido = "ASC" if str(sentido_del_orden).upper().startswith("ASC") else "DESC"
+                print(orden)
                 sql += f" ORDER BY {orden} {sentido}"
     return sql, params
 
