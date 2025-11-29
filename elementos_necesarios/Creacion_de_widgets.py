@@ -21,6 +21,7 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
 def crear_boton(contenedor, texto, imágen, comando, estilo="Boton.TButton"):
   return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, cursor='hand2')
 
+
 def crear_Treeview(contenedor, tabla):
     columnas = campos_en_db[tabla]
    
@@ -94,7 +95,6 @@ def crear_Treeview(contenedor, tabla):
     return tabla_Treeview
 
 
-
 def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):
   listaDesplegable = {}
   cajasDeTexto.setdefault(nombre_de_la_tabla, [])
@@ -145,7 +145,7 @@ def configurar_ciertos_comboboxes(cbBox_tabla):
     except Exception as e:
       print(f"Error configurando {widget}: {e}")
       
-      
+
 def cerrar_abm(ventana):
   try:
     for widget in list(ventana.winfo_children()):
