@@ -209,11 +209,6 @@ def ordenar_campos_especiales(tabla: str, campo: str, columnas: list):
     if campo_en_minúsculas.startswith("hora") and "hora" in [c.lower() for c in columnas]:
         return "STR_TO_DATE(Hora, '%H:%i')"
 
-    # Notas numéricas (ejemplo: si vienen como texto)
-    if campo_en_minúsculas.startswith("nota")  and "nota" in [c.lower() for c in columnas]:
-            # Ordenar como número real independientemente del formato
-            return "valorNota"
-    
     # 2. Alias directos (claves foráneas)
     orden = alias_a_orden_raw.get(tabla, {}).get(campo)
     if orden:
