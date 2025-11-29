@@ -75,7 +75,6 @@ widgets_para_tablas = {
 consultas = {
       "alumno": {
           "select": """SELECT a.ID_Alumno, a.Nombre AS AlumnoNombre,
-                        a.FechaDeNacimiento AS _orden_fecha,
                       DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha,
                       c.Nombre AS CarreraNombre
                       FROM alumno a
@@ -83,7 +82,6 @@ consultas = {
       },
       "asistencia":{
           "select": """SELECT asis.ID, asis.Estado,
-                    asis.Fecha_Asistencia AS _orden_fecha,
                     DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
                     al.Nombre AS Alumno,
                     p.Nombre AS Profesor,
@@ -113,9 +111,9 @@ consultas = {
           },
       "nota":{
           "select": """SELECT n.ID, al.Nombre AS AlumnoNom, m.Nombre AS MateriaNom, p.Nombre AS ProfesorNom,
-                        n.fechaEvaluación AS _orden_fecha,
                         REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
-                        n.tipoNota, DATE_FORMAT(n.fechaEvaluación, '%d/%m/%Y') AS FechaEv
+                        n.tipoNota, 
+                        DATE_FORMAT(n.fechaEvaluación, '%d/%m/%Y') AS Fecha
                         FROM nota n
                         JOIN alumno AS al ON n.IDAlumno = al.ID_Alumno
                         JOIN materia AS m ON n.IDMateria = m.ID_Materia
@@ -196,36 +194,32 @@ alias_a_orden_raw = {
     
 }
 
-ordenables = {
-    "alumno": {
-        "fecha": "_orden_fecha",
-    },
-    "nota": {
-        "fecha": "_orden_fecha",
-    },
-    "asistencia": {
-        "fecha": "_orden_fecha",
-    }
-}
-
 
 # --- FUNCIONES DE CARGA Y CONFIGURACIÓN ---
 
 def ordenar_campos_especiales(tabla: str, campo: str, columnas: list):
     tabla = tabla.lower()
     campo_en_minúsculas = campo.lower()
+    
+        # Fechas formateadas
+    if campo_en_minúsculas.startswith("fecha") and "fecha" in [c.lower() for c in columnas]:
+        return "STR_TO_DATE(Fecha, '%d/%m/%Y')"
 
-    if campo_en_minúsculas.startswith("fecha"):
-        if "_orden_fecha" in [col.lower() for col in columnas]:
-            return "_orden_fecha"
+    # Horas formateadas
+    if campo_en_minúsculas.startswith("hora") and "hora" in [c.lower() for c in columnas]:
+        return "STR_TO_DATE(Hora, '%H:%i')"
 
-    # 1. Usar mapa de ordenables
-    if tabla in ordenables:
-        for alias, real in ordenables[tabla].items():
-            if campo_en_minúsculas.startswith(alias):
-                if real.lower() in [col.lower() for col in columnas]:
-                    return real
+    # Notas numéricas (ejemplo: si vienen como texto)
+    if campo_en_minúsculas.startswith("nota"):
+        # Si en el SELECT existe la columna alias "Nota"
+        if "nota" in [c.lower() for c in columnas]:
+            # Ordenar como número real independientemente del formato
+            return "CAST(REPLACE(n.valorNota, ',', '.') AS DECIMAL(10,2))"
 
+        # Si por algún motivo se usara el nombre original
+        if "valorNota" in [c.lower() for c in columnas]:
+            return "CAST(valorNota AS DECIMAL(10,2))"
+    
     # 2. Alias directos (claves foráneas)
     orden = alias_a_orden_raw.get(tabla, {}).get(campo)
     if orden:

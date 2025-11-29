@@ -21,31 +21,9 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
 def crear_boton(contenedor, texto, imágen, comando, estilo="Boton.TButton"):
   return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, cursor='hand2')
 
-def filtrar_columnas_visibles(columnas):
-    cols_lower = [c.lower() for c in columnas]
-    ocultar_lower = {
-        "_orden_fecha",
-        "FechaDeNacimiento",
-        "FechaEvaluación",
-        "Fecha_Asistencia",  # según tu esquema
-    }
-
-    columnas_visibles = []
-    for col in columnas:
-        col_l = col.lower()
-        if col_l.startswith("_orden_"):
-            continue  # oculta auxiliares
-        if col_l in ocultar_lower:
-            continue  # oculta crudas de fecha
-        columnas_visibles.append(col)
-    return columnas_visibles
-
-
-
 def crear_Treeview(contenedor, tabla):
     columnas = campos_en_db[tabla]
-    columnas_visibles = filtrar_columnas_visibles(columnas)
-
+   
     estilo = ttk.Style()
     estilo_treeview = "Custom.Treeview"
     estilo_encabezado = "Custom.Treeview.Heading"
@@ -63,34 +41,24 @@ def crear_Treeview(contenedor, tabla):
     frame_tabla = tk.Frame(contenedor, bg=colores["blanco"])
     frame_tabla.grid(row=0, column=0, sticky="nsew")
 
-    columnas_ocultas = [col for col in columnas if col.startswith("_orden_")]
-    columnas_visibles = [col for col in columnas if col not in columnas_ocultas]
-
     # ⬅️ CAMBIO IMPORTANTE: EL TREEVIEW DEFINE TODAS LAS COLUMNAS
-    tabla_Treeview = ttk.Treeview(frame_tabla, columns=columnas_visibles, show="headings",style=estilo_treeview)
-
-    # Pero solo muestra las visibles
-    tabla_Treeview["displaycolumns"] = columnas_visibles
+    tabla_Treeview = ttk.Treeview(frame_tabla, columns=columnas, show="headings",style=estilo_treeview)
 
     ancho_mín = 150
 
     # Configurar encabezados de columnas visibles
-    for columna in columnas_visibles:
+    for columna in columnas:
         nombre_legible = alias.get(columna, columna)
         tabla_Treeview.heading(columna, anchor="center", text=nombre_legible)
         tabla_Treeview.column(columna, anchor="center", width=ancho_mín, minwidth=ancho_mín, stretch=False)
 
-    # Ocultar columnas internas
-    for columna in columnas_ocultas:
-        tabla_Treeview.column(columna, width=0, stretch=False)
-
     # Redimensionar dinámico
     def reconfigurar_ancho_columnas(event):
         ancho_disponible = event.width
-        num_columnas = len(columnas_visibles)
+        num_columnas = len(columnas)
         if ancho_disponible > (num_columnas * ancho_mín):
             nuevo_ancho = ancho_disponible // num_columnas
-            for col in columnas_visibles:
+            for col in columnas:
                 tabla_Treeview.column(col, width=nuevo_ancho)
 
     barraVertical = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_Treeview.yview)
@@ -116,7 +84,7 @@ def crear_Treeview(contenedor, tabla):
         id_col = next((c for c in columnas if c.lower().startswith("id_")), None)
         id_val = str(fila[idx_por_col[id_col]]) if id_col else str(índice)
 
-        valores_visibles = [fila[idx_por_col[col]] for col in columnas_visibles]
+        valores_visibles = [fila[idx_por_col[col]] for col in columnas]
         tag = "par" if índice % 2 == 0 else "impar"
         tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
