@@ -21,70 +21,110 @@ def crear_listaDesp(contenedor, ancho, estado="readonly"):
 def crear_boton(contenedor, texto, imágen, comando, estilo="Boton.TButton"):
   return ttk.Button(contenedor, text=texto, image=imágen, compound="left", width=10, command= lambda: comando(), style=estilo, cursor='hand2')
 
+def filtrar_columnas_visibles(columnas):
+    cols_lower = [c.lower() for c in columnas]
+    ocultar_lower = {
+        "_orden_fecha",
+        "FechaDeNacimiento",
+        "FechaEvaluación",
+        "Fecha_Asistencia",  # según tu esquema
+    }
+
+    columnas_visibles = []
+    for col in columnas:
+        col_l = col.lower()
+        if col_l.startswith("_orden_"):
+            continue  # oculta auxiliares
+        if col_l in ocultar_lower:
+            continue  # oculta crudas de fecha
+        columnas_visibles.append(col)
+    return columnas_visibles
+
+
 
 def crear_Treeview(contenedor, tabla):
-  columnas = campos_en_db[tabla]
+    columnas = campos_en_db[tabla]
+    columnas_visibles = filtrar_columnas_visibles(columnas)
 
-  estilo = ttk.Style()
-  estilo_treeview = f"Custom.Treeview"
-  estilo_encabezado = f"Custom.Treeview.Heading"
-  
-  estilo.configure(estilo_treeview, font=("Arial", 8), foreground=colores["negro"], background=colores["blanco"], bordercolor=colores["negro"], fieldbackground=colores["blanco"], relief="solid")
-  estilo.configure(estilo_encabezado, font=("Courier New", 10), foreground=colores["negro"], background=colores["azul"], bordercolor=colores["negro"])
-  estilo.layout(estilo_treeview, [('Treeview.treearea', {'sticky': 'nswe'})])
-  
-  frame_tabla = tk.Frame(contenedor, bg=colores["blanco"])
-  frame_tabla.grid(row=0, column=0, sticky="nsew")
-  
-  tabla_Treeview = ttk.Treeview(frame_tabla, columns=columnas, show="headings", style=estilo_treeview)
-  ancho_mín = 150
-  
-  for columna in columnas:
-    nombre_legible = alias.get(columna, columna)
-    tabla_Treeview.heading(columna, anchor="center", text=nombre_legible)
-    tabla_Treeview.column(columna, anchor="center",width=ancho_mín, minwidth=ancho_mín, stretch=False)
-  
-  def reconfigurar_ancho_columnas(event):
-    ancho_disponible = event.width
-    num_columnas = len(columnas)
+    estilo = ttk.Style()
+    estilo_treeview = "Custom.Treeview"
+    estilo_encabezado = "Custom.Treeview.Heading"
+
+    estilo.configure(estilo_treeview, font=("Arial", 8), foreground=colores["negro"],
+                     background=colores["blanco"], bordercolor=colores["negro"],
+                     fieldbackground=colores["blanco"], relief="solid")
+
+    estilo.configure(estilo_encabezado, font=("Courier New", 10),
+                     foreground=colores["negro"], background=colores["azul"],
+                     bordercolor=colores["negro"])
+
+    estilo.layout(estilo_treeview, [('Treeview.treearea', {'sticky': 'nswe'})])
+
+    frame_tabla = tk.Frame(contenedor, bg=colores["blanco"])
+    frame_tabla.grid(row=0, column=0, sticky="nsew")
+
+    columnas_ocultas = [col for col in columnas if col.startswith("_orden_")]
+    columnas_visibles = [col for col in columnas if col not in columnas_ocultas]
+
+    # ⬅️ CAMBIO IMPORTANTE: EL TREEVIEW DEFINE TODAS LAS COLUMNAS
+    tabla_Treeview = ttk.Treeview(frame_tabla, columns=columnas_visibles, show="headings",style=estilo_treeview)
+
+    # Pero solo muestra las visibles
+    tabla_Treeview["displaycolumns"] = columnas_visibles
+
+    ancho_mín = 150
+
+    # Configurar encabezados de columnas visibles
+    for columna in columnas_visibles:
+        nombre_legible = alias.get(columna, columna)
+        tabla_Treeview.heading(columna, anchor="center", text=nombre_legible)
+        tabla_Treeview.column(columna, anchor="center", width=ancho_mín, minwidth=ancho_mín, stretch=False)
+
+    # Ocultar columnas internas
+    for columna in columnas_ocultas:
+        tabla_Treeview.column(columna, width=0, stretch=False)
+
+    # Redimensionar dinámico
+    def reconfigurar_ancho_columnas(event):
+        ancho_disponible = event.width
+        num_columnas = len(columnas_visibles)
+        if ancho_disponible > (num_columnas * ancho_mín):
+            nuevo_ancho = ancho_disponible // num_columnas
+            for col in columnas_visibles:
+                tabla_Treeview.column(col, width=nuevo_ancho)
+
+    barraVertical = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_Treeview.yview)
+    barraHorizontal = tk.Scrollbar(frame_tabla, orient="horizontal", command=tabla_Treeview.xview)
+
+    tabla_Treeview.configure(yscrollcommand=barraVertical.set, xscrollcommand=barraHorizontal.set)
+
+    tabla_Treeview.grid(row=0, column=0, sticky="nsew")
+    barraVertical.grid(row=0, column=1, sticky="ns")
+    barraHorizontal.grid(row=1, column=0, sticky="ew")
+
+    frame_tabla.grid_rowconfigure(0, weight=1)
+    frame_tabla.grid_columnconfigure(0, weight=1)
+    frame_tabla.bind("<Configure>", reconfigurar_ancho_columnas)
+
+    for item in tabla_Treeview.get_children():
+        tabla_Treeview.delete(item)
+
+    datos = consultar_tabla(tabla)
     
-    if ancho_disponible > (num_columnas * ancho_mín):
-        nuevo_ancho = ancho_disponible // num_columnas
-        for col in columnas:
-          tabla_Treeview.column(col, width=nuevo_ancho)
-    else:
-      pass
-            
-            
-  barraVertical = tk.Scrollbar(frame_tabla, orient="vertical", command=tabla_Treeview.yview)
-  barraHorizontal = tk.Scrollbar(frame_tabla, orient="horizontal", command=tabla_Treeview.xview)
+    idx_por_col = {col: i for i, col in enumerate(columnas)}
+    for índice, fila in enumerate(datos):
+        id_col = next((c for c in columnas if c.lower().startswith("id_")), None)
+        id_val = str(fila[idx_por_col[id_col]]) if id_col else str(índice)
 
-  tabla_Treeview.configure(yscrollcommand=barraVertical.set, xscrollcommand=barraHorizontal.set)
+        valores_visibles = [fila[idx_por_col[col]] for col in columnas_visibles]
+        tag = "par" if índice % 2 == 0 else "impar"
+        tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
 
-  tabla_Treeview.grid(row=0, column=0, sticky="nsew")
-  barraVertical.grid(row=0, column=1, sticky="ns")
-  barraHorizontal.grid(row=1, column=0, sticky="ew")
-  
-  frame_tabla.grid_rowconfigure(0, weight=1)
-  frame_tabla.grid_columnconfigure(0, weight=1)
-  frame_tabla.bind("<Configure>", reconfigurar_ancho_columnas)
-  
-  for item in tabla_Treeview.get_children():
-    tabla_Treeview.delete(item)
-  
-  datos = consultar_tabla(tabla)
-  
-  for índice, fila in enumerate(datos):
-    id_val = fila[0]
-    valores_visibles = fila[1:]
-    
-    tag = "par" if índice % 2 == 0 else "impar"
-    tabla_Treeview.insert("", "end", iid=str(id_val), values=valores_visibles, tags=(tag,))
+    tabla_Treeview.tag_configure("par", background=colores["blanco"])
+    tabla_Treeview.tag_configure("impar", background=colores["celeste"])
 
-  tabla_Treeview.tag_configure("par", background=colores["blanco"])
-  tabla_Treeview.tag_configure("impar", background=colores["celeste"])
-    
-  return tabla_Treeview
+    return tabla_Treeview
+
 
 
 def crear_widgets(marco, nombre_de_la_tabla, campos, ventana):

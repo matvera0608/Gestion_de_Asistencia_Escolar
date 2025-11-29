@@ -75,13 +75,16 @@ widgets_para_tablas = {
 consultas = {
       "alumno": {
           "select": """SELECT a.ID_Alumno, a.Nombre AS AlumnoNombre,
+                        a.FechaDeNacimiento AS _orden_fecha,
                       DATE_FORMAT(a.FechaDeNacimiento, '%d/%m/%Y') AS Fecha,
                       c.Nombre AS CarreraNombre
                       FROM alumno a
                       JOIN carrera c ON a.IDCarrera = c.ID_Carrera"""
       },
       "asistencia":{
-          "select": """SELECT asis.ID, asis.Estado, DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
+          "select": """SELECT asis.ID, asis.Estado,
+                    asis.Fecha_Asistencia AS _orden_fecha,
+                    DATE_FORMAT(asis.Fecha_Asistencia, '%d/%m/%Y') AS Fecha,
                     al.Nombre AS Alumno,
                     p.Nombre AS Profesor,
                     m.Nombre AS Materia
@@ -110,6 +113,7 @@ consultas = {
           },
       "nota":{
           "select": """SELECT n.ID, al.Nombre AS AlumnoNom, m.Nombre AS MateriaNom, p.Nombre AS ProfesorNom,
+                        n.fechaEvaluación AS _orden_fecha,
                         REPLACE(CAST(n.valorNota AS CHAR(10)), '.', ',') AS Nota, 
                         n.tipoNota, DATE_FORMAT(n.fechaEvaluación, '%d/%m/%Y') AS FechaEv
                         FROM nota n
@@ -194,26 +198,31 @@ alias_a_orden_raw = {
 
 ordenables = {
     "alumno": {
-        "fecha": "FechaDeNacimiento",
+        "fecha": "_orden_fecha",
     },
     "nota": {
-        "fecha": "FechaEvaluación",
+        "fecha": "_orden_fecha",
     },
     "asistencia": {
-        "fecha": "Fecha_Asistencia",
+        "fecha": "_orden_fecha",
     }
 }
+
 
 # --- FUNCIONES DE CARGA Y CONFIGURACIÓN ---
 
 def ordenar_campos_especiales(tabla: str, campo: str, columnas: list):
     tabla = tabla.lower()
-    campo_lower = campo.lower()
+    campo_en_minúsculas = campo.lower()
+
+    if campo_en_minúsculas.startswith("fecha"):
+        if "_orden_fecha" in [col.lower() for col in columnas]:
+            return "_orden_fecha"
 
     # 1. Usar mapa de ordenables
     if tabla in ordenables:
         for alias, real in ordenables[tabla].items():
-            if campo_lower.startswith(alias):
+            if campo_en_minúsculas.startswith(alias):
                 if real.lower() in [col.lower() for col in columnas]:
                     return real
 
@@ -228,12 +237,12 @@ def ordenar_campos_especiales(tabla: str, campo: str, columnas: list):
         return orden
 
     # 4. Fallback seguro: si existe en columnas, devolverlo
-    if campo_lower in [col.lower() for col in columnas]:
-        return campo
+    for col in columnas:
+        if campo_en_minúsculas == col.lower():
+            return col  # devolver el nombre exacto de la columna en la subconsulta
 
     # 5. Último recurso: devolver el campo original
-    return campo
-
+    return None
 
 def consulta_semántica(consultas_meta, nombre_de_la_tabla, sentido_del_orden, valorBúsqueda, ordenDatos, operador_like="%{}%"):
     meta = consultas_meta.get(nombre_de_la_tabla.lower())
