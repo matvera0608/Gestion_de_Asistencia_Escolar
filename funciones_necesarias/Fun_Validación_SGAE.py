@@ -157,10 +157,12 @@ def aplicar_validación(widget, ventana, tipo):
                         return False
                 
                 if len(partes) == 1 and len(valor) in (1, 2):
-                    widget.after_idle(lambda: widget.delete(0, "end"))
-                    widget.after_idle(lambda: widget.insert(0, f"{int(valor):02d}:00"))
-                    
-                    return True
+                    try:
+                        hora = int(valor)
+                        if hora < 0 or hora > 23:
+                            return False
+                    except:
+                        return False
                 return True
 
             elif tipo == "nombre":
