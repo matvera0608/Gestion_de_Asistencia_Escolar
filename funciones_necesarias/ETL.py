@@ -13,6 +13,32 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
+# --- Función principal ---
+def sanear_archivo(path):
+     ext = path.lower().split(".")[-1]
+
+     # Detectar encoding real
+     encoding = detectar_encoding(path)
+     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si está bien acá el orden del df
+     print(f"→ Leyendo archivo con encoding detectado: {encoding}")
+     
+     # Cargar según el tipo
+     if ext in ["csv", "txt"]:
+          df = pd.read_csv(path, encoding=encoding, sep=None, engine="python")
+     elif ext == "xlsx":
+          df = pd.read_excel(path)
+     else:
+          raise ValueError("Formato no soportado")
+     
+     print("→ Saneando encabezados...")
+     df.columns = [normalizar_encabezado(c) for c in df.columns]
+
+     print("→ Saneando valores...")
+     df = df.map(normalizar_valor)
+
+     print("→ Archivo saneado correctamente.")
+     return df
+
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
      PORQUE LA DB ES MUY ESTRICTA CON LOS VALORES"""
@@ -62,53 +88,15 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
      if "." not in ruta_archivo:
           mensajeTexto.showerror("Error", "El archivo seleccionado no tiene extensión válida.")
           return None, None
-     
-     match extensión:
-          case "xlsx":
-               try:
-                    datos = pd.read_excel(ruta_archivo)
-               except Exception as e:
-                    mensajeTexto.showerror("Error al leer Excel", str(e))
-                    return None, None
-          case "csv":
-               datos = pd.read_csv(ruta_archivo,sep="\t",engine="python" ,encoding="utf-8")
-          case "txt":
-               with open(ruta_archivo, "r", encoding="utf-8") as archivo:
-                    contenido = archivo.read()
-                    contenido = re.sub(r"[ ]{2,}", "\t", contenido)
-                    contenido = re.sub(r"\t+", "\t", contenido)  # reemplaza múltiples tabulaciones por una sola. Si el txt tiene tabulaciones adicionales limpia para la importación
-                    contenido = re.sub(r";", "\t", contenido)
-                    lector = csv.reader(contenido.splitlines(), delimiter="\t")
-                    filas = list(lector)
-
-
-               encabezado = [col.strip() for col in filas[0]]
-               if not filas or len(filas) < 1:
-                    mensajeTexto.showerror("Error", "El archivo está vacío o mal formateado.")
-                    return None, None
-               num_columnas = len(encabezado)
-
-               filas_limpias = []
-               for fila in filas[1:]:
-                    fila_limpia = [c.strip() for c in fila]
-
-                    if len(fila_limpia) < num_columnas:
-                         fila_limpia += [""] * (num_columnas - len(fila_limpia))
-
-                    elif len(fila_limpia) > num_columnas:
-                         fila_limpia = fila_limpia[:num_columnas]
-
-                    filas_limpias.append(fila_limpia)
-              
-               datos_crudos = pd.DataFrame(filas_limpias, columns=encabezado)
-               datos_crudos.columns = [c.strip() for c in datos_crudos.columns]
+     try:
+               datos_crudos = sanear_archivo(ruta_archivo)
                datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos_crudos)
                if datos is None:
                     return None, None
-          case _:
-               print("No compatible el formato de archivo")
-               return None, None
-
+               
+     except Exception as e:
+        mensajeTexto.showerror("Error al procesar archivo", str(e))
+        return None, None
      return ruta_archivo, datos
  
 def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos):
@@ -213,12 +201,17 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
           dict_fila = fila.to_dict()
           for campo, valor in dict_fila.items():
                dict_fila[campo] = normalizar_valor(valor)
-          traducción, error = traducir_IDs(nombre_de_la_tabla, dict_fila)
+          
+          dict_filtrado = {k: v for k, v in dict_fila.items() if k}
+
+          # Traducir IDs
+          traducción, error = traducir_IDs(nombre_de_la_tabla, dict_filtrado)
           if error:
-               mensajeTexto.showerror(f"ERROR DE DATOS", f"❌ {error}")
+               mensajeTexto.showerror("ERROR DE DATOS", f"❌ {error}")
                return
-     
+
           filas_traducidas.append(traducción)
+
      datos = pd.DataFrame(filas_traducidas)
     
      return datos

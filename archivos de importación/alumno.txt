@@ -1,11 +1,8 @@
-nombre			fecha de nacimiento		          Carrera
-Julio Gómez			15/6/1997	 Hotelería y Turismo
-Julieta Méndez			4/5/1994		 Analista de Sistemas
-Bruno Váldez			31/1/2000		 Hotelería y Turismo
-Zoe Hernández		20/2/2004		 Hotelería y Turismo
-Susana Pérez			20/6/2006		 Hotelería y Turismo
-Lili Gómez			18/6/2000	 Analista de Sistemas
-Paula Vera			3/5/1994		 Hotelería y Turismo
-Bruno Oberauer			27/8/2004		 Analista de sistemas
-Carmen Andrada		2/9/2006		 Hotelería y Turismo
-Walter Chen			2/6/2008		 Hotelería y Turismo
+nombre			fecha de nacimiento	     Carrera
+
+Julio Gómez		15/6/1997	 	          Hotelería y Turismo
+Julieta Méndez	     4/5/1994	     		Analista de sistemas
+Bruno Váldez		31/1/2000			     Hotelería y Turismo
+Zoe Hernández	     20/2/2004	     		Hotelería y Turismo
+Susana Pérez		20/6/2006			     Hotelería y Turismo
+Lili Gómez		18/6/2000	     		Analista de sistemas

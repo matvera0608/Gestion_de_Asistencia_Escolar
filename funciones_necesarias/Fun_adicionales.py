@@ -208,15 +208,15 @@ def traducir_IDs(nombre_de_la_tabla, datos):
     "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
     
     "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-                    "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
-                    "IDMateria": ("ID_Materia", "materia", "Nombre")},
+                  "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
+                  "IDMateria": ("ID_Materia", "materia", "Nombre")},
     
     "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"),
                   "IDMateria": ("ID_Materia", "materia", "Nombre")},
     
     "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-              "IDMateria": ("ID_Materia","materia", "Nombre"),
-              "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
+            "IDMateria": ("ID_Materia","materia", "Nombre"),
+            "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
   if not datos:
     return None, "Datos vacíos."
@@ -236,7 +236,10 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             continue
           if isinstance(nombre_a_buscar, str):
             nombre_a_buscar = nombre_a_buscar.strip()
-            
+            nombre_a_buscar = normalizar_valor(nombre_a_buscar, campo_fkID)
+            if not nombre_a_buscar:
+              return None, f" El valor para '{campo_fkID}' está vacío o es inválido."
+
           if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
             datos_traducidos[campo_fkID] = int(nombre_a_buscar)
             continue  # saltamos la traducción
@@ -252,7 +255,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
       return datos_traducidos, None
       
   except Exception as e:
-    return None , f"Error de conexión: {e}"
+    return None , f"Error de conexión: {e}" #Este es el que imprime, no llega a entrar en el if isinstance
 
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),

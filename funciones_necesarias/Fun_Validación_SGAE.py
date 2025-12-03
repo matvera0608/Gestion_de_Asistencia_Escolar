@@ -1,5 +1,7 @@
 from Conexión import *
 import re
+import pandas as pd
+import chardet
 
 patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_fecha = re.compile(r'^(0?[1-9]|[12][0-9]|3[01])/(0?[1-9]|1[0-2])/\d{4}$')
@@ -7,44 +9,62 @@ patrón_hora = re.compile(r'^([01]\d|2[0-3]):([0-5]\d)$')
 patrón_alfanumérico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_nota = re.compile(r'^(10([.,]0{1,2})?|[1-9]([.,]\d{1,2})?)$')
 
-separadores_comunes = re.compile(r"[–—\-•|→]")
-comillas_o_puntos_suspensivos = re.compile(r"[\"'“”‘’…]")
-separadores_y_comillas = re.compile(r"[–—\-•|→\"'“”‘’…]")
+invisibles = re.compile(r"[\u00A0\u2000-\u200B\u202F\u205F\u3000\t\r\f\v]")
 múltiples_espacios = re.compile(r"\s{2,}")
-punto_y_coma = re.compile(r"[.,;]")
+caracteres_raros = re.compile(r"[\"'“”‘’…•→]") 
+separadores = re.compile(r"[–—\-|]")
 
 def normalizar_expresión(s):
     return s.lower().strip()
 
-def normalizar_encabezado(texto: str) -> str:
-    texto = normalizar_expresión(texto)
-    texto = texto.replace(" ", "")
-    texto = separadores_y_comillas.sub( "", texto)   # separadores y comillas
-    texto = múltiples_espacios.sub(" ", texto)             # múltiples espacios
-    return texto
+def normalizar_encabezado(columna: str) -> str:
+    columna = normalizar_expresión(columna)
+    columna = invisibles.sub(" ", columna)
+    columna = caracteres_raros.sub("", columna)
+    columna = separadores.sub("", columna)
+    columna = múltiples_espacios.sub(" ", columna)
+    return columna
 
-def normalizar_valor(valor, campo=None):
-    if not isinstance(valor, str):
-        return valor  # no tocamos enteros, fechas, etc. 
-    # 1. Quitar espacios, tabulaciones y saltos de línea
-    original = valor.strip()
+def normalizar_valor(valor):
+    if pd.isna(valor):
+        return None
     
-    if campo and campo.lower() in ["nota", "calificación", "calificaciones", "notas"]:
-        return original.replace(",", ".") if "," in original else original
+    if isinstance(valor, str):
+        s = invisibles.sub(" ", valor.strip())
+        s = caracteres_raros.sub("", s)
+        s = separadores.sub("", s)
+        s = múltiples_espacios.sub(" ", s)
 
-    # 2. Eliminar separadores comunes
-    valor = separadores_comunes.sub("", original)  # guiones, bullets, flechas
+        # convertir "1.0" → "1"
+        if re.fullmatch(r"\d+\.0+", s):
+            return int(float(s))
 
-    # 3. Eliminar comillas, puntos suspensivos, etc.
-    valor = comillas_o_puntos_suspensivos.sub("", valor)
+        # convertir "001" → 1
+        if re.fullmatch(r"0+\d+", s):
+            return int(s)
 
-    # 4. reeemplazar múltiples espacios por uno solo
-    valor = múltiples_espacios.sub(" ", valor)
-    
-    valor = punto_y_coma.sub("", valor)
+        # convertir "1,0" → 1.0
+        if "," in s and re.fullmatch(r"\d+,\d+", s):
+            return float(s.replace(",", "."))
 
-    # 5. Si queda vacío, devolver None
-    return valor if valor else None
+        # si es número entero
+        if re.fullmatch(r"\d+", s):
+            return int(s)
+
+        # si es número decimal
+        if re.fullmatch(r"\d+\.\d+", s):
+            return float(s)
+
+        return s
+
+    # si ya es number, retornarlo
+    return valor
+
+# --- Detección automática de codificación ---
+def detectar_encoding(path):
+    with open(path, "rb") as f:
+        data = f.read(2048)
+    return chardet.detect(data)["encoding"]
 
 def detectar_repeticiones_de_datos(datos, tabla):
     valorNombre = datos.get("Nombre", "").strip()

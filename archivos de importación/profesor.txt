@@ -1,4 +1,4 @@
-Nombre
+nombre
 Hugo López
 María Gómez
 Javier Silva
@@ -12,15 +12,5 @@ Lucía Morales
 Ricardo Rojas
 Valeria Núñez
 Sebastián Vega
-Camila Ríos
-Diego Acosta
-Florencia Gil
-Alejandro Luna
-Natalia Pérez
-Gonzalo Herrera
-Jimena Ortiz
-Fabián Ramos
-Agustina Sosa
-Federico Nieto
-Paula Benítez
-Juan Cruz
+Diego López
+Zoe Jansen
