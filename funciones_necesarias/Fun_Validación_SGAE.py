@@ -18,8 +18,8 @@ def normalizar_expresión(s):
 
 def normalizar_encabezado(texto: str) -> str:
     texto = normalizar_expresión(texto)
+    texto = texto.replace(" ", "")
     texto = separadores_y_comillas.sub( "", texto)   # separadores y comillas
-    texto = punto_y_coma.sub("", texto)
     texto = múltiples_espacios.sub(" ", texto)             # múltiples espacios
     return texto
 

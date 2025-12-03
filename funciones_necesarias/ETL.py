@@ -75,7 +75,9 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
           case "txt":
                with open(ruta_archivo, "r", encoding="utf-8") as archivo:
                     contenido = archivo.read()
+                    contenido = re.sub(r"[ ]{2,}", "\t", contenido)
                     contenido = re.sub(r"\t+", "\t", contenido)  # reemplaza múltiples tabulaciones por una sola. Si el txt tiene tabulaciones adicionales limpia para la importación
+                    contenido = re.sub(r";", "\t", contenido)
                     lector = csv.reader(contenido.splitlines(), delimiter="\t")
                     filas = list(lector)
 
