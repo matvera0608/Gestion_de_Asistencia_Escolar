@@ -17,7 +17,7 @@ REM color 0E es para texto amarillo
 
 REM 🚀 --- FLUJO PRINCIPAL --- BORRÉ PORQUE HABIA CIERTAS DUPLICACIONE
 CALL :SELECT_LANGUAGE
-
+IF NOT EXIST .gitignore CALL :CREATE_GITIGNORE
 GOTO REINTENTAR_CONEXION
 
 EXIT /B
@@ -85,7 +85,6 @@ echo .........................................................................
         echo El archivo .gitignore ya existe. No se sobrescribira.
         GOTO :EOF
     )
-    
     IF "%LANG_TYPE%"=="python" (
         echo # Python >> .gitignore
         echo __pycache__/ >> .gitignore
