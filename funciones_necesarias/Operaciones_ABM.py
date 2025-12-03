@@ -173,7 +173,7 @@ def eliminar_datos(nombre_de_la_tabla, cajasDeTexto, treeview, ventana):
     print(f"HA OCURRIDO UN ERROR AL ELIMINAR LOS DATOS: {str(e)}")
     return False
 
-def importar_datos(nombre_de_la_tabla, treeview):
+def importar_datos(nombre_de_la_tabla, treeview, ventana):
   try:
     if not hasattr(treeview, "winfo_exists") or not treeview.winfo_exists():
       print("La tabla visual no existe o fue cerrada.")
@@ -196,8 +196,9 @@ def importar_datos(nombre_de_la_tabla, treeview):
     refrescar_Treeview(nombre_de_la_tabla, treeview)
     
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
-    print(f"{len(valores_a_importar)} registros importados correctamente en {nombre_de_la_tabla}")
     
+    mostrar_aviso(ventana, f"{len(valores_a_importar)} registros importados\ncorrectamente en {nombre_de_la_tabla}", colores["verde_éxito"], 10)
+
   except error_sql as e_sql:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e_sql)}")
   

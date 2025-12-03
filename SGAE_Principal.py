@@ -265,7 +265,7 @@ def abrir_tablas(nombre_de_la_tabla):
   cf.btnGuardar = wid.crear_boton(marco_izquierdo, "Guardar",imágenes_por_botón["guardar"], lambda: btn_abm.guardar_registros(nombre_de_la_tabla, ele.cajasDeTexto, ele.campos_en_db, treeview, ventanaSecundaria))
   cf.btnGuardar.grid(row=4, column=0, pady=10, padx=0, sticky="ew")
   
-  cf.btnImportar = wid.crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: abm.importar_datos(nombre_de_la_tabla, treeview))
+  cf.btnImportar = wid.crear_boton(marco_izquierdo,"Importar", imágenes_por_botón["importar"], lambda: abm.importar_datos(nombre_de_la_tabla, treeview, ventanaSecundaria))
   cf.btnImportar.grid(row=5, column=0, pady=10, padx=0, sticky="ew")
   
   cf.btnExportarPDF = wid.crear_boton(marco_izquierdo, "Exportar", imágenes_por_botón["exportar"], lambda: abm.exportar_en_PDF(nombre_de_la_tabla, treeview, ventanaSecundaria))
