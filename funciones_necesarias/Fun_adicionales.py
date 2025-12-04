@@ -218,9 +218,9 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             "IDMateria": ("ID_Materia","materia", "Nombre"),
             "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
-  if not datos:
-    return None, "Datos vacíos."
-  
+  if datos.empty or datos.isnull().all():
+    return None, "Fila sin datos válidos"
+
   # Crear un nuevo diccionario para almacenar los datos traducidos
   datos_traducidos = datos.copy()
   reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())
@@ -236,7 +236,7 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             continue
           if isinstance(nombre_a_buscar, str):
             nombre_a_buscar = nombre_a_buscar.strip()
-            nombre_a_buscar = normalizar_valor(nombre_a_buscar, campo_fkID)
+            nombre_a_buscar = normalizar_valor(nombre_a_buscar)
             if not nombre_a_buscar:
               return None, f" El valor para '{campo_fkID}' está vacío o es inválido."
 

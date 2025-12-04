@@ -31,8 +31,6 @@ def normalizar_valor(valor):
     
     if isinstance(valor, str):
         s = invisibles.sub(" ", valor.strip())
-        s = caracteres_raros.sub("", s)
-        s = separadores.sub("", s)
         s = múltiples_espacios.sub(" ", s)
 
         # convertir "1.0" → "1"
@@ -59,6 +57,14 @@ def normalizar_valor(valor):
 
     # si ya es number, retornarlo
     return valor
+
+def normalizar_línea(línea: str) -> list[str]:
+    # 1. Reemplazar invisibles por espacio normal
+    línea = invisibles.sub(" ", línea)
+    # 2. Colapsar grupos de espacios/tabs en un tab
+    línea = re.sub(r"[ \t]{2,}", "\t", línea.strip())
+    # 3. Dividir por tab
+    return línea.split("\t")
 
 # --- Detección automática de codificación ---
 def detectar_encoding(path):

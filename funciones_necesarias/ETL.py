@@ -1,7 +1,6 @@
-import re
+import traceback
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
-import csv
 import pandas as pd
 import os, difflib
 from Conexión import *
@@ -16,25 +15,33 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 # --- Función principal ---
 def sanear_archivo(path):
      ext = path.lower().split(".")[-1]
-
+     # Separador: 2+ espacios, o tab, o punto y coma
+     sep_regex = r"\s{2,}|\t|;"
      # Detectar encoding real
      encoding = detectar_encoding(path)
-     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si está bien acá el orden del df
      print(f"→ Leyendo archivo con encoding detectado: {encoding}")
      
      # Cargar según el tipo
      if ext in ["csv", "txt"]:
-          df = pd.read_csv(path, encoding=encoding, sep=None, engine="python")
+          df = pd.read_csv(path, encoding=encoding, sep=sep_regex, engine="python", skip_blank_lines=True)
      elif ext == "xlsx":
           df = pd.read_excel(path)
      else:
           raise ValueError("Formato no soportado")
      
+     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si está bien acá el orden del df
+     df.dropna(axis=1, how="all")
+     # -------------------------------
+     # NORMALIZAR SOLO ENCABEZADOS
+     # -------------------------------
      print("→ Saneando encabezados...")
      df.columns = [normalizar_encabezado(c) for c in df.columns]
-
+     # -------------------------------
+     # NORMALIZAR SOLO VALORES
+     # -------------------------------
      print("→ Saneando valores...")
-     df = df.map(normalizar_valor)
+     for col in df.columns:
+          df[col] = df[col].apply(normalizar_valor)
 
      print("→ Archivo saneado correctamente.")
      return df
@@ -88,37 +95,51 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
      if "." not in ruta_archivo:
           mensajeTexto.showerror("Error", "El archivo seleccionado no tiene extensión válida.")
           return None, None
+     
      try:
-               datos_crudos = sanear_archivo(ruta_archivo)
-               datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos_crudos)
-               if datos is None:
-                    return None, None
-               
+          datos_crudos = sanear_archivo(ruta_archivo)
      except Exception as e:
-        mensajeTexto.showerror("Error al procesar archivo", str(e))
-        return None, None
+          mensajeTexto.showerror("Error al leer archivo", str(e))
+          return None, None
+     try:
+          datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos_crudos)
+          if datos is None:
+               return None, None
+     except Exception as e:
+          detalle = traceback.format_exc()  # stack completo
+          mensajeTexto.showerror("Error al validar archivo",
+               f"Tipo: {type(e).__name__}\nMensaje: {str(e)}\n\nDetalle:\n{detalle}")
+          return None, None
+
      return ruta_archivo, datos
  
 def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos):
+     # filas → ya sanitizadas
+     # aquí solo validás:
+     # - que las columnas coincidan
+     # - que los tipos sean correctos
+     # - que claves foráneas existan
+     # - que no haya vacíos en campos obligatorios
+     
      """ VALIDAMOS EL ARCHIVO ASEGURANDO QUE EL NOMBRE SE LLAME EXACTAMENTE IGUAL, DETECTANDO LOS CAMPOS QUE REALMENTE EXISTAN,
      DESPUÉS SI FALTAN QUE TIRE UN AVISO Y QUE VERIFIQUE UN REGISTRO INVÁLIDO """
      
      #===================================================================
      # 1. VALIDACIÓN INTELIGENTE DEL NOMBRE DE ARCHIVO DONDE TENGAN UNA SIMILITUD
      #===================================================================
-     
+     errores = []
+     similitud = 0.85
      nombre_de_archivo= os.path.splitext(os.path.basename(ruta_archivo))[0]
      nombre_de_archivo_normalizado = nombre_de_archivo.lower().replace("_", "").replace(" ", "")
      nombre_de_la_tabla_normalizado = nombre_de_la_tabla.lower().replace("_", "").replace(" ", "")
 
      # Intentar coincidencias aproximadas
-     mejor_coincidencia = difflib.get_close_matches(nombre_de_archivo_normalizado, [nombre_de_la_tabla_normalizado.lower()] , n=1, cutoff=0.85)
+     mejor_coincidencia = difflib.get_close_matches(nombre_de_archivo_normalizado, [nombre_de_la_tabla_normalizado.lower()] , n=1, cutoff=similitud)
 
      
      if not mejor_coincidencia:
-          mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
-          return
-     
+          errores.append(f"El nombre del archivo {os.path.basename(ruta_archivo)} no coincide con la tabla {nombre_de_la_tabla}")
+          
      #===================================================================
      # 2. VALIDACIÓN INTELIGENTE DE NOMBRE DE CAMPOS CON EL FIN DE FLEXIBILIZAR UN POCO 
      #===================================================================
@@ -144,7 +165,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
           continue
        
         # 3) Coincidencia aproximada (difflib)
-        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=0.85)
+        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=similitud)
         if mejor:
           mejor_norm = mejor[0]
           if mejor_norm in alias_invertido:
@@ -153,15 +174,19 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
                # Es un nombre oficial
                indice = campos_oficiales_normalizados.index(mejor_norm)
                columnas_finales_de_campos.append(campos_oficiales[indice])
-          continue
+               continue
 
-        # 4) Nada coincide → inválido
-        mensajeTexto.showerror(
-            "ERROR DE IMPORTACIÓN",
-            f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}."
-        )
-        return None
-
+     # 4) Nada coincide → inválido
+     errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
+     
+     
+     #----------------------------------------------
+     # VALIDACIÓN: misma cantidad de columnas
+     #----------------------------------------------
+     if len(columnas_finales_de_campos) != len(datos.columns):
+          errores.append(f"El archivo tiene {len(datos.columns)} columnas, "
+          f"pero la tabla '{nombre_de_la_tabla}' requiere {len(campos_oficiales)}.")
+     
      datos.columns = columnas_finales_de_campos
      
      #===================================================================
@@ -169,52 +194,47 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      #===================================================================
      campos_invalidos = [c for c in columnas_finales_de_campos if c and c not in campos_oficiales]
      if campos_invalidos:
-          mensajeTexto.showerror("ERROR DE IMPORTACIÓN", f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
-          return
-     
+          errores.append(f"Los siguientes campos no existen en la tabla {nombre_de_la_tabla}: {', '.join(campos_invalidos)}")
+          
      #===================================================================
      # 4. VALIDACIÓN INTELIGENTE DE CAMPOS FALTANTES
      #===================================================================
      
      campos_faltantes = [c for c in campos_oficiales if c not in columnas_finales_de_campos]
      if campos_faltantes:
-          mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
-          return
-     
+          errores.append(f"Faltan columnas obligatorias en el archivo: {', '.join(campos_faltantes)}")
+          
+
      #===================================================================
      # 5. VALIDACIÓN DE CANTIDAD DE CAMPOS
      #===================================================================
      
      for i, fila in enumerate(datos.values): #Validar largo de la fila
           if len(fila) != len(campos_oficiales):
-               mensajeTexto.showerror("ERROR DE IMPORTACIÓN",f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
-               return
-     
+              errores.append(f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
+              
      #===================================================================
      # 6. TRADUCCIÓN DE CAMPOS CLAVES O CRUDOS A NOMBRES LEGIBLES
      #===================================================================
      
-     
+      # Mostrar todos los errores juntos
+     if errores:
+          mensajeTexto.showerror("ERROR DE IMPORTACIÓN", "\n".join(errores))
+
+     # 6. Traducción de IDs
      filas_traducidas = []
-     
      for _, fila in datos.iterrows():
-          dict_fila = fila.to_dict()
-          for campo, valor in dict_fila.items():
-               dict_fila[campo] = normalizar_valor(valor)
-          
-          dict_filtrado = {k: v for k, v in dict_fila.items() if k}
-
-          # Traducir IDs
-          traducción, error = traducir_IDs(nombre_de_la_tabla, dict_filtrado)
+          traduccion, error = traducir_IDs(nombre_de_la_tabla, fila)
           if error:
-               mensajeTexto.showerror("ERROR DE DATOS", f"❌ {error}")
-               return
+               errores.append(f"❌ {error}")
+          else:
+               filas_traducidas.append(traduccion)
 
-          filas_traducidas.append(traducción)
+     if errores:
+          mensajeTexto.showerror("ERROR DE DATOS", "\n".join(errores))
+          return None
 
-     datos = pd.DataFrame(filas_traducidas)
-    
-     return datos
+     return pd.DataFrame(filas_traducidas)
 
 def normalizar_datos(datos):
      for columna in datos.columns:
