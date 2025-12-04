@@ -23,14 +23,24 @@ def sanear_archivo(path):
      
      # Cargar según el tipo
      if ext in ["csv", "txt"]:
-          df = pd.read_csv(path, encoding=encoding, sep=sep_regex, engine="python", skip_blank_lines=True)
+          df = pd.read_csv(path, encoding=encoding, sep=sep_regex, engine="python", skip_blank_lines=True, dtype=str, keep_default_na=False)
+          # Asegurar que el orden de lectura se conserve
+          df.reset_index(drop=True, inplace=True)
+
+          # Normalizar encabezados
+          df.columns = [normalizar_encabezado(c) for c in df.columns]
+
+          # Normalizar valores (ya lo tenés)
+          for col in df.columns:
+               df[col] = df[col].apply(normalizar_valor)
      elif ext == "xlsx":
           df = pd.read_excel(path)
      else:
           raise ValueError("Formato no soportado")
      
-     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si está bien acá el orden del df
+     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si esta es la causante del desorden
      df.dropna(axis=1, how="all")
+     
      # -------------------------------
      # NORMALIZAR SOLO ENCABEZADOS
      # -------------------------------
