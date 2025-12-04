@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 SET MAX_INTENTOS=5
 SET INTENTO=1
 SET INTENTO_DE_PUSHEO=1
-SET COMMIT_MESSAGE=Saneando datos para la importación
+SET COMMIT_MESSAGE=Se importó nuevos archivos
 echo .........................................................................
 echo Giteo v2.3 pro
 echo Iniciando subida a GitHub...

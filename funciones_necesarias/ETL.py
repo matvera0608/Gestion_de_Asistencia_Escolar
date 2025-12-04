@@ -19,7 +19,7 @@ def sanear_archivo(path):
      sep_regex = r"\s{2,}|\t|;"
      # Detectar encoding real
      encoding = detectar_encoding(path)
-     print(f"→ Leyendo archivo con encoding detectado: {encoding}")
+     # print(f"→ Leyendo archivo con encoding detectado: {encoding}")
      
      # Cargar según el tipo
      if ext in ["csv", "txt"]:
@@ -34,12 +34,12 @@ def sanear_archivo(path):
      # -------------------------------
      # NORMALIZAR SOLO ENCABEZADOS
      # -------------------------------
-     print("→ Saneando encabezados...")
+     # print("→ Saneando encabezados...")
      df.columns = [normalizar_encabezado(c) for c in df.columns]
      # -------------------------------
      # NORMALIZAR SOLO VALORES
      # -------------------------------
-     print("→ Saneando valores...")
+     # print("→ Saneando valores...")
      for col in df.columns:
           df[col] = df[col].apply(normalizar_valor)
 
@@ -152,42 +152,44 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      
      #Se recorre con un for el archivo para validar cada atributo dentro del archivo.
      for columna_original in datos.columns:
-        c_norm = normalizar_encabezado(columna_original)
-        # 1) Coincidencia exacta por alias
-        if c_norm in alias_invertido:
-          columnas_finales_de_campos.append(alias_invertido[c_norm])
-          continue
-        # 2) Coincidencia exacta por nombre oficial
-        if c_norm in campos_oficiales_normalizados:
-          
-          indice = campos_oficiales_normalizados.index(c_norm)
-          columnas_finales_de_campos.append(campos_oficiales[indice])
-          continue
-       
-        # 3) Coincidencia aproximada (difflib)
-        mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=similitud)
-        if mejor:
-          mejor_norm = mejor[0]
-          if mejor_norm in alias_invertido:
-               columnas_finales_de_campos.append(alias_invertido[mejor_norm])
-          else:
-               # Es un nombre oficial
-               indice = campos_oficiales_normalizados.index(mejor_norm)
+          c_norm = normalizar_encabezado(columna_original)
+          # 1) Coincidencia exacta por alias
+          if c_norm in alias_invertido:
+               columnas_finales_de_campos.append(alias_invertido[c_norm])
+               continue
+          # 2) Coincidencia exacta por nombre oficial
+          if c_norm in campos_oficiales_normalizados:
+
+               indice = campos_oficiales_normalizados.index(c_norm)
                columnas_finales_de_campos.append(campos_oficiales[indice])
                continue
 
-     # 4) Nada coincide → inválido
-     errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
+          # 3) Coincidencia aproximada (difflib)
+          mejor = difflib.get_close_matches(c_norm, alias_válidos, n=1, cutoff=similitud)
+          if mejor:
+               mejor_norm = mejor[0]
+               if mejor_norm in alias_invertido:
+                    columnas_finales_de_campos.append(alias_invertido[mejor_norm])
+               else:
+                    # Es un nombre oficial
+                    indice = campos_oficiales_normalizados.index(mejor_norm)
+                    columnas_finales_de_campos.append(campos_oficiales[indice])
+               continue
+
+          # 4) Nada coincide → inválido
+          errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
      
      
      #----------------------------------------------
      # VALIDACIÓN: misma cantidad de columnas
      #----------------------------------------------
-     if len(columnas_finales_de_campos) != len(datos.columns):
-          errores.append(f"El archivo tiene {len(datos.columns)} columnas, "
-          f"pero la tabla '{nombre_de_la_tabla}' requiere {len(campos_oficiales)}.")
-     
-     datos.columns = columnas_finales_de_campos
+     if len(columnas_finales_de_campos) == len(datos.columns):
+          datos.columns = columnas_finales_de_campos
+     elif len(columnas_finales_de_campos) != len(datos.columns):
+          errores.append(f"El archivo tiene {len(datos.columns)} columnas, "f"pero solo se pudieron mapear {len(columnas_finales_de_campos)}."
+          )
+          mensajeTexto.showerror("ERROR DE COLUMNAS", "\n".join(errores))
+          return None
      
      #===================================================================
      # 3. VALIDACIÓN INTELIGENTE DE CAMPOS INVÁLIDOS
@@ -211,7 +213,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      
      for i, fila in enumerate(datos.values): #Validar largo de la fila
           if len(fila) != len(campos_oficiales):
-              errores.append(f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
+               errores.append(f"❌ Error en registro {i+1}: cantidad de valores incorrecta ({len(fila)} en vez de {len(campos_oficiales)})")
               
      #===================================================================
      # 6. TRADUCCIÓN DE CAMPOS CLAVES O CRUDOS A NOMBRES LEGIBLES
@@ -220,6 +222,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
       # Mostrar todos los errores juntos
      if errores:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", "\n".join(errores))
+          return None
 
      # 6. Traducción de IDs
      filas_traducidas = []
@@ -319,8 +322,8 @@ def crear_PDF(ruta_archivo, datos, nombre_de_la_tabla):
      ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
      ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
      ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#3d3dff")),
-     ('FONTSIZE', (0, 0), (-1, 0), 14),
+     ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#5d5dff")),
+     ('FONTSIZE', (0, 0), (-1, 0), 12),
      ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
      ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
      ('GRID', (0, 0), (-1, -1), 0.8, colors.black),
