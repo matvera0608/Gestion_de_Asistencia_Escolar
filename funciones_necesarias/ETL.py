@@ -42,7 +42,7 @@ def sanear_archivo(path):
      # print("→ Saneando valores...")
      for col in df.columns:
           df[col] = df[col].apply(normalizar_valor)
-
+          
      print("→ Archivo saneado correctamente.")
      return df
 

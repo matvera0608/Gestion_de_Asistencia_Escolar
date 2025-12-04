@@ -197,7 +197,7 @@ def importar_datos(nombre_de_la_tabla, treeview, ventana):
     
     datos_en_cache[nombre_de_la_tabla] = datos.copy()
     
-    mostrar_aviso(ventana, f"{len(valores_a_importar)} registros importados correctamente", colores["verde_éxito"], 10)
+    mostrar_aviso(ventana, f"✅ {len(valores_a_importar)} REGISTROS IMPORTADOS CORRECTAMENTE", colores["verde_éxito"], 10)
 
   except error_sql as e_sql:
     print(f"OCURRIÓ UNA EXCEPCIÓN: {str(e_sql)}")

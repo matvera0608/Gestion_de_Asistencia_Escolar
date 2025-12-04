@@ -41,7 +41,6 @@ def guardar_registros(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ven
         mostrar_aviso(ventana, "No hay operación activa", colores["rojo_error"], 10)
         return
     
-    
 def limpiar_TODO(nombre_de_la_tabla, treeview):
     cf.restaurar_botonera("disabled")
     cf.btnAgregar.config(state="normal")

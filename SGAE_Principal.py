@@ -287,8 +287,8 @@ def abrir_tablas(nombre_de_la_tabla):
       "Modificar": partial(btn_abm.editar_registro,nombre_de_la_tabla, treeview),
       "Guardar": partial(btn_abm.guardar_registros, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ele.campos_en_db),
       "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria),
-      "Importar": partial(abm.importar_datos, nombre_de_la_tabla, treeview),
-      "Exportar": partial(abm.exportar_en_PDF, nombre_de_la_tabla, treeview),
+      "Importar": partial(abm.importar_datos, nombre_de_la_tabla, treeview, ventanaSecundaria),
+      "Exportar": partial(abm.exportar_en_PDF, nombre_de_la_tabla, treeview, ventanaSecundaria),
       "Mostrar": partial(fun.mostrar_registro, nombre_de_la_tabla, treeview, ele.cajasDeTexto)
   }
   
