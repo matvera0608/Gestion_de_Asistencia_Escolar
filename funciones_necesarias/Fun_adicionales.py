@@ -218,9 +218,6 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             "IDMateria": ("ID_Materia","materia", "Nombre"),
             "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
   }
-  if datos.empty or datos.isnull().all():
-    return None, "Fila sin datos válidos"
-
   # Crear un nuevo diccionario para almacenar los datos traducidos
   datos_traducidos = datos.copy()
   reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())

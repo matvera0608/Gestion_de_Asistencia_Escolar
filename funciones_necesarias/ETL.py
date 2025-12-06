@@ -1,7 +1,7 @@
 import traceback
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
-import pandas as pd
+import pandas as pd, re
 import os, difflib
 from Conexión import *
 from .Fun_adicionales import *
@@ -12,47 +12,67 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
-# --- Función principal ---
+def validar_y_traducir(df, nombre_de_la_tabla):
+     errores = []
+     filas = []
+
+     for _, fila in df.iterrows():
+          traduccion, error = traducir_IDs(nombre_de_la_tabla, fila)
+          if error:
+               errores.append(error)
+          else:
+               filas.append(traduccion)
+
+     if errores:
+          mensajeTexto.showerror("ERROR DE DATOS", "\n".join(errores))
+          return None
+
+     return pd.DataFrame(filas)   # ← perfecto, orden estable
+
+
+
 def sanear_archivo(path):
-     ext = path.lower().split(".")[-1]
-     # Separador: 2+ espacios, o tab, o punto y coma
-     sep_regex = r"\s{2,}|\t|;"
      # Detectar encoding real
      encoding = detectar_encoding(path)
-     # print(f"→ Leyendo archivo con encoding detectado: {encoding}")
-     
-     # Cargar según el tipo
-     if ext in ["csv", "txt"]:
-          df = pd.read_csv(path, encoding=encoding, sep=sep_regex, engine="python", skip_blank_lines=True, dtype=str, keep_default_na=False)
-          # Asegurar que el orden de lectura se conserve
-          df.reset_index(drop=True, inplace=True)
 
-          # Normalizar encabezados
-          df.columns = [normalizar_encabezado(c) for c in df.columns]
+     # -----------------------------------------
+     # 1. Detectar si es ancho fijo o delimitado
+     # -----------------------------------------
+     with open(path, "r", encoding=encoding, errors="ignore") as file:
+          lineas = file.readlines()
 
-          # Normalizar valores (ya lo tenés)
-          for col in df.columns:
-               df[col] = df[col].apply(normalizar_valor)
-     elif ext == "xlsx":
-          df = pd.read_excel(path)
-     else:
-          raise ValueError("Formato no soportado")
+     filas = []
      
-     df = df.loc[:, ~df.columns.str.contains("unnamed", case=False)] #No sé si esta es la causante del desorden
-     df.dropna(axis=1, how="all")
+     for linea in lineas:
+          campos = normalizar_línea(linea)
+          if len([c for c in campos if c.strip()]) > 0:
+               filas.append(campos)
+          
+     if not filas:
+          raise ValueError("El archivo está vacío o no contiene datos legibles.")
      
      # -------------------------------
-     # NORMALIZAR SOLO ENCABEZADOS
+     # 2. Crear DataFrame estable
      # -------------------------------
-     # print("→ Saneando encabezados...")
-     df.columns = [normalizar_encabezado(c) for c in df.columns]
+     # Tomo la fila más larga como referencia de cantidad de columnas
+     max_cols = max(len(f) for f in filas)
+
+     # Completo filas cortas para que pandas no falle
+     filas = [fila + [""] * (max_cols - len(fila)) for fila in filas]
+
+     df = pd.DataFrame(filas)
      # -------------------------------
-     # NORMALIZAR SOLO VALORES
+     # 3. Primera fila = encabezados
      # -------------------------------
-     # print("→ Saneando valores...")
+     df.columns = [normalizar_encabezado(c) for c in df.iloc[0]]
+     df = df.drop(index=0).reset_index(drop=True)
+
+     # -------------------------------
+     # 4. Normalizar valores
+     # -------------------------------
      for col in df.columns:
           df[col] = df[col].apply(normalizar_valor)
-          
+
      print("→ Archivo saneado correctamente.")
      return df
 
@@ -233,21 +253,13 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      if errores:
           mensajeTexto.showerror("ERROR DE IMPORTACIÓN", "\n".join(errores))
           return None
+     
+     df_traducido = validar_y_traducir(datos, nombre_de_la_tabla)
 
-     # 6. Traducción de IDs
-     filas_traducidas = []
-     for _, fila in datos.iterrows():
-          traduccion, error = traducir_IDs(nombre_de_la_tabla, fila)
-          if error:
-               errores.append(f"❌ {error}")
-          else:
-               filas_traducidas.append(traduccion)
-
-     if errores:
-          mensajeTexto.showerror("ERROR DE DATOS", "\n".join(errores))
+     if df_traducido is None:
           return None
 
-     return pd.DataFrame(filas_traducidas)
+     return df_traducido
 
 def normalizar_datos(datos):
      for columna in datos.columns:

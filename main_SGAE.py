@@ -161,6 +161,7 @@ def mostrar_pestañas(ventana, permiso):
   
   ventana.after(1000, setattr(notebook, "carga_inicial", False))
 
+#Aquí se encontrará los eventos en esta función, acciones es un diccionario que sirve para eventuar luego.
 def abrir_tablas(nombre_de_la_tabla):
     
   # Destruir ventana anterior si existe y limpiar referencias

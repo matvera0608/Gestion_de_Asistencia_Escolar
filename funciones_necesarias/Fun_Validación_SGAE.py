@@ -25,38 +25,18 @@ def normalizar_encabezado(columna: str) -> str:
     columna = múltiples_espacios.sub(" ", columna)
     return columna
 
+
+
+## TE ENVÍO ESTA PARTE PORQUE BLOC DE NOTAS ES MUY PROPENSO A FALLOS
 def normalizar_valor(valor):
     if pd.isna(valor):
         return None
-    
     if isinstance(valor, str):
         s = invisibles.sub(" ", valor.strip())
         s = múltiples_espacios.sub(" ", s)
-
-        # convertir "1.0" → "1"
-        if re.fullmatch(r"\d+\.0+", s):
-            return int(float(s))
-
-        # convertir "001" → 1
-        if re.fullmatch(r"0+\d+", s):
-            return int(s)
-
-        # convertir "1,0" → 1.0
-        if "," in s and re.fullmatch(r"\d+,\d+", s):
-            return float(s.replace(",", "."))
-
-        # si es número entero
-        if re.fullmatch(r"\d+", s):
-            return int(s)
-
-        # si es número decimal
-        if re.fullmatch(r"\d+\.\d+", s):
-            return float(s)
-
         return s
-
-    # si ya es number, retornarlo
     return valor
+
 
 def normalizar_línea(línea: str) -> list[str]:
     # 1. Reemplazar invisibles por espacio normal
@@ -71,6 +51,9 @@ def detectar_encoding(path):
     with open(path, "rb") as f:
         data = f.read(2048)
     return chardet.detect(data)["encoding"]
+
+
+
 
 def detectar_repeticiones_de_datos(datos, tabla):
     valorNombre = datos.get("Nombre", "").strip()
