@@ -30,7 +30,6 @@ def validar_y_traducir(df, nombre_de_la_tabla):
      return pd.DataFrame(filas)   # ← perfecto, orden estable
 
 
-
 def sanear_archivo(path):
      # Detectar encoding real
      encoding = detectar_encoding(path)
@@ -218,7 +217,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      elif len(columnas_finales_de_campos) != len(datos.columns):
           errores.append(f"El archivo tiene {len(datos.columns)} columnas, "f"pero solo se pudieron mapear {len(columnas_finales_de_campos)}."
           )
-          mensajeTexto.showerror("ERROR DE COLUMNAS", "\n".join(errores))
+          mensajeTexto.showerror("ERROR DE COLUMNAS O COINCIDENCIAS", "\n".join(errores))
           return None
      
      #===================================================================
