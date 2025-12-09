@@ -1,16 +1,16 @@
-estado	     fecha 	Alumno	          Profesor	          Materia
-presente	14/03/2025	Luisa Méndez	Hugo López	Base de Datos
-ausente	14/03/2025	Carlos Gómez	Hugo López	Base de Datos
-presente	14/03/2025	Luisa Méndez	Hugo López	Base de Datos
-presente	14/03/2025	Carlos Gómez	Hugo López	Base de Datos
-ausente	17/03/2025	Luisa Méndez	Hugo López	Base de Datos
-presente	17/03/2025	Luisa Méndez	Hugo López	Base de Datos
-ausente	17/03/2025	Carlos Gómez	Hugo López	Base de Datos
-presente	17/03/2025	Luisa Méndez	Hugo López	Base de Datos
-presente	17/03/2025	Carlos Gómez	Hugo López	Base de Datos
-ausente	17/03/2025	Luisa Méndez	Hugo López	Base de Datos
-presente	17/03/2025	Luisa Méndez	Hugo López	Base de Datos
-ausente	17/3/2025	     Carlos Gómez	Hugo López	Base de Datos
-presente	17/3/2025	     Luisa Méndez	Hugo López	Base de Datos
-presente	17/3/2025	     Carlos Gómez	Hugo López	Base de Datos
-ausente	17/3/2025	     Luisa Méndez	Hugo López	Base de Datos
+estado	     fecha 	     Alumno   Profesor    Materia
+presente	14/03/2025	Luisa Méndez	   Hugo López	          Base de Datos
+ausente	14/03/2025	Carlos Gómez	     Hugo López	Base de Datos
+presente	14/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+presente	14/03/2025	Carlos Gómez	    Hugo López	Base de Datos
+ausente	17/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+presente	17/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+ausente	17/03/2025	Carlos Gómez	     Hugo López	Base de Datos
+presente	17/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+presente	17/03/2025	Carlos Gómez	     Hugo López	Base de Datos
+ausente	17/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+presente	17/03/2025	Luisa Méndez	     Hugo López	Base de Datos
+ausente	17/3/2025	     Carlos Gómez	     Hugo López	Base de Datos
+presente	17/3/2025	     Luisa Méndez	     Hugo López	Base de Datos
+presente	17/3/2025	     Carlos Gómez	     Hugo López	Base de Datos
+ausente	17/3/2025	     Luisa Méndez	     Hugo López	Base de Datos

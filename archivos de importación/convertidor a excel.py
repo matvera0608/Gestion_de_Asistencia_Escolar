@@ -1,7 +1,7 @@
 import os, pandas as pd
 from datetime import datetime
-archivo_origen = "alumno.txt"
-archivo_destino = "alumno.xlsx"
+archivo_origen = "asistencia.txt"
+archivo_destino = "asistencia.xlsx"
 
 if not os.path.isfile(archivo_origen):
     print(f"El archivo {archivo_origen} no existe.")
@@ -34,9 +34,18 @@ def fecha_valida(fecha):
 columna_fecha = next((col for col in df.columns if "fecha" in col.lower()), None)
 
 if columna_fecha:
-     df[columna_fecha].apply(fecha_valida)
+    df["FechaValida"] = df[columna_fecha].apply(fecha_valida)
+
+    errores = df[df["FechaValida"] == False]
+
+    if not errores.empty:
+        print("⚠️ Se encontraron fechas inválidas:")
+        print(errores[[columna_fecha]])
+    else:
+        print("✔ Todas las fechas son válidas")
 else:
     print("⚠️ No se encontró ninguna columna que contenga 'fecha'")
+
 df.to_excel(archivo_destino, index=False)
 
 print(f"Conversión completa: {archivo_destino}")

@@ -1,7 +1,7 @@
 import traceback
 from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
-import pandas as pd, re
+import pandas as pd
 import os, difflib
 from Conexión import *
 from .Fun_adicionales import *
@@ -11,6 +11,45 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
+
+def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    # -----------------------------------------
+    # 1. Normalizar nombres de columnas
+    # -----------------------------------------
+    nuevas = []
+    for col in df.columns:
+        nuevas.append(normalizar_encabezado(str(col)))
+    df.columns = nuevas
+
+    # Eliminar columnas vacías
+    df = df.loc[:, df.columns.map(lambda c: c.strip() != "")]
+
+    # -----------------------------------------
+    # 2. Normalizar valores celda por celda
+    # -----------------------------------------
+    for col in df.columns:
+        df[col] = df[col].astype(str).apply(normalizar_valor)
+
+    return df
+
+
+def cargar_archivo(path):
+     extension = os.path.splitext(path)[1].lower()
+     
+     if extension in [".xlsx", ".xls"]:
+          print("→ Cargando Excel sin saneo de líneas…")
+          df = pd.read_excel(path)
+          # Normalizar encabezados
+          df.columns = [normalizar_encabezado(c) for c in df.columns]
+          
+          # Normalizar valores
+          for col in df.columns:
+               df[col] = df[col].apply(normalizar_valor)
+
+          return df
+     else:
+          print("Cargando archivo delimitado (txt.csv)...")
+          return sanear_archivo_diferente_a_excel(path)
 
 def validar_y_traducir(df, nombre_de_la_tabla):
      errores = []
@@ -29,11 +68,9 @@ def validar_y_traducir(df, nombre_de_la_tabla):
 
      return pd.DataFrame(filas)   # ← perfecto, orden estable
 
-
-def sanear_archivo(path):
+def sanear_archivo_diferente_a_excel(path):
      # Detectar encoding real
      encoding = detectar_encoding(path)
-
      # -----------------------------------------
      # 1. Detectar si es ancho fijo o delimitado
      # -----------------------------------------
@@ -46,7 +83,7 @@ def sanear_archivo(path):
           campos = normalizar_línea(linea)
           if len([c for c in campos if c.strip()]) > 0:
                filas.append(campos)
-          
+     
      if not filas:
           raise ValueError("El archivo está vacío o no contiene datos legibles.")
      
@@ -71,6 +108,9 @@ def sanear_archivo(path):
      # -------------------------------
      for col in df.columns:
           df[col] = df[col].apply(normalizar_valor)
+
+     # Eliminar columnas sin nombre (causan pk000)
+     df = df.loc[:, df.columns.map(lambda c: str(c).strip() != "")]
 
      print("→ Archivo saneado correctamente.")
      return df
@@ -126,7 +166,16 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
           return None, None
      
      try:
-          datos_crudos = sanear_archivo(ruta_archivo)
+          if extensión in [".txt", ".csv"]:
+               # TXT o CSV → se procesan como texto crudo
+               datos_crudos = sanear_archivo_diferente_a_excel(ruta_archivo)
+          else:
+               # Excel → se carga con pandas y se sanea como DF
+               datos_crudos = pd.read_excel(ruta_archivo)
+               datos_crudos = sanear_dataframe(datos_crudos)
+               
+          print("Columnas detectadas:", datos_crudos.columns)
+
      except Exception as e:
           mensajeTexto.showerror("Error al leer archivo", str(e))
           return None, None

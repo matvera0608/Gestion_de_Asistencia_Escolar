@@ -14,17 +14,29 @@ múltiples_espacios = re.compile(r"\s{2,}")
 caracteres_raros = re.compile(r"[\"'“”‘’…•→]") 
 separadores = re.compile(r"[–—\-|]")
 
+# --- Este es Fun_Validación_SGAE.py ---
+
 def normalizar_expresión(s):
     return s.lower().strip()
 
 def normalizar_encabezado(columna: str) -> str:
+    
+    if columna is None:
+        return ""
+    
+    columna = str(columna).strip()
+    
+    if columna == "":
+        return ""
+    
     columna = normalizar_expresión(columna)
     columna = invisibles.sub(" ", columna)
     columna = caracteres_raros.sub("", columna)
     columna = separadores.sub("", columna)
     columna = múltiples_espacios.sub(" ", columna)
+    
+    
     return columna
-
 
 
 ## TE ENVÍO ESTA PARTE PORQUE BLOC DE NOTAS ES MUY PROPENSO A FALLOS
