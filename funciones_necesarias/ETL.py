@@ -12,6 +12,13 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
+def es_excel_valido(path):
+    try:
+        pd.read_excel(path, nrows=1)
+        return True
+    except:
+        return False
+
 def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     # -----------------------------------------
     # 1. Normalizar nombres de columnas
@@ -31,7 +38,6 @@ def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
         df[col] = df[col].astype(str).apply(normalizar_valor)
 
     return df
-
 
 def cargar_archivo(path):
      extension = os.path.splitext(path)[1].lower()
@@ -164,15 +170,20 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
      if "." not in ruta_archivo:
           mensajeTexto.showerror("Error", "El archivo seleccionado no tiene extensión válida.")
           return None, None
-     
+     datos_crudos = None
      try:
-          if extensión in [".txt", ".csv"]:
+          if extensión in ["txt", "csv"]:
                # TXT o CSV → se procesan como texto crudo
                datos_crudos = sanear_archivo_diferente_a_excel(ruta_archivo)
+          elif extensión == "xlsx" and es_excel_valido(ruta_archivo):
+               # CASO EXCEL → validar contenido real
+               if es_excel_valido(ruta_archivo):
+                    datos_crudos = pd.read_excel(ruta_archivo)
+                    datos_crudos = sanear_dataframe(datos_crudos)
+               else:
+                    raise ValueError("El archivo tiene extensión .xlsx pero NO es un Excel válido.")
           else:
-               # Excel → se carga con pandas y se sanea como DF
-               datos_crudos = pd.read_excel(ruta_archivo)
-               datos_crudos = sanear_dataframe(datos_crudos)
+               raise ValueError(f"Extensión no soportada: .{extensión}")
                
           print("Columnas detectadas:", datos_crudos.columns)
 

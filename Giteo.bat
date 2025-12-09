@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 SET MAX_INTENTOS=5
 SET INTENTO=1
 SET INTENTO_DE_PUSHEO=1
-SET COMMIT_MESSAGE=Se importo nuevos archivos
+SET COMMIT_MESSAGE=Arreglando el ETL que cuesta mucho
 echo .........................................................................
 echo Giteo v2.3 pro
 echo Iniciando subida a GitHub...
