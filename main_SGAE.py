@@ -286,7 +286,7 @@ def abrir_tablas(nombre_de_la_tabla):
     "Cancelar": partial(btn_abm.limpiar_TODO, nombre_de_la_tabla, treeview),
     "Agregar": partial(btn_abm.nuevo_registro,nombre_de_la_tabla, treeview),
     "Modificar": partial(btn_abm.editar_registro,nombre_de_la_tabla, treeview),
-    "Guardar": partial(btn_abm.guardar_registros, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ele.campos_en_db),
+    "Guardar": partial(btn_abm.guardar_registros, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ele.campos_en_db, ventanaSecundaria),
     "Eliminar": partial(abm.eliminar_datos, nombre_de_la_tabla, ele.cajasDeTexto, treeview, ventanaSecundaria),
     "Importar": partial(abm.importar_datos, nombre_de_la_tabla, treeview, ventanaSecundaria),
     "Exportar": partial(abm.exportar_en_PDF, nombre_de_la_tabla, treeview, ventanaSecundaria),
@@ -301,7 +301,7 @@ def abrir_tablas(nombre_de_la_tabla):
   ventanaSecundaria.bind("<Key>", lambda e: mover_con_flechas(treeview, ele.cajasDeTexto[nombre_de_la_tabla], botones, acciones, e))
   ventanaSecundaria.bind("<Control-i>", lambda e: (acciones["Importar"]()))
   ventanaSecundaria.bind("<Control-e>", lambda e: (acciones["Exportar"]()))
-  ventanaSecundaria.bind("<Control-a>", lambda e: (acciones["Guardar"]()))
+  ventanaSecundaria.bind("<Alt-a>", lambda e: (acciones["Guardar"]()))
   ventanaSecundaria.bind("<Control-Key-BackSpace>", lambda e: (acciones["Eliminar"]()))
 
 # --- INICIO DEL SISTEMA ---
