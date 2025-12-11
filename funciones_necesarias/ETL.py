@@ -266,7 +266,7 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
                continue
 
           # 4) Nada coincide → inválido
-          errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
+     errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
      
      
      #----------------------------------------------
