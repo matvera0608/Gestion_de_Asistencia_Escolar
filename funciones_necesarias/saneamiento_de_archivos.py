@@ -36,7 +36,6 @@ def normalizar_encabezado(columna: str) -> str:
 
     return columna
 
-
 ## TE ENVÍO ESTA PARTE PORQUE BLOC DE NOTAS ES MUY PROPENSO A FALLOS
 def normalizar_valor(valor):
     if pd.isna(valor):
@@ -46,7 +45,6 @@ def normalizar_valor(valor):
         s = múltiples_espacios.sub(" ", s)
         return s
     return valor
-
 
 def normalizar_línea(línea: str) -> list[str]:
     línea = remover_bom(línea)
@@ -63,12 +61,63 @@ def normalizar_línea(línea: str) -> list[str]:
     línea = re.sub(r"[ \t]{2,}", "\t", línea)
     return línea.split("\t")
 
-
 # --- Detección automática de codificación ---
 def detectar_encoding(path):
     with open(path, "rb") as f:
         data = f.read(2048)
     return chardet.detect(data)["encoding"]
+
+def sanear_archivo_diferente_a_excel(path):
+    encoding = detectar_encoding(path)
+
+    with open(path, "r", encoding=encoding, errors="ignore") as file:
+        raw_lines = file.readlines()
+
+    lineas = []
+    
+    for linea in raw_lines:
+        # Limpieza dura
+        linea = linea.replace("\ufeff", "")
+        linea = linea.replace("\u00A0", " ")
+        linea = linea.replace("\u200B", "")
+        linea = linea.rstrip()
+
+        if linea.strip():
+            lineas.append(linea)
+
+    if not lineas:
+        raise ValueError("El archivo está vacío o no contiene datos.")
+
+
+    tipo, delimitador = detectar_delimitador(lineas)
+
+    if tipo == "regex":
+        filas = [re.split(delimitador, l.strip()) for l in lineas if l.strip()]
+    else:
+        filas = [l.split(delimitador) for l in lineas if l.strip()]
+
+    # Normalizar largo
+    max_cols = max(len(f) for f in filas)
+    filas = [f + [""] * (max_cols - len(f)) for f in filas]
+
+    df = pd.DataFrame(filas)
+
+    print("DEBUG columnas:", df.columns.tolist())
+    print("DEBUG primera fila:", df.iloc[0].tolist())
+
+    # Encabezados reales
+    df.columns = [normalizar_encabezado(c) for c in df.iloc[0]]
+    df = df.drop(index=0).reset_index(drop=True)
+    
+    # Normalizar valores
+    for col in df.columns:
+        df[col] = df[col].apply(normalizar_valor)
+
+    # Eliminar columnas vacías
+    df = df.loc[:, [c for c in df.columns if c != ""]]
+
+    print("→ Archivo TXT saneado correctamente.")
+    return df
 
 def es_excel_valido(path):
     try:
@@ -113,17 +162,11 @@ def cargar_archivo(path):
           print("Cargando archivo delimitado (txt.csv)...")
           return sanear_archivo_diferente_a_excel(path)
 
-#Puedo guardar en una función de para la deteccción del delimitador? porque así mi sanear archivo no crece y además lo convierto en un pipeline.
+
 def detectar_delimitador(lineas):
-    import re
+    if any(re.search(r"[ \t]{2,}", l) for l in lineas):
+        return ("regex", r"[ \t]{2,}")
 
-    # 1) Detectar secuencias de 2+ espacios
-    if any(re.search(r" {2,}", l) for l in lineas):
-        return r"\s{2,}"
-
-    # 2) Fallback a delimitadores comunes
     posibles = ["\t", "|", ";", ","]
     contador = {d: sum(l.count(d) for l in lineas[:10]) for d in posibles}
-    return max(contador, key=contador.get)
-
-
+    return ("literal", max(contador, key=contador.get))

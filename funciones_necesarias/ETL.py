@@ -12,7 +12,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
-
 def validar_y_traducir(df, nombre_de_la_tabla):
      errores = []
      filas = []

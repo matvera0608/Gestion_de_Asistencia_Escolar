@@ -12,10 +12,8 @@ def mover_con_flechas(treeview, cajas, botones, acciones, event):
     if not ordenes_widget:
         return "break"
     
-    try:
-        índice_actual = ordenes_widget.index(widget)
-    except:
-        índice_actual = - 1
+    índice_actual = ordenes_widget.index(widget) if widget in ordenes_widget else -1
+
         
     #--- BOOLEANOS PARA LA NAVEGACIÓN ---#
     interacción_con_Treeview = widget == treeview
