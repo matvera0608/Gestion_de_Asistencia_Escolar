@@ -1,7 +1,5 @@
 from Conexión import *
 import re
-import pandas as pd
-import chardet
 
 patrón_nombre = re.compile(r'^[A-Za-záéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_fecha = re.compile(r'^(0?[1-9]|[12][0-9]|3[01])/(0?[1-9]|1[0-2])/\d{4}$')
@@ -9,79 +7,8 @@ patrón_hora = re.compile(r'^([01]\d|2[0-3]):([0-5]\d)$')
 patrón_alfanumérico_con_espacios = re.compile(r'^[A-Za-z0-9áéíóúÁÉÍÓÚñÑüÜ\s]+$')
 patrón_nota = re.compile(r'^(10([.,]0{1,2})?|[1-9]([.,]\d{1,2})?)$')
 
-invisibles = re.compile(r"[\u00A0\u2000-\u200B\u202F\u205F\u3000\t\r\f\v]")
-múltiples_espacios = re.compile(r"\s{2,}")
-caracteres_raros = re.compile(r"[\"'“”‘’…•→]") 
-separadores = re.compile(r"[–—\-|]")
 
 # --- Este es Fun_Validación_SGAE.py ---
-
-def remover_bom(texto: str) -> str:
-    BOM = "\ufeff"  # caracter BOM UTF-8
-    if texto.startswith(BOM):
-        return texto[len(BOM):]
-    return texto
-
-
-def normalizar_expresión(s):
-    return s.lower().strip()
-
-def normalizar_encabezado(columna: str) -> str:
-
-    if columna is None:
-        return ""
-
-    columna = str(columna).strip()
-    if columna == "":
-        return ""
-    
-    columna = normalizar_expresión(columna)
-    
-
-    # Limpieza de caracteres
-    columna = invisibles.sub(" ", columna)
-    columna = caracteres_raros.sub("", columna)
-    columna = separadores.sub("", columna)
-    columna = múltiples_espacios.sub(" ", columna)
-
-
-    return columna
-
-
-## TE ENVÍO ESTA PARTE PORQUE BLOC DE NOTAS ES MUY PROPENSO A FALLOS
-def normalizar_valor(valor):
-    if pd.isna(valor):
-        return None
-    if isinstance(valor, str):
-        s = invisibles.sub(" ", valor.strip())
-        s = múltiples_espacios.sub(" ", s)
-        return s
-    return valor
-
-
-def normalizar_línea(línea: str) -> list[str]:
-    línea = remover_bom(línea)
-    línea = invisibles.sub(" ", línea).strip()
-
-    # CSV delimitadores comunes
-    if "," in línea:
-        return [c.strip() for c in línea.split(",")]
-
-    if ";" in línea:
-        return [c.strip() for c in línea.split(";")]
-
-    # Tab separado
-    línea = re.sub(r"[ \t]{2,}", "\t", línea)
-    return línea.split("\t")
-
-
-# --- Detección automática de codificación ---
-def detectar_encoding(path):
-    with open(path, "rb") as f:
-        data = f.read(2048)
-    return chardet.detect(data)["encoding"]
-
-
 
 
 def detectar_repeticiones_de_datos(datos, tabla):

@@ -223,6 +223,10 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())
   if not reglas:
     return datos, None
+  
+  if not datos or datos == {}:
+    return None, " No se proporcionaron datos para traducir."
+  
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()

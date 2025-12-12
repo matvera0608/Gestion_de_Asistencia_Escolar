@@ -12,50 +12,6 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
-def es_excel_valido(path):
-    try:
-        pd.read_excel(path, nrows=1)
-        return True
-    except:
-        return False
-
-def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-     # -----------------------------------------
-     # 1. Normalizar nombres de columnas
-     # -----------------------------------------
-     nuevas = [normalizar_encabezado(str(col)) for col in df.columns]
-     df = df.copy()          # <-- copia segura
-     df.columns = nuevas
-
-
-     # Eliminar columnas vacías o generadas automáticamente por pandas (como 'Unnamed: X')
-     # df = df.loc[:, [df.columns.map(lambda c: c.strip() != "" and not c.lower().startswith('unnamed'))]]
-     df = df.loc[:, [c for c in df.columns if c.strip() != "" and not c.lower().startswith("unnamed")]]
-     # -----------------------------------------
-     # 2. Normalizar valores celda por celda
-     # -----------------------------------------
-     for col in df.columns:
-          df.loc[:, col] = df[col].astype(str).apply(normalizar_valor)
-
-     return df
-
-def cargar_archivo(path):
-     extension = os.path.splitext(path)[1].lower()
-     
-     if extension in [".xlsx", ".xls"]:
-          print("→ Cargando Excel sin saneo de líneas…")
-          df = pd.read_excel(path)
-          # Normalizar encabezados
-          df.columns = [normalizar_encabezado(c) for c in df.columns]
-          
-          # Normalizar valores
-          for col in df.columns:
-               df[col] = df[col].apply(normalizar_valor)
-
-          return df
-     else:
-          print("Cargando archivo delimitado (txt.csv)...")
-          return sanear_archivo_diferente_a_excel(path)
 
 def validar_y_traducir(df, nombre_de_la_tabla):
      errores = []
@@ -73,53 +29,6 @@ def validar_y_traducir(df, nombre_de_la_tabla):
           return None
 
      return pd.DataFrame(filas)   # ← perfecto, orden estable
-
-def sanear_archivo_diferente_a_excel(path):
-     encoding = detectar_encoding(path)
-
-     with open(path, "r", encoding=encoding, errors="ignore") as file:
-          raw_lines = file.readlines()
-
-     # 1) Normalizar líneas y detectar delimitador automáticamente
-     lineas = []
-     for linea in raw_lines:
-          linea = linea.replace("\ufeff", "")   # BOM
-          linea = linea.replace("\u00A0", " ")  # espacios raros
-          linea = linea.replace("\u200B", "")   # zero-width
-          linea = linea.strip()
-
-          if linea:
-               lineas.append(linea)
-
-     if not lineas:
-          raise ValueError("El archivo está vacío o no contiene datos legibles.")
-
-     # 2) Determinar delimitador real por frecuencia
-     posibles = ["|", ";", ",", "\t", " "]
-     delimitador = max(posibles, key=lambda d: sum(d in l for l in lineas))
-
-     filas = [l.split(delimitador) for l in lineas]
-
-     # 3) Completar con vacío
-     max_cols = max(len(f) for f in filas)
-     filas = [f + [""] * (max_cols - len(f)) for f in filas]
-
-     # 4) Crear DataFrame
-     df = pd.DataFrame(filas)
-
-     # 5) Primera fila = encabezados reales
-     df.columns = [normalizar_encabezado(c) for c in df.iloc[0]]
-     df = df.drop(index=0).reset_index(drop=True)
-
-     # 6) Normalizar valores internos
-     for col in df.columns:
-          df[col] = df[col].apply(normalizar_valor)
-
-     # 7) Eliminar columnas vacías / corruptas
-     df = df.loc[:, df.columns.map(lambda c: str(c).strip() != "")]
-
-     print("→ Archivo saneado correctamente.")
-     return df
 
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
@@ -188,7 +97,7 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
           print("Columnas detectadas:", datos_crudos.columns)
 
      except Exception as e:
-          mensajeTexto.showerror("Error al leer archivo", str(e))
+          mensajeTexto.showerror("Error al leer archivo", str(e)) #Aunque soporte la extensión, pero tira error de lectura.
           return None, None
      try:
           datos = validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos_crudos)
