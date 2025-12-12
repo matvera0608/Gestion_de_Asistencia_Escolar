@@ -16,26 +16,35 @@ separadores = re.compile(r"[–—\-|]")
 
 # --- Este es Fun_Validación_SGAE.py ---
 
+def remover_bom(texto: str) -> str:
+    BOM = "\ufeff"  # caracter BOM UTF-8
+    if texto.startswith(BOM):
+        return texto[len(BOM):]
+    return texto
+
+
 def normalizar_expresión(s):
     return s.lower().strip()
 
 def normalizar_encabezado(columna: str) -> str:
-    
+
     if columna is None:
         return ""
-    
+
     columna = str(columna).strip()
-    
     if columna == "":
         return ""
     
     columna = normalizar_expresión(columna)
+    
+
+    # Limpieza de caracteres
     columna = invisibles.sub(" ", columna)
     columna = caracteres_raros.sub("", columna)
     columna = separadores.sub("", columna)
     columna = múltiples_espacios.sub(" ", columna)
-    
-    
+
+
     return columna
 
 
@@ -51,12 +60,20 @@ def normalizar_valor(valor):
 
 
 def normalizar_línea(línea: str) -> list[str]:
-    # 1. Reemplazar invisibles por espacio normal
-    línea = invisibles.sub(" ", línea)
-    # 2. Colapsar grupos de espacios/tabs en un tab
-    línea = re.sub(r"[ \t]{2,}", "\t", línea.strip())
-    # 3. Dividir por tab
+    línea = remover_bom(línea)
+    línea = invisibles.sub(" ", línea).strip()
+
+    # CSV delimitadores comunes
+    if "," in línea:
+        return [c.strip() for c in línea.split(",")]
+
+    if ";" in línea:
+        return [c.strip() for c in línea.split(";")]
+
+    # Tab separado
+    línea = re.sub(r"[ \t]{2,}", "\t", línea)
     return línea.split("\t")
+
 
 # --- Detección automática de codificación ---
 def detectar_encoding(path):

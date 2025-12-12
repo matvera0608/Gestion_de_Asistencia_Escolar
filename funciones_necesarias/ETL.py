@@ -20,24 +20,24 @@ def es_excel_valido(path):
         return False
 
 def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    # -----------------------------------------
-    # 1. Normalizar nombres de columnas
-    # -----------------------------------------
-    nuevas = []
-    for col in df.columns:
-        nuevas.append(normalizar_encabezado(str(col)))
-    df.columns = nuevas
+     # -----------------------------------------
+     # 1. Normalizar nombres de columnas
+     # -----------------------------------------
+     nuevas = [normalizar_encabezado(str(col)) for col in df.columns]
+     df = df.copy()          # <-- copia segura
+     df.columns = nuevas
 
-    # Eliminar columnas vacías
-    df = df.loc[:, df.columns.map(lambda c: c.strip() != "")]
 
-    # -----------------------------------------
-    # 2. Normalizar valores celda por celda
-    # -----------------------------------------
-    for col in df.columns:
-        df[col] = df[col].astype(str).apply(normalizar_valor)
+     # Eliminar columnas vacías o generadas automáticamente por pandas (como 'Unnamed: X')
+     # df = df.loc[:, [df.columns.map(lambda c: c.strip() != "" and not c.lower().startswith('unnamed'))]]
+     df = df.loc[:, [c for c in df.columns if c.strip() != "" and not c.lower().startswith("unnamed")]]
+     # -----------------------------------------
+     # 2. Normalizar valores celda por celda
+     # -----------------------------------------
+     for col in df.columns:
+          df.loc[:, col] = df[col].astype(str).apply(normalizar_valor)
 
-    return df
+     return df
 
 def cargar_archivo(path):
      extension = os.path.splitext(path)[1].lower()
@@ -75,47 +75,47 @@ def validar_y_traducir(df, nombre_de_la_tabla):
      return pd.DataFrame(filas)   # ← perfecto, orden estable
 
 def sanear_archivo_diferente_a_excel(path):
-     # Detectar encoding real
      encoding = detectar_encoding(path)
-     # -----------------------------------------
-     # 1. Detectar si es ancho fijo o delimitado
-     # -----------------------------------------
+
      with open(path, "r", encoding=encoding, errors="ignore") as file:
-          lineas = file.readlines()
+          raw_lines = file.readlines()
 
-     filas = []
-     
-     for linea in lineas:
-          campos = normalizar_línea(linea)
-          if len([c for c in campos if c.strip()]) > 0:
-               filas.append(campos)
-     
-     if not filas:
+     # 1) Normalizar líneas y detectar delimitador automáticamente
+     lineas = []
+     for linea in raw_lines:
+          linea = linea.replace("\ufeff", "")   # BOM
+          linea = linea.replace("\u00A0", " ")  # espacios raros
+          linea = linea.replace("\u200B", "")   # zero-width
+          linea = linea.strip()
+
+          if linea:
+               lineas.append(linea)
+
+     if not lineas:
           raise ValueError("El archivo está vacío o no contiene datos legibles.")
-     
-     # -------------------------------
-     # 2. Crear DataFrame estable
-     # -------------------------------
-     # Tomo la fila más larga como referencia de cantidad de columnas
+
+     # 2) Determinar delimitador real por frecuencia
+     posibles = ["|", ";", ",", "\t", " "]
+     delimitador = max(posibles, key=lambda d: sum(d in l for l in lineas))
+
+     filas = [l.split(delimitador) for l in lineas]
+
+     # 3) Completar con vacío
      max_cols = max(len(f) for f in filas)
+     filas = [f + [""] * (max_cols - len(f)) for f in filas]
 
-     # Completo filas cortas para que pandas no falle
-     filas = [fila + [""] * (max_cols - len(fila)) for fila in filas]
-
+     # 4) Crear DataFrame
      df = pd.DataFrame(filas)
-     # -------------------------------
-     # 3. Primera fila = encabezados
-     # -------------------------------
+
+     # 5) Primera fila = encabezados reales
      df.columns = [normalizar_encabezado(c) for c in df.iloc[0]]
      df = df.drop(index=0).reset_index(drop=True)
 
-     # -------------------------------
-     # 4. Normalizar valores
-     # -------------------------------
+     # 6) Normalizar valores internos
      for col in df.columns:
           df[col] = df[col].apply(normalizar_valor)
 
-     # Eliminar columnas sin nombre (causan pk000)
+     # 7) Eliminar columnas vacías / corruptas
      df = df.loc[:, df.columns.map(lambda c: str(c).strip() != "")]
 
      print("→ Archivo saneado correctamente.")
@@ -201,7 +201,7 @@ def seleccionar_archivo_siguiendo_extension(nombre_de_la_tabla):
           return None, None
 
      return ruta_archivo, datos
- 
+
 def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos):
      # filas → ya sanitizadas
      # aquí solo validás:
@@ -239,6 +239,17 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
      columnas_finales_de_campos = []
      
+     # print("→ Encabezados del archivo:", list(datos.columns))
+     # print("→ Encabezados normalizados:", [normalizar_encabezado(c) for c in datos.columns])
+     # print("→ Alias invertido:", alias_invertido)
+     
+     # print("\n=== DEBUG ENCABEZADOS RAW ===")
+     # for c in datos.columns:
+     #      print(repr(c))
+     #      print("=== FIN DEBUG ===\n")
+
+     
+     
      #Se recorre con un for el archivo para validar cada atributo dentro del archivo.
      for columna_original in datos.columns:
           c_norm = normalizar_encabezado(columna_original)
@@ -265,8 +276,8 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
                     columnas_finales_de_campos.append(campos_oficiales[indice])
                continue
 
-          # 4) Nada coincide → inválido
-     errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
+               # 4) Nada coincide → inválido
+          errores.append(f"El encabezado «{columna_original}» no coincide con ningún campo de la tabla {nombre_de_la_tabla}")
      
      
      #----------------------------------------------

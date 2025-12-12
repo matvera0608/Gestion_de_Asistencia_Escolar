@@ -2,9 +2,9 @@
 chcp 65001
 SETLOCAL ENABLEDELAYEDEXPANSION
 SET MAX_INTENTOS=5
-SET INTENTO=1
+SET INTENTO=0
 SET INTENTO_DE_PUSHEO=1
-SET COMMIT_MESSAGE=Arreglando antes del 22 de Diciembre
+SET COMMIT_MESSAGE=ELT
 echo .........................................................................
 echo Giteo v2.3 pro
 echo Iniciando subida a GitHub...
@@ -18,33 +18,9 @@ REM color 0E es para texto amarillo
 REM 🚀 --- FLUJO PRINCIPAL --- BORRÉ PORQUE HABIA CIERTAS DUPLICACIONE
 CALL :SELECT_LANGUAGE
 IF NOT EXIST .gitignore CALL :CREATE_GITIGNORE
-GOTO REINTENTAR_CONEXION
-
-EXIT /B
-
-:REINTENTAR_CONEXION
-    CALL :CHECK_INTERNET
-    IF %INTERNET_STATUS% EQU 0 (
-        GOTO INICIAR_O_ACTUALIZAR
-    ) ELSE (
-            IF !INTENTO! LSS !MAX_INTENTOS! (
-                color 0E
-                SET /A INTENTO+=1
-                echo ERROR: No se detectó la conexión a Internet. Reintentando en 5 segundos... (Intento !INTENTO! de !MAX_INTENTOS!)
-                timeout /t 5 /nobreak > NUL
-                GOTO REINTENTAR_CONEXION
-            ) ELSE (
-                color 0C
-                echo.
-                echo No se puede gitear sin conexión. El proceso está abortado
-                echo.
-                GOTO END_SCRIPT
-            )
-        GOTO :EOF
-    )
-
+CALL :CHECK_INTERNET
 CALL :INICIAR_O_ACTUALIZAR
-
+EXIT /B
 :: ................................
 :: FUNCIONES PRINCIPALES
 :: ................................
@@ -58,6 +34,7 @@ CALL :INICIAR_O_ACTUALIZAR
     echo 4. Java
     echo 5. Otro / Ninguno
     echo.
+
 
     SET /P "leng_prog_opcion=Ingresa el numero del lenguaje que estas usando: "
 
@@ -85,6 +62,7 @@ echo .........................................................................
         echo El archivo .gitignore ya existe. No se sobrescribira.
         GOTO :EOF
     )
+    
     IF "%LANG_TYPE%"=="python" (
         echo # Python >> .gitignore
         echo __pycache__/ >> .gitignore
@@ -114,25 +92,46 @@ echo .........................................................................
 :CHECK_INTERNET
     ping -n 1 8.8.8.8 -w 1000 >NUL
     IF %ERRORLEVEL% EQU 0 (
-        color 0A
         SET "INTERNET_STATUS=0"
         echo Conexión a Internet detectada. Continuado con el giteo
-    ) ELSE IF %ERRORLEVEL% EQU 1 (
+    ) ELSE (
         SET "INTERNET_STATUS=1"
-        echo ERROR: No se detectó la conexión a Internet.)
+        echo ERROR: No se detectó la conexión a Internet.
+    )
     echo Intentando verificar conexión a Internet...
+
+    IF %INTERNET_STATUS% EQU 0 (
+    GOTO :EOF
+    ) ELSE (
+        IF !INTENTO! LSS !MAX_INTENTOS! (
+            color 0E
+            SET /A INTENTO+=1
+            echo ERROR: No se detectó la conexión a Internet. Reintentando en 5 segundos... (Intento !INTENTO! de !MAX_INTENTOS!)
+            timeout /t 5 /nobreak > NUL
+            GOTO CHECK_INTERNET
+        ) 
+        ELSE (
+            color 0C
+            echo.
+            echo No se puede gitear sin conexión. El proceso está abortado
+            echo.
+            GOTO END_SCRIPT
+        ) 
+    )
+    GOTO :EOF
+
 
 echo .........................................................................
 
 :INICIAR_O_ACTUALIZAR
     echo.
     IF NOT EXIST ".git" (
-        color 0B
+        color 0E
         echo Inicializando nuevo repositorio...
         git init
         git add .
         git commit -m "%COMMIT_MESSAGE%"
-        git branch -M 
+        git branch -M main
         SET /P "URL=Ingresa la URL del repositorio de GitHub: "
         git remote add origin %URL%
     ) ELSE (
@@ -158,15 +157,8 @@ echo .........................................................................
     color 0C
     echo ⚠️  Error en la subida (Rejected o temporal).
     IF !INTENTO_DE_PUSHEO! LEQ 5 (
-        echo Intentando sincronizar y reintentar... Intento !INTENTO_DE_PUSHEO! de 5
-        REM ----------------------------------------------------
-        REM PASO 1: INTENTAR CONFIGURAR TRACKING SI ES NECESARIO
-        REM Solo intentamos esto en el primer fallo (Intento 1)
-        IF !INTENTO_DE_PUSHEO! EQU 1 (
-            git branch --set-upstream-to=origin/main main
-        )
+        echo Intentando sincronizar y reintentar... (Intento !INTENTO_DE_PUSHEO! de 5)
         git pull --rebase
-        REM ----------------------------------------------------
         IF %ERRORLEVEL% NEQ 0 GOTO CONFLICTO
         echo Rebase exitoso. Reintentando subida...
         git push -u origin main
@@ -178,6 +170,7 @@ echo .........................................................................
         echo 🚫 Falló tras 5 intentos de sincronización.
         GOTO CONFLICTO
     )
+
 
 :CONFLICTO
     color 0C
@@ -191,7 +184,6 @@ echo .........................................................................
     pause
     GOTO END_SCRIPT
 
-
 :PUSHEO_EXITOSO
     color 0A
     echo .........................................................................
@@ -202,3 +194,4 @@ echo .........................................................................
     echo .........................................................................
     echo Proceso Giteo finalizado.
     timeout /t 1 >NUL
+    EXIT /B
