@@ -3,8 +3,11 @@ from tkinter import messagebox as mensajeTexto, filedialog as diálogoArchivo
 from dateutil.parser import parse
 import pandas as pd
 import os, difflib
+
+
 from Conexión import *
 from .Fun_adicionales import *
+from .saneamiento_de_archivos import *
 
 #IMPORTACIÓN PARA CREAR PDF#
 from reportlab.lib import colors
@@ -147,14 +150,14 @@ def validar_archivo(ruta_archivo, nombre_de_la_tabla, alias, campos_en_db, datos
      alias_válidos = list(alias_invertido.keys()) + campos_oficiales_normalizados
      columnas_finales_de_campos = []
      
-     # print("→ Encabezados del archivo:", list(datos.columns))
-     # print("→ Encabezados normalizados:", [normalizar_encabezado(c) for c in datos.columns])
-     # print("→ Alias invertido:", alias_invertido)
+     print("→ Encabezados del archivo:", list(datos.columns))
+     print("→ Encabezados normalizados:", [normalizar_encabezado(c) for c in datos.columns])
+     print("→ Alias invertido:", alias_invertido)
      
-     # print("\n=== DEBUG ENCABEZADOS RAW ===")
-     # for c in datos.columns:
-     #      print(repr(c))
-     #      print("=== FIN DEBUG ===\n")
+     print("\n=== DEBUG ENCABEZADOS RAW ===")
+     for c in datos.columns:
+          print(repr(c))
+          print("=== FIN DEBUG ===\n")
 
      
      

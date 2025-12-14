@@ -4,7 +4,7 @@ SETLOCAL ENABLEDELAYEDEXPANSION
 SET MAX_INTENTOS=5
 SET INTENTO=0
 SET INTENTO_DE_PUSHEO=1
-SET COMMIT_MESSAGE=Me costó un montón
+SET COMMIT_MESSAGE=Hice el ETL con mucha precisión 
 echo .........................................................................
 echo Giteo v2.3 pro
 echo Iniciando subida a GitHub...
