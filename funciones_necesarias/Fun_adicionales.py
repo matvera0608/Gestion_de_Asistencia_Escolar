@@ -204,9 +204,22 @@ def consultar_tabla(nombre_de_la_tabla):
     return []
 
 def traducir_IDs(nombre_de_la_tabla, datos):
-  if datos is None or datos.empty:
+  # Caso None
+  if datos is None:
     return datos, None
 
+  # Caso DataFrame
+  if hasattr(datos, "empty") and datos.empty:
+    return datos, None
+
+  # Caso dict vacío
+  if isinstance(datos, dict) and not datos:
+    return datos, None
+  
+  if isinstance(datos, dict):
+    datos = pd.DataFrame([datos])
+  
+  # ... resto de la lógica ...
   if not isinstance(datos, pd.DataFrame):
     return None, "Los datos no son un DataFrame válido."
 
@@ -276,8 +289,6 @@ def traducir_IDs(nombre_de_la_tabla, datos):
 
   except Exception as e:
       return None, f"Error al traducir IDs: {e}"
-
-
 
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),

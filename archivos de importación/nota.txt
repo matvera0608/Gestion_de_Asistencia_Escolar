@@ -1,4 +1,4 @@
-alumno              materia                  profesor       nota      evaluación       fecha evaluación
+alumno              materia                  profesor     nota      evaluación    fecha evaluación
 Carlos Gómez        Programación I           Martín Díaz      9    Parcial        05/04/2025
 Luisa Méndez        Base de Datos            Lucía Reyes       8   TP          12/04/2025
 Roberto Sosa        Algoritmos Avanzados     Javier López       7    Final    20/05/2025

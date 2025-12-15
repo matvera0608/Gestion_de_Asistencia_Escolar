@@ -5,6 +5,7 @@ from .Fun_Validación_SGAE import *
 from .ETL import *
 import tkinter as tk
 from tkinter import filedialog as diálogoArchivo
+import numpy as np
 
 def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventana):
   datos = obtener_datos_de_Formulario(nombre_de_la_tabla, cajasDeTexto, campos_db)
@@ -28,28 +29,56 @@ def insertar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, ventan
   
   if datos_traducidos is None:
     return False
-  
+
+  # Caso dict vacío
+  if isinstance(datos_traducidos, dict) and not datos_traducidos:
+    return False
+
+  # Caso DataFrame vacío
+  if isinstance(datos_traducidos, pd.DataFrame) and datos_traducidos.empty:
+    return False
+
   campos_vacios = []
   
   for campo, valor in datos_traducidos.items():
-    if valor == "" or not valor:
-        datos_traducidos[campo] = None
-        campos_vacios.append(alias.get(campo, campo))
+    # Si es Serie, tomar el primer valor
+    if isinstance(valor, pd.Series):
+      valor = valor.iloc[0]
+
+    # Normalizar nulos
+    if pd.isna(valor) or valor == "":
+      datos_traducidos[campo] = None
+      campos_vacios.append(alias.get(campo, campo))
 
   if campos_vacios:
-      lista = ", ".join(campos_vacios)
-      mostrar_aviso(ventana, f"⚠️ Faltan datos en los campos:\n{lista}", colores["amarillo_alerta"],8)
-      return None
+    lista = ", ".join(campos_vacios)
+    mostrar_aviso(ventana, f"⚠️ Faltan datos en los campos:\n{lista}", colores["amarillo_alerta"],8)
+    return None
         
   try:
     with conectar_base_de_datos() as conexión:
+       # Normalizar: asegurar dict antes de insertar
+      if isinstance(datos_traducidos, pd.DataFrame):
+        # Si por alguna razón vino un DataFrame, tomar la primera fila
+        if len(datos_traducidos) != 1:
+          return False, "Se esperaba un solo registro."
+        datos_traducidos = datos_traducidos.iloc[0].to_dict()
+      elif isinstance(datos_traducidos, np.ndarray):
+        # Convertir array → dict si es un array de una sola fila
+        if datos_traducidos.ndim == 2 and datos_traducidos.shape[0] == 1:
+          # Necesitás los nombres de las columnas
+          datos_traducidos = dict(zip(campos_db, datos_traducidos[0]))
+        else:
+          return False, "Los datos no deberían ser un array para una inserción simple."
+      elif not isinstance(datos_traducidos, dict):
+          return False, "Formato de datos no válido para inserción."
+      
       campos = ', '.join(datos_traducidos.keys())
       valores = ', '.join(['%s'] * len(datos_traducidos))
       consulta = f"INSERT INTO {nombre_de_la_tabla} ({campos}) VALUES ({valores})"
-      valores_sql = list(datos_traducidos.values())
-      
+     
       cursor = conexión.cursor()
-      cursor.execute(consulta, tuple(valores_sql))
+      cursor.execute(consulta, tuple(datos_traducidos.values()))
       conexión.commit()
       
       refrescar_Treeview(nombre_de_la_tabla, treeview)
@@ -101,38 +130,61 @@ def modificar_datos(nombre_de_la_tabla, cajasDeTexto, campos_db, treeview, venta
   if error:
     return False
   
-  if datos_traducidos is None or not datos_traducidos:
+  if datos_traducidos is None:
     return False
-  
-  valores_sql = list(datos_traducidos.values())
+
+  # Caso dict vacío
+  if isinstance(datos_traducidos, dict) and not datos_traducidos:
+    return False
+
+  # Caso DataFrame vacío
+  if isinstance(datos_traducidos, pd.DataFrame) and datos_traducidos.empty:
+    return False
+
+  # Normalizar: asegurar dict antes de UPDATE
+  if isinstance(datos_traducidos, pd.DataFrame):
+    if len(datos_traducidos) != 1:
+      return False, "Se esperaba un solo registro para modificar."
+    datos_traducidos = datos_traducidos.iloc[0].to_dict()
+
+  elif isinstance(datos_traducidos, np.ndarray):
+    return False, "Los datos no deberían ser un array en una modificación."
+
+  elif not isinstance(datos_traducidos, dict):
+    return False, "Formato de datos no válido para modificación."
+
+  # Armar SQL
   campos_sql = [f"{cam} = %s" for cam in datos_traducidos.keys()]
   set_sql = ', '.join(campos_sql)
   campoID = conseguir_campo_ID(nombre_de_la_tabla)
   consulta = f"UPDATE {nombre_de_la_tabla} SET {set_sql} WHERE {campoID} = %s"
-  
+
+  # Preparar valores
+  valores_sql = list(datos_traducidos.values())
   valores_sql.append(idSeleccionado)
+
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
       cursor.execute(consulta, tuple(valores_sql))
       conexión.commit()
-      
-      refrescar_Treeview(nombre_de_la_tabla, treeview)
-      
-      re_seleccionar_índice(índice_actual, treeview)
-      
-      campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+  
+    refrescar_Treeview(nombre_de_la_tabla, treeview)
     
-      for i, campo in enumerate(campos_oficiales):
-        try:
-          entry = cajasDeTexto[nombre_de_la_tabla][i]
-        except (KeyError, IndexError):
-          continue
-        if not entry.winfo_exists():
-          continue
-        entry.delete(0, tk.END)
-      mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
-      return True
+    re_seleccionar_índice(índice_actual, treeview)
+    
+    campos_oficiales = campos_en_db.get(nombre_de_la_tabla, [])
+  
+    for i, campo in enumerate(campos_oficiales):
+      try:
+        entry = cajasDeTexto[nombre_de_la_tabla][i]
+      except (KeyError, IndexError):
+        continue
+      if not entry.winfo_exists():
+        continue
+      entry.delete(0, tk.END)
+    mostrar_aviso(ventana, "✅ SE MODIFICÓ EXITOSAMENTE LOS DATOS", colores["verde_éxito"], 10)
+    return True
   except Exception as e:
     print(f"HA OCURRIDO UN ERROR AL MODIFICAR LOS DATOS: {str(e)}")
     return False

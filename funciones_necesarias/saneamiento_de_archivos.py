@@ -140,7 +140,7 @@ def sanear_dataframe(df: pd.DataFrame) -> pd.DataFrame:
      # 2. Normalizar valores celda por celda
      # -----------------------------------------
      for col in df.columns:
-          df.loc[:, col] = df[col].astype(str).apply(normalizar_valor)
+          df[col] = df[col].astype(str)
 
      return df
 

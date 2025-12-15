@@ -15,21 +15,14 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate
 
 def validar_y_traducir(df, nombre_de_la_tabla):
-     errores = []
-     filas = []
-     
-     for _, fila in df.iterrows():
-          traduccion, error = traducir_IDs(nombre_de_la_tabla, fila)
-          if error:
-               errores.append(error)
-          else:
-               filas.append(traduccion)
+     traducción, error = traducir_IDs(nombre_de_la_tabla, df)
 
-     if errores:
-          mensajeTexto.showerror("ERROR DE DATOS", "\n".join(errores))
+     if error:
+          mensajeTexto.showerror("ERROR DE DATOS", error)
           return None
 
-     return pd.DataFrame(filas)   # ← perfecto, orden estable
+     return traducción
+
 
 def convertir_datos_para_mysql(valor):
      """ ACÁ ME ASEGURO DE CONVERTIR LOS DATOS PARA SQL COMO FECHA Y HORA,
