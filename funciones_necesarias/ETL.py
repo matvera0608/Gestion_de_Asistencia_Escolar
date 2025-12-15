@@ -17,7 +17,7 @@ from reportlab.platypus import Paragraph, Spacer, Table, TableStyle, SimpleDocTe
 def validar_y_traducir(df, nombre_de_la_tabla):
      errores = []
      filas = []
-
+     
      for _, fila in df.iterrows():
           traduccion, error = traducir_IDs(nombre_de_la_tabla, fila)
           if error:

@@ -204,6 +204,13 @@ def consultar_tabla(nombre_de_la_tabla):
     return []
 
 def traducir_IDs(nombre_de_la_tabla, datos):
+  
+  if datos is None or datos.empty:
+    return datos, None
+  
+  if not isinstance(datos, pd.DataFrame):
+    return None, "Los datos no son un DataFrame válido."
+  
   campos_a_traducir = {
     "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
     
@@ -225,18 +232,26 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())
   if not reglas:
     return datos, None
-  
-  if datos is None or datos.empty:
-    return
-  
+    
+
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
-      for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
-        if campo_fkID in datos:
-          nombre_a_buscar = datos[campo_fkID]
-          if nombre_a_buscar is None:
+      for idx, fila in datos.iterrows():
+        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
+          if campo_fkID not in datos.columns:
             continue
+
+          valor = fila[campo_fkID]
+
+          if pd.isna(valor):
+              continue
+
+          valor = normalizar_valor(valor)
+
+          if not valor:
+            continue   # ← evita el error del string vacío
+
           if isinstance(nombre_a_buscar, str):
             nombre_a_buscar = nombre_a_buscar.strip()
             nombre_a_buscar = normalizar_valor(nombre_a_buscar)
@@ -252,10 +267,10 @@ def traducir_IDs(nombre_de_la_tabla, datos):
           resultado = cursor.fetchone()
           
           if resultado:
-              datos_traducidos[campo_fkID] = resultado[0]
+              datos_traducidos[idx, campo_fkID] = resultado[0]
           else:
               return None, f" El '{nombre_a_buscar}' no existe en la base de datos." #Acá tira el error de el '' no existe en la base de datos cuando mi txt tiene un espacio en blanco después del registro
-      return datos_traducidos, None
+    return datos_traducidos, None
       
   except Exception as e:
     return None , f"Error de conexión: {e}" #Este es el que imprime, no llega a entrar en el if isinstance
