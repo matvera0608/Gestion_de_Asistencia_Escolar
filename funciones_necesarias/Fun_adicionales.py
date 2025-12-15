@@ -1,5 +1,7 @@
 from Conexión import *
 from .Fun_Validación_SGAE import *
+from .Saneamiento_de_archivos import *
+
 from elementos_necesarios.Creacion_de_widgets import *
 from elementos_necesarios.Elementos import *
 from datetime import datetime as fecha_y_hora
@@ -224,8 +226,8 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   if not reglas:
     return datos, None
   
-  if not datos or datos == {}:
-    return None, " No se proporcionaron datos para traducir."
+  if datos is None or datos.empty:
+    return
   
   try:
     with conectar_base_de_datos() as conexión:
