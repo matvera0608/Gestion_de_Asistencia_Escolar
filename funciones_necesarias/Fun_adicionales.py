@@ -204,76 +204,80 @@ def consultar_tabla(nombre_de_la_tabla):
     return []
 
 def traducir_IDs(nombre_de_la_tabla, datos):
-  
   if datos is None or datos.empty:
     return datos, None
-  
+
   if not isinstance(datos, pd.DataFrame):
     return None, "Los datos no son un DataFrame válido."
-  
+
   campos_a_traducir = {
-    "alumno": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-    
-    "materia": {"IDCarrera": ("ID_Carrera","carrera", "Nombre")},
-    
-    "asistencia": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-                  "IDProfesor": ("ID_Profesor","profesor", "Nombre"),
-                  "IDMateria": ("ID_Materia", "materia", "Nombre")},
-    
-    "enseñanza": {"IDProfesor": ("ID_Profesor","profesor", "Nombre"),
-                  "IDMateria": ("ID_Materia", "materia", "Nombre")},
-    
-    "nota": {"IDAlumno": ("ID_Alumno","alumno", "Nombre"),
-            "IDMateria": ("ID_Materia","materia", "Nombre"),
-            "IDProfesor": ("ID_Profesor","profesor", "Nombre")}
+    "alumno": {
+        "IDCarrera": ("ID_Carrera", "carrera", "Nombre")
+    },
+    "materia": {
+        "IDCarrera": ("ID_Carrera", "carrera", "Nombre")
+    },
+    "asistencia": {
+        "IDAlumno": ("ID_Alumno", "alumno", "Nombre"),
+        "IDProfesor": ("ID_Profesor", "profesor", "Nombre"),
+        "IDMateria": ("ID_Materia", "materia", "Nombre")
+    },
+    "enseñanza": {
+        "IDProfesor": ("ID_Profesor", "profesor", "Nombre"),
+        "IDMateria": ("ID_Materia", "materia", "Nombre")
+    },
+    "nota": {
+        "IDAlumno": ("ID_Alumno", "alumno", "Nombre"),
+        "IDMateria": ("ID_Materia", "materia", "Nombre"),
+        "IDProfesor": ("ID_Profesor", "profesor", "Nombre")
+    }
   }
-  # Crear un nuevo diccionario para almacenar los datos traducidos
-  datos_traducidos = datos.copy()
+
   reglas = campos_a_traducir.get(nombre_de_la_tabla.lower())
   if not reglas:
     return datos, None
-    
+
+  datos_traducidos = datos.copy()
 
   try:
     with conectar_base_de_datos() as conexión:
       cursor = conexión.cursor()
+
       for idx, fila in datos.iterrows():
-        for campo_fkID, (campo_idPK, tabla_ref, campo_ref) in reglas.items():
+        for campo_fkID, (campo_pk, tabla_ref, campo_ref) in reglas.items():
           if campo_fkID not in datos.columns:
             continue
 
           valor = fila[campo_fkID]
 
           if pd.isna(valor):
-              continue
+            continue
 
           valor = normalizar_valor(valor)
 
           if not valor:
             continue   # ← evita el error del string vacío
 
-          if isinstance(nombre_a_buscar, str):
-            nombre_a_buscar = nombre_a_buscar.strip()
-            nombre_a_buscar = normalizar_valor(nombre_a_buscar)
-            if not nombre_a_buscar:
-              return None, f" El valor para '{campo_fkID}' está vacío o es inválido."
+          # Si ya es un ID numérico
+          if isinstance(valor, (int,)) or (isinstance(valor, str) and valor.isdigit()):
+            datos_traducidos.at[idx, campo_fkID] = int(valor)
+            continue
 
-          if isinstance(nombre_a_buscar, int) or (isinstance(nombre_a_buscar, str) and nombre_a_buscar.isdigit()):
-            datos_traducidos[campo_fkID] = int(nombre_a_buscar)
-            continue  # saltamos la traducción
-          
-          consulta = f"SELECT {campo_idPK} FROM {tabla_ref} WHERE {campo_ref} = %s"
-          cursor.execute(consulta, (nombre_a_buscar,))
+          consulta = f"""SELECT {campo_pk} FROM {tabla_ref} WHERE {campo_ref} = %s"""
+          cursor.execute(consulta, (valor,))
           resultado = cursor.fetchone()
-          
+
           if resultado:
-              datos_traducidos[idx, campo_fkID] = resultado[0]
+            datos_traducidos.at[idx, campo_fkID] = resultado[0]
           else:
-              return None, f" El '{nombre_a_buscar}' no existe en la base de datos." #Acá tira el error de el '' no existe en la base de datos cuando mi txt tiene un espacio en blanco después del registro
+            return None, f"'{valor}' no existe en la tabla '{tabla_ref}'."
+
     return datos_traducidos, None
-      
+
   except Exception as e:
-    return None , f"Error de conexión: {e}" #Este es el que imprime, no llega a entrar en el if isinstance
+      return None, f"Error al traducir IDs: {e}"
+
+
 
 campos_con_claves = {
   "carrera": ("ID_Carrera","Nombre"),
