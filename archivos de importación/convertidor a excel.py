@@ -1,7 +1,7 @@
 import os, pandas as pd
 from datetime import datetime
-archivo_origen = "asistencia.txt"
-archivo_destino = "asistencia.xlsx"
+archivo_origen = "carreras.txt"
+archivo_destino = "carreras.xlsx"
 
 if not os.path.isfile(archivo_origen):
     print(f"El archivo {archivo_origen} no existe.")

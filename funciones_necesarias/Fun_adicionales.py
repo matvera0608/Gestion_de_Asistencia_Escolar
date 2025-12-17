@@ -253,9 +253,6 @@ def traducir_IDs(nombre_de_la_tabla, datos):
   datos_traducidos = datos.copy()
 
   try:
-    with conectar_base_de_datos() as conexión:
-      cursor = conexión.cursor()
-
       for idx, fila in datos.iterrows():
         for campo_fkID, (campo_pk, tabla_ref, campo_ref) in reglas.items():
           if campo_fkID not in datos.columns:
@@ -269,14 +266,14 @@ def traducir_IDs(nombre_de_la_tabla, datos):
           valor = normalizar_valor(valor)
 
           if not valor:
-            continue   # ← evita el error del string vacío
+            continue
 
-          # Si ya es un ID numérico
           if isinstance(valor, (int,)) or (isinstance(valor, str) and valor.isdigit()):
             datos_traducidos.at[idx, campo_fkID] = int(valor)
             continue
-
-          consulta = f"""SELECT {campo_pk} FROM {tabla_ref} WHERE {campo_ref} = %s"""
+        with conectar_base_de_datos() as conexión:
+          cursor = conexión.cursor()
+          consulta = f""" SELECT {campo_pk} FROM {tabla_ref} WHERE {campo_ref} = %s """
           cursor.execute(consulta, (valor,))
           resultado = cursor.fetchone()
 
@@ -284,8 +281,8 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             datos_traducidos.at[idx, campo_fkID] = resultado[0]
           else:
             return None, f"'{valor}' no existe en la tabla '{tabla_ref}'."
-
-    return datos_traducidos, None
+          
+      return datos_traducidos, None
 
   except Exception as e:
       return None, f"Error al traducir IDs: {e}"
