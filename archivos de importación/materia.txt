@@ -1,17 +1,12 @@
 nombre	horario de entrada	horario de salida	carrera
 Programación I	18:00	20:00	Analista de sistemas
-Base de Datos	16:30	18:00	Analista de sistemas
 Algoritmos Avanzados	19:00	21:30	Analista de sistemas
-Análisis de Sistemas I	08:00	10:00	Analista de sistemas
 Diseño Web	14:00	15:30	Analista de sistemas
 Sistemas Operativos I	18:00	20:00	Analista de sistemas
 Inglés Técnico	16:30	18:00	Analista de sistemas
 Análisis Matemático	19:00	21:30	Analista de sistemas
-Análisis de Sistemas I	08:00	10:00	Analista de sistemas
 Diseño Web	14:00	15:30	Analista de sistemas
 Programación I	18:00	20:00	Analista de sistemas
-Base de Datos	16:30	18:00	Analista de sistemas
 Algoritmos Avanzados	19:00	21:30	Analista de sistemas
 Estructuras de Datos	10:00	12:00	Analista de sistemas
-Análisis de Sistemas I	08:00	10:00	Analista de sistemas
 Diseño Web	14:00	15:30	Analista de sistemas

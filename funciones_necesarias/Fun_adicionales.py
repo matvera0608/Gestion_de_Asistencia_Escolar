@@ -259,29 +259,30 @@ def traducir_IDs(nombre_de_la_tabla, datos):
             continue
 
           valor = fila[campo_fkID]
-
+          print("ANTES:", repr(fila[campo_fkID]))
           if pd.isna(valor):
             continue
 
           valor = normalizar_valor(valor)
-
+          
+          print("DESPUÉS:", repr(valor))
           if not valor:
             continue
 
           if isinstance(valor, (int,)) or (isinstance(valor, str) and valor.isdigit()):
             datos_traducidos.at[idx, campo_fkID] = int(valor)
             continue
-        with conectar_base_de_datos() as conexión:
-          cursor = conexión.cursor()
-          consulta = f""" SELECT {campo_pk} FROM {tabla_ref} WHERE {campo_ref} = %s """
-          cursor.execute(consulta, (valor,))
-          resultado = cursor.fetchone()
+          with conectar_base_de_datos() as conexión:
+            cursor = conexión.cursor()
+            consulta = f""" SELECT {campo_pk} FROM {tabla_ref} WHERE {campo_ref} = %s """
+            cursor.execute(consulta, (valor,))
+            resultado = cursor.fetchone()
 
-          if resultado:
-            datos_traducidos.at[idx, campo_fkID] = resultado[0]
-          else:
-            return None, f"'{valor}' no existe en la tabla '{tabla_ref}'."
-          
+            if resultado:
+              datos_traducidos.at[idx, campo_fkID] = resultado[0]
+            else:
+              return None, f"'{valor}' no existe en la tabla '{tabla_ref}'."
+            
       return datos_traducidos, None
 
   except Exception as e:
