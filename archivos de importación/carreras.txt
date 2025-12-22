@@ -1,0 +1,4 @@
+nombre                        duración
+Hotelería y Turismo           3 años
+Administración de empresas    3 años
+Analista de sistemas          3 años
